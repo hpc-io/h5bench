@@ -55,16 +55,12 @@
 // HDF5 specific declerations
 herr_t ierr;
 
-// Variables and dimensions
-long numparticles = 8388608;	// 8  meg particles per process
-long long total_particles, offset;
-
-double *x, *y, *z;
-double *px, *py, *pz;
-long *id1, *id2;
-int x_dim = 64;
-int y_dim = 64;
-int z_dim = 64;
+// Global Variables and dimensions
+long NUM_PARTICLES = 8388608;	// 8  meg particles per process
+long long TOTAL_PARTICLES, FILE_OFFSET;
+int X_DIM = 64;
+int Y_DIM = 64;
+int Z_DIM = 64;
 
 // Uniform random number
 double uniform_random_number()
@@ -74,62 +70,62 @@ double uniform_random_number()
 }
 
 // Initialize particle data
-void init_particles ()
-{
-    long i;
-    for (i=0; i<numparticles; i++)
-    {
-        id1[i] = i;
-        id2[i] = i*2;
-        x[i] = uniform_random_number()*x_dim;
-        y[i] = uniform_random_number()*y_dim;
-        z[i] = ((double)id1[i]/numparticles)*z_dim;
-        px[i] = uniform_random_number()*x_dim;
-        py[i] = uniform_random_number()*y_dim;
-        pz[i] = ((double)id2[i]/numparticles)*z_dim;
-    }
-}
+//void init_particles ()
+//{
+//    long i;
+//    for (i=0; i<NUM_PARTICLES; i++)
+//    {
+//        id1[i] = i;
+//        id2[i] = i*2;
+//        x[i] = uniform_random_number()*x_dim;
+//        y[i] = uniform_random_number()*y_dim;
+//        z[i] = ((double)id1[i]/NUM_PARTICLES)*z_dim;
+//        px[i] = uniform_random_number()*x_dim;
+//        py[i] = uniform_random_number()*y_dim;
+//        pz[i] = ((double)id2[i]/NUM_PARTICLES)*z_dim;
+//    }
+//}
 
 // Create HDF5 file and write data
-void create_and_write_synthetic_h5_data(int rank, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id)
-{
-    int i;
-    // Note: printf statements are inserted basically
-    // to check the progress. Other than that they can be removed
-    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "id1", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "id2", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, x);
-    /* if (rank == 0) printf ("Written variable 1 \n"); */
-
-    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, y);
-    /* if (rank == 0) printf ("Written variable 2 \n"); */
-
-    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, z);
-    /* if (rank == 0) printf ("Written variable 3 \n"); */
-
-    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_LONG, memspace, filespace, plist_id, id1);
-    /* if (rank == 0) printf ("Written variable 4 \n"); */
-
-    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_LONG, memspace, filespace, plist_id, id2);
-    /* if (rank == 0) printf ("Written variable 5 \n"); */
-
-    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, px);
-    /* if (rank == 0) printf ("Written variable 6 \n"); */
-
-    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, py);
-    /* if (rank == 0) printf ("Written variable 7 \n"); */
-
-    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, pz);
-    /* if (rank == 0) printf ("Written variable 8 \n"); */
-    if (rank == 0) printf ("  Finished written 8 variables \n");
-}
+//void create_and_write_synthetic_h5_data(int rank, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id)
+//{
+//    int i;
+//    // Note: printf statements are inserted basically
+//    // to check the progress. Other than that they can be removed
+//    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[3] = H5Dcreate(loc, "id1", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[4] = H5Dcreate(loc, "id2", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[5] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[6] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    dset_ids[7] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//
+//    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, x);
+//    /* if (rank == 0) printf ("Written variable 1 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, y);
+//    /* if (rank == 0) printf ("Written variable 2 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, z);
+//    /* if (rank == 0) printf ("Written variable 3 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_LONG, memspace, filespace, plist_id, id1);
+//    /* if (rank == 0) printf ("Written variable 4 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_LONG, memspace, filespace, plist_id, id2);
+//    /* if (rank == 0) printf ("Written variable 5 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, px);
+//    /* if (rank == 0) printf ("Written variable 6 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, py);
+//    /* if (rank == 0) printf ("Written variable 7 \n"); */
+//
+//    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, pz);
+//    /* if (rank == 0) printf ("Written variable 8 \n"); */
+//    if (rank == 0) printf ("  Finished written 8 variables \n");
+//}
 
 typedef enum Benchmark_mode{
     LINEAR_LINEAR,
@@ -200,12 +196,12 @@ particle* prepare_data_compound(long particle_cnt, unsigned long *data_size_out)
     for (long i = 0; i < particle_cnt; i++) {
         data_out[i].id_1 = i;
         data_out[i].id_2 = 2 * i;
-        data_out[i].x = uniform_random_number() * x_dim;
-        data_out[i].y = uniform_random_number() * y_dim;
-        data_out[i].z = ((double) i / particle_cnt) * z_dim;
-        data_out[i].px = uniform_random_number() * x_dim;
-        data_out[i].py = uniform_random_number() * y_dim;
-        data_out[i].pz = ((double) 2 * i / particle_cnt) * z_dim;
+        data_out[i].x = uniform_random_number() * X_DIM;
+        data_out[i].y = uniform_random_number() * Y_DIM;
+        data_out[i].z = ((double) i / particle_cnt) * Z_DIM;
+        data_out[i].px = uniform_random_number() * X_DIM;
+        data_out[i].py = uniform_random_number() * Y_DIM;
+        data_out[i].pz = ((double) 2 * i / particle_cnt) * Z_DIM;
     }
     *data_size_out = particle_cnt * sizeof(particle);
     return data_out;
@@ -229,12 +225,12 @@ data_linear * prepare_data_linear(long particle_cnt, unsigned long * data_size_o
     for (long i = 0; i < particle_cnt; i++) {
         data_out->id_1[i] = i;
         data_out->id_2[i] = i * 2;
-        data_out->x[i] = uniform_random_number() * x_dim;
-        data_out->y[i] = uniform_random_number() * y_dim;
-        data_out->z[i] = ((double) data_out->id_1[i] / numparticles) * z_dim;
-        data_out->px[i] = uniform_random_number() * x_dim;
-        data_out->py[i] = uniform_random_number() * y_dim;
-        data_out->pz[i] = ((double) data_out->id_2[i] / numparticles) * z_dim;
+        data_out->x[i] = uniform_random_number() * X_DIM;
+        data_out->y[i] = uniform_random_number() * Y_DIM;
+        data_out->z[i] = ((double) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
+        data_out->px[i] = uniform_random_number() * X_DIM;
+        data_out->py[i] = uniform_random_number() * Y_DIM;
+        data_out->pz[i] = ((double) data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
     *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
 
@@ -306,9 +302,15 @@ void data_write_linear_to_linear(int rank, hid_t loc, hid_t *dset_ids, hid_t fil
     if (rank == 0) printf ("  Finished written 8 variables \n");
 }
 
+void data_write_linear_to_compound(int rank, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+        data_linear* data_in){
+
+}
+
 void data_write_comp_to_linear(int rank, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in && data_in->x);
+    assert(0 && "data_write_comp_to_linear() implementation not finished yet, ");
     DEBUG_PRINT
     hid_t *tids = make_compound_separates();
     DEBUG_PRINT
@@ -412,6 +414,8 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int my
                 data_write_linear_to_linear(my_rank, grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_linear*)data);
                 break;
             case LINEAR_COMPOUND:
+                assert(0 && "LINEAR_COMPOUND is not implemented yet ");
+                data_write_linear_to_compound(my_rank, grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_linear*)data);
                 break;
             case COMPOUND_LINEAR:
                 data_write_comp_to_linear(my_rank, grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
@@ -451,11 +455,11 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int my
 }
 
 int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out){
-    *filespace_out = H5Screate_simple(1, (hsize_t *) &total_particles, NULL);//= world_size * numparticles
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &numparticles, NULL);
+    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//= world_size * numparticles
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
     *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &offset, NULL, (hsize_t *) &numparticles, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL, (hsize_t *) &NUM_PARTICLES, NULL);
     return 0;
 }
 
@@ -521,7 +525,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    numparticles = (atoi(argv[4])) * 1024 * 1024;
+    NUM_PARTICLES = (atoi(argv[4])) * 1024 * 1024;
 
     char* mode_str = argv[5];
     bench_mode mode;
@@ -539,10 +543,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (my_rank == 0) {
-        printf("Number of paritcles: %ld \n", numparticles);
+        printf("Number of paritcles: %ld \n", NUM_PARTICLES);
     }
 
-    unsigned long total_write_size = num_procs * nts * numparticles * (6 * sizeof(double) + 2 * sizeof(long));
+    unsigned long total_write_size = num_procs * nts * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
 
     //init_particles ();
 
@@ -552,12 +556,12 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     unsigned long t0 = get_time_usec();
-    MPI_Allreduce(&numparticles, &total_particles, 1, MPI_LONG_LONG, MPI_SUM, comm);
-    MPI_Scan(&numparticles, &offset, 1, MPI_LONG_LONG, MPI_SUM, comm);
-    offset -= numparticles;
+    MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, comm);
+    MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, comm);
+    FILE_OFFSET -= NUM_PARTICLES;
 
     if (my_rank == 0)
-        printf("Total particle number = %lldM, total write size = %luMB\n", total_particles / (1024 * 1024),
+        printf("Total particle number = %lldM, total write size = %luMB\n", TOTAL_PARTICLES / (1024 * 1024),
                 total_write_size / (1024 * 1024));
 
     hid_t fapl = set_fapl();
@@ -581,7 +585,7 @@ int main(int argc, char* argv[]) {
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time;
-    _run_time_steps(mode, numparticles, nts, my_rank, sleep_time, file_id, plist_id, filespace, memspace,
+    _run_time_steps(mode, NUM_PARTICLES, nts, my_rank, sleep_time, file_id, plist_id, filespace, memspace,
             &raw_write_time);
 
     unsigned long t3 = get_time_usec(); // t3 - t2: writting data, including metadata
