@@ -21,8 +21,17 @@ bin:
 
 check:
 	echo "test run..."
-	mpirun -n 2 ./vpicio_uni_h5 test_data.h5 5 1 2
-	rm test_data.h5
+	mpirun -n 2 ./vpicio_uni_h5 test_data_CC.h5 2 1 1 CC
+	mpirun -n 2 ./vpicio_uni_h5 test_data_CC2D.h5 2 1 1 CC2D
+	mpirun -n 2 ./vpicio_uni_h5 test_data_CI.h5 2 1 1 CI
+	mpirun -n 2 ./vpicio_uni_h5 test_data_CI2D.h5 2 1 1 CI2D
+	mpirun -n 2 ./vpicio_uni_h5 test_data_IC.h5 2 1 1 IC
+	mpirun -n 2 ./vpicio_uni_h5 test_data_IC2D.h5 2 1 1 IC2D
+	mpirun -n 2 ./vpicio_uni_h5 test_data_II.h5 2 1 1 II
+	mpirun -n 2 ./vpicio_uni_h5 test_data_II2D.h5 2 1 1 II2D
+	mpirun -n 2 ./vpicio_uni_h5 test_data_CC3D.h5 2 1 1 CC3D
+
+	
 .PHONY: clean
 clean:
 	rm -rf $(BIN) 

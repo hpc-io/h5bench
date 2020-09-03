@@ -134,7 +134,7 @@ hid_t* make_compound_type_separates(){
 }
 
 //returns prepared local data volume, used to calculate bandwidth
-particle* prepare_data_compound(long particle_cnt, unsigned long *data_size_out) {
+particle* prepare_data_interleaved(long particle_cnt, unsigned long *data_size_out) {
     particle *data_out = (particle*) malloc(particle_cnt * sizeof(particle));
 
     for (long i = 0; i < particle_cnt; i++) {
@@ -189,14 +189,14 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
     data_out->dim_1 = dim_1;
     data_out->dim_2 = dim_2;
 
-    data_out->x =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->y =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->z =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->px = (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->py = (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->pz = (double*) malloc(dim_1 * dim_2 * sizeof(double));
-    data_out->id_1 = (long*) malloc(dim_1 * dim_2 * sizeof(long));
-    data_out->id_2 = (long*) malloc(dim_1 * dim_2 * sizeof(long));
+    data_out->x =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->y =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->z =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->px = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->py = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->pz = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->id_1 = (long*) malloc(particle_cnt * sizeof(long));
+    data_out->id_2 = (long*) malloc(particle_cnt * sizeof(long));
 
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
@@ -213,7 +213,7 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
             idx++;
         }
     }
-    *data_size_out = dim_1 * dim_2 * (6 * sizeof(double) + 2 * sizeof(long));
+    *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
 
     return data_out;
 }
@@ -226,14 +226,14 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
     data_out->dim_2 = dim_2;
     data_out->dim_3 = dim_3;
 
-    data_out->x =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->y =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->z =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->px = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->py = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->pz = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
-    data_out->id_1 = (long*) malloc(dim_1 * dim_2 * dim_3 * sizeof(long));
-    data_out->id_2 = (long*) malloc(dim_1 * dim_2 * dim_3 * sizeof(long));
+    data_out->x =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->y =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->z =  (double*) malloc(particle_cnt * sizeof(double));
+    data_out->px = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->py = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->pz = (double*) malloc(particle_cnt * sizeof(double));
+    data_out->id_1 = (long*) malloc(particle_cnt * sizeof(long));
+    data_out->id_2 = (long*) malloc(particle_cnt * sizeof(long));
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
         for(long i2 = 0; i2 < dim_2; i2++){
@@ -251,7 +251,7 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
             }
         }
     }
-    *data_size_out = dim_1 * dim_2 * dim_3 * (6 * sizeof(double) + 2 * sizeof(long));
+    *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
 
     return data_out;
 }
@@ -261,6 +261,9 @@ void data_free(bench_mode mode, void* data){
     switch(mode){
         case CONTIG_CONTIG_1D:
         case CONTIG_INTERLEAVED_1D:
+        case CONTIG_INTERLEAVED_2D:
+        case CONTIG_CONTIG_2D:
+        case CONTIG_CONTIG_3D:
             free(((data_contig_md*)data)->x);
             free(((data_contig_md*)data)->y);
             free(((data_contig_md*)data)->z);
@@ -273,25 +276,11 @@ void data_free(bench_mode mode, void* data){
             break;
 
         case INTERLEAVED_CONTIG_1D:
+        case INTERLEAVED_CONTIG_2D:
         case INTERLEAVED_INTERLEAVED_1D:
+        case INTERLEAVED_INTERLEAVED_2D:
             free(data);
             break;
-
-        case CONTIG_CONTIG_2D:
-        case CONTIG_CONTIG_3D:{
-            data_contig_md* d = (data_contig_md*)data;
-            assert(d->particle_cnt = d->dim_1 * d->dim_2);
-            free(d->x);
-            free(d->y);
-            free(d->z);
-            free(d->px);
-            free(d->py);
-            free(d->pz);
-            free(d->id_1);
-            free(d->id_2);
-            free(d);
-            break;
-        }
 
         default:
             break;
@@ -307,7 +296,7 @@ int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out, hid_t* 
     return 0;
 }
 
-int set_select_space_multi_2D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out,
+int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out,
         unsigned long long dim_1, unsigned long long dim_2){//dim_1 * dim_2 === NUM_PARTICLES
     hsize_t mem_dims[2], file_dims[2];
     mem_dims[0] = (hsize_t)dim_1;
@@ -339,7 +328,7 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out, h
     mem_dims[0] = (hsize_t)dim_1;
     mem_dims[1] = (hsize_t)dim_2;
     mem_dims[2] = (hsize_t)dim_3;
-    file_dims[0] = (hsize_t)dim_1 * NUM_RANKS * NUM_TIMESTEPS;
+    file_dims[0] = (hsize_t)dim_1 * NUM_RANKS;
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
 
@@ -404,7 +393,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_contig_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         data_contig_md* data_in){
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -420,7 +409,7 @@ void data_write_contig_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t files
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_interleaved_to_contig_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in && data_in->x);
 
@@ -461,7 +450,7 @@ void data_write_interleaved_to_contig_1d(hid_t loc, hid_t *dset_ids, hid_t files
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_interleaved_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in && data_in->x);
 
@@ -472,8 +461,7 @@ void data_write_interleaved_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t 
 }
 
 int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sleep_time,
-        hid_t file_id, hid_t plist_id, hid_t filespace, hid_t memspace,
-        unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
+        hid_t file_id, unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
 
     char grp_name[128];
     unsigned long  rt_start, rt_end;
@@ -483,36 +471,70 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
     *raw_write_time_out = 0;
     void* data = NULL;
     unsigned long data_size;
+    hid_t plist_id, filespace, memspace;
 
     make_compound_type_separates();
     make_compound_type();
 
+    if(mode == CONTIG_CONTIG_2D){
+
+    } else if(mode == CONTIG_CONTIG_3D){
+
+    } else
+        set_select_spaces_default(&filespace, &memspace, &plist_id);
+
     switch(mode){
         case CONTIG_CONTIG_1D:
+            set_select_spaces_default(&filespace, &memspace, &plist_id);
             data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
+        case CONTIG_CONTIG_2D:
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
+            dset_cnt = 8;
+            break;
+
+
         case CONTIG_INTERLEAVED_1D:
+            set_select_spaces_default(&filespace, &memspace, &plist_id);
             data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
+            dset_cnt = 1;
+            break;
+
+        case CONTIG_INTERLEAVED_2D:
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
             dset_cnt = 1;
             break;
 
         case INTERLEAVED_CONTIG_1D:
-            data = (void*)prepare_data_compound(particle_cnt, &data_size);
+            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
+            dset_cnt = 8;
+            break;
+
+        case INTERLEAVED_CONTIG_2D:
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
         case INTERLEAVED_INTERLEAVED_1D:
-            data = (void*)prepare_data_compound(particle_cnt, &data_size);
+            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
-        case CONTIG_CONTIG_2D:
-            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
-            dset_cnt = 8;
+        case INTERLEAVED_INTERLEAVED_2D:
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
+            dset_cnt = 1;
             break;
+
         case CONTIG_CONTIG_3D:
+            set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
             data = (void*)prepare_data_contig_3D(particle_cnt, 64, 64, particle_cnt/4096, &data_size);
             dset_cnt = 8;
             break;
@@ -535,25 +557,24 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
         MPI_Barrier (MPI_COMM_WORLD);
         switch(mode){
             case CONTIG_CONTIG_1D:
+            case CONTIG_CONTIG_2D:
+            case CONTIG_CONTIG_3D:
                 data_write_contig_contig_MD_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
                 break;
 
             case CONTIG_INTERLEAVED_1D:
-                //assert(0 && "CONTIG_INTERLEAVED_1D is not implemented yet ");
-                data_write_contig_to_interleaved_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
+            case CONTIG_INTERLEAVED_2D:
+                data_write_contig_to_interleaved(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
                 break;
 
             case INTERLEAVED_CONTIG_1D:
-                data_write_interleaved_to_contig_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
+            case INTERLEAVED_CONTIG_2D:
+                data_write_interleaved_to_contig(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
                 break;
 
             case INTERLEAVED_INTERLEAVED_1D:
-                data_write_interleaved_to_interleaved_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
-                break;
-
-            case CONTIG_CONTIG_2D:
-            case CONTIG_CONTIG_3D:
-                data_write_contig_contig_MD_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
+            case INTERLEAVED_INTERLEAVED_2D:
+                data_write_interleaved_to_interleaved(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
                 break;
 
             default:
@@ -563,10 +584,12 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
 
         *raw_write_time_out += (rt_end - rt_start);
         MPI_Barrier (MPI_COMM_WORLD);
-        fflush(stdout);
+
         if (i != timestep_cnt - 1) {
-            if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
-            if (sleep_time > 0) sleep(sleep_time);
+            if (sleep_time > 0) {
+                if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
+                sleep(sleep_time);
+            }
         }
 
         for (int j = 0; j < dset_cnt; j++)
@@ -585,6 +608,11 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
     *total_data_size_out = timestep_cnt * data_size;
 
     data_free(mode, data);
+
+    H5Sclose(memspace);
+    H5Sclose(filespace);
+    H5Pclose(plist_id);
+
     return 0;
 }
 
@@ -593,10 +621,14 @@ hid_t set_fapl(){
     return fapl;
 }
 
-hid_t set_metadata(hid_t fapl){
-    // Alignmemt
-    int alignment = 16777216;
-    //H5Pset_alignment(fapl, alignment, alignment),
+hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len){
+    if(align != 0){
+        if(alignment_len <= 0){
+            alignment_len = 16777216; //16MB as default
+            threshold = 16777216;
+            H5Pset_alignment(fapl, threshold, alignment_len);
+        }
+    }
 
     // Collective metadata
     H5Pset_all_coll_metadata_ops(fapl, 1);
@@ -619,7 +651,7 @@ hid_t set_metadata(hid_t fapl){
 
 void print_usage(char *name) {
     printf("Usage: %s /path_to_file num_time_steps num_sleep_sec num_M_particles CC/CI/IC/II/CC2D/CC3D \n", name);
-    printf("LL/LC/CL/CC is used to set benchmark mode, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
+    printf("CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
 }
 
 int main(int argc, char* argv[]) {
@@ -656,33 +688,44 @@ int main(int argc, char* argv[]) {
 
     char* mode_str = argv[5];
     bench_mode mode;
+    char* bench_name;
     if (strcmp(mode_str, "CC") == 0) {
         mode = CONTIG_CONTIG_1D;
+        bench_name = "CONTIG_CONTIG_1D";
+    } else if (strcmp(mode_str, "CC2D") == 0) {
+        mode = CONTIG_CONTIG_2D;
+        bench_name = "CONTIG_CONTIG_2D";
     } else if (strcmp(mode_str, "CI") == 0) {
         mode = CONTIG_INTERLEAVED_1D;
-    } else if (strcmp(mode_str, "II") == 0) {
+        bench_name = "CONTIG_INTERLEAVED_1D";
+    } else if (strcmp(mode_str, "CI2D") == 0) {
+        mode = CONTIG_INTERLEAVED_2D;
+        bench_name = "CONTIG_INTERLEAVED_2D";
+    }else if (strcmp(mode_str, "II") == 0) {
         mode = INTERLEAVED_INTERLEAVED_1D;
+        bench_name = "INTERLEAVED_INTERLEAVED_1D";
+    }else if (strcmp(mode_str, "II2D") == 0) {
+        mode = INTERLEAVED_INTERLEAVED_2D;
+        bench_name = "INTERLEAVED_INTERLEAVED_2D";
     } else if (strcmp(mode_str, "IC") == 0) {
         mode = INTERLEAVED_CONTIG_1D;
-    } else if(strcmp(mode_str, "CC2D") == 0){
-        mode = CONTIG_CONTIG_2D;
+        bench_name = "INTERLEAVED_CONTIG_1D";
+    } else if (strcmp(mode_str, "IC2D") == 0) {
+        mode = INTERLEAVED_CONTIG_2D;
+        bench_name = "INTERLEAVED_CONTIG_2D";
     } else if(strcmp(mode_str, "CC3D") == 0){
         mode = CONTIG_CONTIG_3D;
+        bench_name = "CONTIG_CONTIG_3D";
     } else {
-        printf("Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CC3D \n");
+        printf("Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D \n");
         return 0;
     }
 
     if (my_rank == 0) {
-        printf("Number of paritcles: %lld M\n", NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: %s, Number of paritcles: %lld M\n", bench_name, NUM_PARTICLES/(1024*1024));
     }
 
     unsigned long total_write_size = num_procs * nts * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
-
-    //init_particles ();
-
-    if (my_rank == 0)
-        printf("Finished initializeing particles \n");
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -698,7 +741,8 @@ int main(int argc, char* argv[]) {
 
     H5Pset_fapl_mpio(fapl, comm, info);
 
-    set_metadata(fapl);
+    int align = 0;
+    set_metadata(fapl, 0, 0, 0);
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
     hid_t file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
@@ -707,22 +751,21 @@ int main(int argc, char* argv[]) {
     if (my_rank == 0)
         printf("Opened HDF5 file... \n");
 
-    hid_t filespace, memspace, plist_id;
+//    hid_t filespace, memspace, plist_id;
 
-    if(mode == CONTIG_CONTIG_2D){
-        set_select_space_multi_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
-    } else if(mode == CONTIG_CONTIG_3D){
-        set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
-    } else
-        set_select_spaces_default(&filespace, &memspace, &plist_id);
+//    if(mode == CONTIG_CONTIG_2D){
+//        set_select_space_multi_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+//    } else if(mode == CONTIG_CONTIG_3D){
+//        set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
+//    } else
+//        set_select_spaces_default(&filespace, &memspace, &plist_id);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, total_data_size;
-    _run_time_steps(mode, NUM_PARTICLES, nts, sleep_time, file_id, plist_id, filespace, memspace,
-            &total_data_size, &raw_write_time);
+    _run_time_steps(mode, NUM_PARTICLES, nts, sleep_time, file_id, &total_data_size, &raw_write_time);
 
     unsigned long t3 = get_time_usec(); // t3 - t2: writting data, including metadata
 
@@ -731,9 +774,7 @@ int main(int argc, char* argv[]) {
         printf("Total running time = %lu ms\n", (t3 - t0) / 1000);
     }
 
-    H5Sclose(memspace);
-    H5Sclose(filespace);
-    H5Pclose(plist_id);
+
     H5Fclose(file_id);
 
     MPI_Barrier(MPI_COMM_WORLD);
