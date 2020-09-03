@@ -66,71 +66,16 @@ double uniform_random_number()
     return (((double)rand())/((double)(RAND_MAX)));
 }
 
-// Initialize particle data
-//void init_particles ()
-//{
-//    long i;
-//    for (i=0; i<NUM_PARTICLES; i++)
-//    {
-//        id1[i] = i;
-//        id2[i] = i*2;
-//        x[i] = uniform_random_number()*x_dim;
-//        y[i] = uniform_random_number()*y_dim;
-//        z[i] = ((double)id1[i]/NUM_PARTICLES)*z_dim;
-//        px[i] = uniform_random_number()*x_dim;
-//        py[i] = uniform_random_number()*y_dim;
-//        pz[i] = ((double)id2[i]/NUM_PARTICLES)*z_dim;
-//    }
-//}
-
-// Create HDF5 file and write data
-//void create_and_write_synthetic_h5_data(int rank, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id)
-//{
-//    int i;
-//    // Note: printf statements are inserted basically
-//    // to check the progress. Other than that they can be removed
-//    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[3] = H5Dcreate(loc, "id1", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[4] = H5Dcreate(loc, "id2", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[5] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[6] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//    dset_ids[7] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-//
-//    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, x);
-//    /* if (rank == 0) printf ("Written variable 1 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, y);
-//    /* if (rank == 0) printf ("Written variable 2 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, z);
-//    /* if (rank == 0) printf ("Written variable 3 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_LONG, memspace, filespace, plist_id, id1);
-//    /* if (rank == 0) printf ("Written variable 4 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_LONG, memspace, filespace, plist_id, id2);
-//    /* if (rank == 0) printf ("Written variable 5 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, px);
-//    /* if (rank == 0) printf ("Written variable 6 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, py);
-//    /* if (rank == 0) printf ("Written variable 7 \n"); */
-//
-//    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, pz);
-//    /* if (rank == 0) printf ("Written variable 8 \n"); */
-//    if (rank == 0) printf ("  Finished written 8 variables \n");
-//}
-
 typedef enum Benchmark_mode{
-    LINEAR_LINEAR,
-    LINEAR_COMPOUND,
-    COMPOUND_LINEAR,
-    COMPOUND_COMPOUND,
-    ARRAY_2D,
-    ARRAY_3D
+    CONTIG_CONTIG_1D,
+    CONTIG_INTERLEAVED_1D,
+    INTERLEAVED_CONTIG_1D,
+    INTERLEAVED_INTERLEAVED_1D,
+    CONTIG_CONTIG_2D,
+    CONTIG_INTERLEAVED_2D,
+    INTERLEAVED_CONTIG_2D,
+    INTERLEAVED_INTERLEAVED_2D,
+    CONTIG_CONTIG_3D
 }bench_mode;
 
 typedef struct Particle{
@@ -139,30 +84,14 @@ typedef struct Particle{
     long id_1, id_2;
 }particle;
 
-typedef struct data_linear{
+typedef struct data_md{
     long particle_cnt;
+    long dim_1, dim_2, dim_3;
     double *x, *y, *z;
     double *px, *py, *pz;
     long *id_1, *id_2;
-}data_linear;
+}data_contig_md;
 
-typedef struct data_2d{
-    long particle_cnt;
-    long dim_1, dim_2;
-    double **x, **y, **z;
-    double **px, **py, **pz;
-    long **id_1, **id_2;
-}data_2d;
-
-typedef struct data_3d{
-    long particle_cnt;
-    long dim_1, dim_2, dim_3;
-    double ***x, ***y, ***z;
-    double ***px, ***py, ***pz;
-    long ***id_1, ***id_2;
-}data_3d;
-
-//need to close later.
 hid_t make_compound_type(){
     PARTICLE_COMPOUND_TYPE = H5Tcreate(H5T_COMPOUND, sizeof(particle));
     H5Tinsert(PARTICLE_COMPOUND_TYPE, "x", HOFFSET(particle, x),   H5T_NATIVE_DOUBLE);
@@ -223,9 +152,9 @@ particle* prepare_data_compound(long particle_cnt, unsigned long *data_size_out)
     return data_out;
 }
 
-data_linear * prepare_data_linear(long particle_cnt, unsigned long * data_size_out) {
+data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_size_out) {
 
-    data_linear *data_out = (data_linear*) malloc(sizeof(data_linear));
+    data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
 
     data_out->particle_cnt = particle_cnt;
 
@@ -253,41 +182,35 @@ data_linear * prepare_data_linear(long particle_cnt, unsigned long * data_size_o
     return data_out;
 }
 
-data_2d* prepare_data_2D(long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
+data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
     assert(particle_cnt == dim_1 * dim_2);
-    data_2d *data_out = (data_2d*) malloc(sizeof(data_2d));
+    data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
     data_out->dim_1 = dim_1;
     data_out->dim_2 = dim_2;
 
-    data_out->x =  (double**) malloc(dim_1 * sizeof(double*));
-    data_out->y =  (double**) malloc(dim_1 * sizeof(double*));
-    data_out->z =  (double**) malloc(dim_1 * sizeof(double*));
-    data_out->px = (double**) malloc(dim_1 * sizeof(double*));
-    data_out->py = (double**) malloc(dim_1 * sizeof(double*));
-    data_out->pz = (double**) malloc(dim_1 * sizeof(double*));
-    data_out->id_1 = (long**) malloc(dim_1 * sizeof(long*));
-    data_out->id_2 = (long**) malloc(dim_1 * sizeof(long*));
+    data_out->x =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->y =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->z =  (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->px = (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->py = (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->pz = (double*) malloc(dim_1 * dim_2 * sizeof(double));
+    data_out->id_1 = (long*) malloc(dim_1 * dim_2 * sizeof(long));
+    data_out->id_2 = (long*) malloc(dim_1 * dim_2 * sizeof(long));
 
+    long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
-        data_out->x[i1] =  (double*) malloc(dim_2 * sizeof(double));
-        data_out->y[i1] =  (double*) malloc(dim_2 * sizeof(double));
-        data_out->z[i1] =  (double*) malloc(dim_2 * sizeof(double));
-        data_out->px[i1] = (double*) malloc(dim_2 * sizeof(double));
-        data_out->py[i1] = (double*) malloc(dim_2 * sizeof(double));
-        data_out->pz[i1] = (double*) malloc(dim_2 * sizeof(double));
-        data_out->id_1[i1] = (long*) malloc(dim_2 * sizeof(long));
-        data_out->id_2[i1] = (long*) malloc(dim_2 * sizeof(long));
         for(long i2 = 0; i2 < dim_2; i2++){
-            data_out->x[i1][i2] = uniform_random_number() * X_DIM;
-            data_out->id_1[i1][i2] = i1;
-            data_out->id_2[i1][i2] = i1 * 2;
-            data_out->x[i1][i2] =  uniform_random_number() * X_DIM;
-            data_out->y[i1][i2] =  uniform_random_number() * Y_DIM;
-            data_out->px[i1][i2] = uniform_random_number() * X_DIM;
-            data_out->py[i1][i2] = uniform_random_number() * Y_DIM;
-            data_out->z[i1][i2] =  ((double) data_out->id_1[i1][i2] / NUM_PARTICLES) * Z_DIM;
-            data_out->pz[i1][i2] = ((double) data_out->id_2[i1][i2] / NUM_PARTICLES) * Z_DIM;
+            data_out->x[idx] = uniform_random_number() * X_DIM;
+            data_out->id_1[idx] = i1;
+            data_out->id_2[idx] = i1 * 2;
+            data_out->x[idx] =  uniform_random_number() * X_DIM;
+            data_out->y[idx] =  uniform_random_number() * Y_DIM;
+            data_out->px[idx] = uniform_random_number() * X_DIM;
+            data_out->py[idx] = uniform_random_number() * Y_DIM;
+            data_out->z[idx] =  ((double) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+            data_out->pz[idx] = ((double) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+            idx++;
         }
     }
     *data_size_out = dim_1 * dim_2 * (6 * sizeof(double) + 2 * sizeof(long));
@@ -295,52 +218,36 @@ data_2d* prepare_data_2D(long particle_cnt, long dim_1, long dim_2, unsigned lon
     return data_out;
 }
 
-data_3d* prepare_data_3D(long particle_cnt, long dim_1, long dim_2, long dim_3, unsigned long * data_size_out){
+data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2, long dim_3, unsigned long * data_size_out){
     assert(particle_cnt == dim_1 * dim_2 * dim_3);
-    data_3d *data_out = (data_3d*) malloc(sizeof(data_3d));
+    data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
     data_out->dim_1 = dim_1;
     data_out->dim_2 = dim_2;
     data_out->dim_3 = dim_3;
 
-    data_out->x =  (double***) malloc(dim_1 * sizeof(double**));
-    data_out->y =  (double***) malloc(dim_1 * sizeof(double**));
-    data_out->z =  (double***) malloc(dim_1 * sizeof(double**));
-    data_out->px = (double***) malloc(dim_1 * sizeof(double**));
-    data_out->py = (double***) malloc(dim_1 * sizeof(double**));
-    data_out->pz = (double***) malloc(dim_1 * sizeof(double**));
-    data_out->id_1 = (long***) malloc(dim_1 * sizeof(long**));
-    data_out->id_2 = (long***) malloc(dim_1 * sizeof(long**));
-
+    data_out->x =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->y =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->z =  (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->px = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->py = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->pz = (double*) malloc(dim_1 * dim_2 * dim_3 * sizeof(double));
+    data_out->id_1 = (long*) malloc(dim_1 * dim_2 * dim_3 * sizeof(long));
+    data_out->id_2 = (long*) malloc(dim_1 * dim_2 * dim_3 * sizeof(long));
+    long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
-        data_out->x[i1] =  (double**) malloc(dim_2 * sizeof(double*));
-        data_out->y[i1] =  (double**) malloc(dim_2 * sizeof(double*));
-        data_out->z[i1] =  (double**) malloc(dim_2 * sizeof(double*));
-        data_out->px[i1] = (double**) malloc(dim_2 * sizeof(double*));
-        data_out->py[i1] = (double**) malloc(dim_2 * sizeof(double*));
-        data_out->pz[i1] = (double**) malloc(dim_2 * sizeof(double*));
-        data_out->id_1[i1] = (long**) malloc(dim_2 * sizeof(long*));
-        data_out->id_2[i1] = (long**) malloc(dim_2 * sizeof(long*));
-
         for(long i2 = 0; i2 < dim_2; i2++){
-            data_out->x[i1][i2] =  (double*) malloc(dim_3 * sizeof(double));
-            data_out->y[i1][i2] =  (double*) malloc(dim_3 * sizeof(double));
-            data_out->z[i1][i2] =  (double*) malloc(dim_3 * sizeof(double));
-            data_out->px[i1][i2] = (double*) malloc(dim_3 * sizeof(double));
-            data_out->py[i1][i2] = (double*) malloc(dim_3 * sizeof(double));
-            data_out->pz[i1][i2] = (double*) malloc(dim_3 * sizeof(double));
-            data_out->id_1[i1][i2] = (long*) malloc(dim_3 * sizeof(long));
-            data_out->id_2[i1][i2] = (long*) malloc(dim_3 * sizeof(long));
-
             for(long i3 = 0; i3 < dim_3; i3++){
-                data_out->x[i1][i2][i3] =  uniform_random_number() * X_DIM;
-                data_out->y[i1][i2][i3] =  uniform_random_number() * Y_DIM;
-                data_out->px[i1][i2][i3] = uniform_random_number() * X_DIM;
-                data_out->py[i1][i2][i3] = uniform_random_number() * Y_DIM;
-                data_out->id_1[i1][i2][i3] = i1;
-                data_out->id_2[i1][i2][i3] = i1 * 2;
-                data_out->z[i1][i2][i3] =  ((double) data_out->id_1[i1][i2][i3] / NUM_PARTICLES) * Z_DIM;
-                data_out->pz[i1][i2][i3] = ((double) data_out->id_2[i1][i2][i3] / NUM_PARTICLES) * Z_DIM;
+                data_out->x[idx] = uniform_random_number() * X_DIM;
+                data_out->id_1[idx] = i1;
+                data_out->id_2[idx] = i1 * 2;
+                data_out->x[idx] =  uniform_random_number() * X_DIM;
+                data_out->y[idx] =  uniform_random_number() * Y_DIM;
+                data_out->px[idx] = uniform_random_number() * X_DIM;
+                data_out->py[idx] = uniform_random_number() * Y_DIM;
+                data_out->z[idx] =  ((double) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+                data_out->pz[idx] = ((double) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+                idx++;
             }
         }
     }
@@ -352,82 +259,37 @@ data_3d* prepare_data_3D(long particle_cnt, long dim_1, long dim_2, long dim_3, 
 void data_free(bench_mode mode, void* data){
     assert(data);
     switch(mode){
-        case LINEAR_LINEAR:
-        case LINEAR_COMPOUND:
-            free(((data_linear*)data)->x);
-            free(((data_linear*)data)->y);
-            free(((data_linear*)data)->z);
-            free(((data_linear*)data)->px);
-            free(((data_linear*)data)->py);
-            free(((data_linear*)data)->pz);
-            free(((data_linear*)data)->id_1);
-            free(((data_linear*)data)->id_2);
-            free(((data_linear*)data));
+        case CONTIG_CONTIG_1D:
+        case CONTIG_INTERLEAVED_1D:
+            free(((data_contig_md*)data)->x);
+            free(((data_contig_md*)data)->y);
+            free(((data_contig_md*)data)->z);
+            free(((data_contig_md*)data)->px);
+            free(((data_contig_md*)data)->py);
+            free(((data_contig_md*)data)->pz);
+            free(((data_contig_md*)data)->id_1);
+            free(((data_contig_md*)data)->id_2);
+            free(((data_contig_md*)data));
             break;
 
-        case COMPOUND_LINEAR:
-
-        case COMPOUND_COMPOUND:
+        case INTERLEAVED_CONTIG_1D:
+        case INTERLEAVED_INTERLEAVED_1D:
             free(data);
             break;
 
-        case ARRAY_2D: {
-            data_2d* d2 = (data_2d*)data;
-            assert(d2->particle_cnt = d2->dim_1 * d2->dim_2);
-            for(long i1 = 0; i1 < d2->dim_1; i1++){
-                free(d2->x[i1]);
-                free(d2->y[i1]);
-                free(d2->z[i1]);
-                free(d2->px[i1]);
-                free(d2->py[i1]);
-                free(d2->pz[i1]);
-                free(d2->id_1[i1]);
-                free(d2->id_2[i1]);
-            }
-            free(d2->x);
-            free(d2->y);
-            free(d2->z);
-            free(d2->px);
-            free(d2->py);
-            free(d2->pz);
-            free(d2->id_1);
-            free(d2->id_2);
-            break;
-        }
-
-        case ARRAY_3D: {
-            data_3d* d3 = (data_3d*)data;
-            assert(d3->particle_cnt = d3->dim_1 * d3->dim_2 * d3->dim_3);
-            for(long i1 = 0; i1 < d3->dim_1; i1++){
-                for(long i2 = 0; i2 < d3->dim_2; i2++){
-                    free(d3->x[i1][i2]);
-                    free(d3->y[i1][i2]);
-                    free(d3->z[i1][i2]);
-                    free(d3->px[i1][i2]);
-                    free(d3->py[i1][i2]);
-                    free(d3->pz[i1][i2]);
-                    free(d3->id_1[i1][i2]);
-                    free(d3->id_2[i1][i2]);
-                }
-
-                free(d3->x[i1]);
-                free(d3->y[i1]);
-                free(d3->z[i1]);
-                free(d3->px[i1]);
-                free(d3->py[i1]);
-                free(d3->pz[i1]);
-                free(d3->id_1[i1]);
-                free(d3->id_2[i1]);
-            }
-
-            free(d3->x);
-            free(d3->y);
-            free(d3->z);
-            free(d3->px);
-            free(d3->py);
-            free(d3->pz);
-            free(d3->id_1);
-            free(d3->id_2);
+        case CONTIG_CONTIG_2D:
+        case CONTIG_CONTIG_3D:{
+            data_contig_md* d = (data_contig_md*)data;
+            assert(d->particle_cnt = d->dim_1 * d->dim_2);
+            free(d->x);
+            free(d->y);
+            free(d->z);
+            free(d->px);
+            free(d->py);
+            free(d->pz);
+            free(d->id_1);
+            free(d->id_2);
+            free(d);
             break;
         }
 
@@ -447,17 +309,18 @@ int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out, hid_t* 
 
 int set_select_space_multi_2D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out,
         unsigned long long dim_1, unsigned long long dim_2){//dim_1 * dim_2 === NUM_PARTICLES
-    hsize_t mem_dims[2];
-    hsize_t file_dims[2];
+    hsize_t mem_dims[2], file_dims[2];
     mem_dims[0] = (hsize_t)dim_1;
     mem_dims[1] = (hsize_t)dim_2;
-    file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; //NUM_TIMESTEPS no use?
-    file_dims[1] = (hsize_t)dim_2;
+    file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; //total x length: dim_1 * world_size.
+    file_dims[1] = (hsize_t)dim_2;//always the same dim_2
+
     hsize_t file_starts[2], count[2];//select start point and range in each dimension.
-    file_starts[0] = dim_1 * (MY_RANK);//NUM_TIMESTEPS
+    file_starts[0] = dim_1 * (MY_RANK);//file offset for each rank
     file_starts[1] = 0;
-    count[0] = dim_1;
+    count[0] = dim_1;//
     count[1] = dim_2;
+
     DEBUG_PRINT
     *filespace_out = H5Screate_simple(2, file_dims, NULL); //(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//= world_size * numparticles
     *memspace_out =  H5Screate_simple(2, mem_dims, NULL);
@@ -498,58 +361,11 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out, h
     return 0;
 }
 
-void data_write_2D_array(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_2d* data_in){
-    //write file:
-    //      - create 2D array as the dateset type, now linear-linear is 8 datasets of 1D array
-    //      - need to have 8 datasets, each is a 2D array of double/long, 3D case is similar.
-    assert(data_in && data_in->x);
-    DEBUG_PRINT
-    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_LONG, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_LONG, memspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    DEBUG_PRINT
-    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->x);
-    /* if (rank == 0) printf ("Written variable 1 \n"); */
-    DEBUG_PRINT
-    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->y);
-    /* if (rank == 0) printf ("Written variable 2 \n"); */
-    DEBUG_PRINT
-    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->z);
-    /* if (rank == 0) printf ("Written variable 3 \n"); */
-    DEBUG_PRINT
-    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->px);
-    /* if (rank == 0) printf ("Written variable 4 \n"); */
-
-    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->py);
-    /* if (rank == 0) printf ("Written variable 5 \n"); */
-
-    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->pz);
-    /* if (rank == 0) printf ("Written variable 6 \n"); */
-
-    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_LONG, memspace, filespace, plist_id, data_in->id_1);
-    /* if (rank == 0) printf ("Written variable 7 \n"); */
-
-    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_LONG, memspace, filespace, plist_id, data_in->id_2);
-    /* if (rank == 0) printf ("Written variable 8 \n"); */
-
-    if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
-}
-
-void data_write_3D_array(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_3d* data_in){
-    assert(data_in && data_in->x);
-}
-
-void data_write_linear_to_linear(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_linear* data_in) {
-
+/*
+ *  write file: create m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
+ */
+void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+        data_contig_md* data_in){
     assert(data_in && data_in->x);
 
     dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -558,7 +374,6 @@ void data_write_linear_to_linear(hid_t loc, hid_t *dset_ids, hid_t filespace, hi
     dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
     dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -589,8 +404,8 @@ void data_write_linear_to_linear(hid_t loc, hid_t *dset_ids, hid_t filespace, hi
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_linear_to_compound(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_linear* data_in){
+void data_write_contig_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+        data_contig_md* data_in){
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
@@ -605,7 +420,7 @@ void data_write_linear_to_compound(hid_t loc, hid_t *dset_ids, hid_t filespace, 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_comp_to_linear(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+void data_write_interleaved_to_contig_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in && data_in->x);
 
@@ -646,7 +461,7 @@ void data_write_comp_to_linear(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-void data_write_comp_to_comp(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
+void data_write_interleaved_to_interleaved_1d(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in && data_in->x);
 
@@ -673,41 +488,42 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
     make_compound_type();
 
     switch(mode){
-        case LINEAR_LINEAR:
-            data = (void*)prepare_data_linear(particle_cnt, &data_size);
+        case CONTIG_CONTIG_1D:
+            data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
-        case LINEAR_COMPOUND:
-            data = (void*)prepare_data_linear(particle_cnt, &data_size);
+        case CONTIG_INTERLEAVED_1D:
+            data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
-        case COMPOUND_LINEAR:
+        case INTERLEAVED_CONTIG_1D:
             data = (void*)prepare_data_compound(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
-        case COMPOUND_COMPOUND:
+        case INTERLEAVED_INTERLEAVED_1D:
             data = (void*)prepare_data_compound(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
-        case ARRAY_2D:
-            data = (void*)prepare_data_2D(particle_cnt, 64, particle_cnt/64, &data_size);
+        case CONTIG_CONTIG_2D:
+            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
             dset_cnt = 8;
             break;
-        case ARRAY_3D:
-            data = (void*)prepare_data_3D(particle_cnt, 64, 64, particle_cnt/4096, &data_size);
+        case CONTIG_CONTIG_3D:
+            data = (void*)prepare_data_contig_3D(particle_cnt, 64, 64, particle_cnt/4096, &data_size);
             dset_cnt = 8;
             break;
         default:
+            assert(0 && "this mode is not yet implemented");
             break;
     }
 
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
-
+        MPI_Barrier (MPI_COMM_WORLD);
         grp_ids[i] = H5Gcreate2(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
         if (MY_RANK == 0)
@@ -716,31 +532,28 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
         dset_ids[i] = (hid_t*)calloc(8, sizeof(hid_t));
 
         rt_start = get_time_usec();
-
+        MPI_Barrier (MPI_COMM_WORLD);
         switch(mode){
-            case LINEAR_LINEAR:
-                data_write_linear_to_linear(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_linear*)data);
+            case CONTIG_CONTIG_1D:
+                data_write_contig_contig_MD_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
                 break;
 
-            case LINEAR_COMPOUND:
-                //assert(0 && "LINEAR_COMPOUND is not implemented yet ");
-                data_write_linear_to_compound(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_linear*)data);
+            case CONTIG_INTERLEAVED_1D:
+                //assert(0 && "CONTIG_INTERLEAVED_1D is not implemented yet ");
+                data_write_contig_to_interleaved_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
                 break;
 
-            case COMPOUND_LINEAR:
-                data_write_comp_to_linear(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
+            case INTERLEAVED_CONTIG_1D:
+                data_write_interleaved_to_contig_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
                 break;
 
-            case COMPOUND_COMPOUND:
-                data_write_comp_to_comp(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
+            case INTERLEAVED_INTERLEAVED_1D:
+                data_write_interleaved_to_interleaved_1d(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
                 break;
 
-            case ARRAY_2D:
-                data_write_2D_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_2d*)data);
-                break;
-
-            case ARRAY_3D:
-                data_write_3D_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_3d*)data);
+            case CONTIG_CONTIG_2D:
+            case CONTIG_CONTIG_3D:
+                data_write_contig_contig_MD_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
                 break;
 
             default:
@@ -749,7 +562,7 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
         rt_end = get_time_usec();
 
         *raw_write_time_out += (rt_end - rt_start);
-
+        MPI_Barrier (MPI_COMM_WORLD);
         fflush(stdout);
         if (i != timestep_cnt - 1) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
@@ -805,8 +618,8 @@ hid_t set_metadata(hid_t fapl){
 }
 
 void print_usage(char *name) {
-    printf("Usage: %s /path_to_file num_time_steps num_sleep_sec num_M_particles LL/LC/CL/CC/2D/3D \n", name);
-    printf("LL/LC/CL/CC is used to set benchmark mode, stands for LINEAR_LINEAR, LINEAR_COMPOUND, COMPOUND_LINEAR, COMPOUND_COMPOUND, 2D Array and 3D Array");
+    printf("Usage: %s /path_to_file num_time_steps num_sleep_sec num_M_particles CC/CI/IC/II/CC2D/CC3D \n", name);
+    printf("LL/LC/CL/CC is used to set benchmark mode, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
 }
 
 int main(int argc, char* argv[]) {
@@ -843,25 +656,25 @@ int main(int argc, char* argv[]) {
 
     char* mode_str = argv[5];
     bench_mode mode;
-    if (strcmp(mode_str, "LL") == 0) {
-        mode = LINEAR_LINEAR;
-    } else if (strcmp(mode_str, "LC") == 0) {
-        mode = LINEAR_COMPOUND;
-    } else if (strcmp(mode_str, "CC") == 0) {
-        mode = COMPOUND_COMPOUND;
-    } else if (strcmp(mode_str, "CL") == 0) {
-        mode = COMPOUND_LINEAR;
-    } else if(strcmp(mode_str, "2D") == 0){
-        mode = ARRAY_2D;
-    } else if(strcmp(mode_str, "3D") == 0){
-        mode = ARRAY_3D;
+    if (strcmp(mode_str, "CC") == 0) {
+        mode = CONTIG_CONTIG_1D;
+    } else if (strcmp(mode_str, "CI") == 0) {
+        mode = CONTIG_INTERLEAVED_1D;
+    } else if (strcmp(mode_str, "II") == 0) {
+        mode = INTERLEAVED_INTERLEAVED_1D;
+    } else if (strcmp(mode_str, "IC") == 0) {
+        mode = INTERLEAVED_CONTIG_1D;
+    } else if(strcmp(mode_str, "CC2D") == 0){
+        mode = CONTIG_CONTIG_2D;
+    } else if(strcmp(mode_str, "CC3D") == 0){
+        mode = CONTIG_CONTIG_3D;
     } else {
-        printf("Benchmark mode can only be one of these: LL, LC, CL, CC \n");
+        printf("Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CC3D \n");
         return 0;
     }
 
     if (my_rank == 0) {
-        printf("Number of paritcles: %lld \n", NUM_PARTICLES);
+        printf("Number of paritcles: %lld M\n", NUM_PARTICLES/(1024*1024));
     }
 
     unsigned long total_write_size = num_procs * nts * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
@@ -896,9 +709,9 @@ int main(int argc, char* argv[]) {
 
     hid_t filespace, memspace, plist_id;
 
-    if(mode == ARRAY_2D){
+    if(mode == CONTIG_CONTIG_2D){
         set_select_space_multi_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
-    } else if(mode == ARRAY_3D){
+    } else if(mode == CONTIG_CONTIG_3D){
         set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
     } else
         set_select_spaces_default(&filespace, &memspace, &plist_id);
