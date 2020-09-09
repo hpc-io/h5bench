@@ -66,17 +66,7 @@ double uniform_random_number()
     return (((double)rand())/((double)(RAND_MAX)));
 }
 
-typedef enum Benchmark_mode{
-    CONTIG_CONTIG_1D,
-    CONTIG_INTERLEAVED_1D,
-    INTERLEAVED_CONTIG_1D,
-    INTERLEAVED_INTERLEAVED_1D,
-    CONTIG_CONTIG_2D,
-    CONTIG_INTERLEAVED_2D,
-    INTERLEAVED_CONTIG_2D,
-    INTERLEAVED_INTERLEAVED_2D,
-    CONTIG_CONTIG_3D
-}bench_mode;
+
 
 typedef struct Particle{
     double x, y, z;
@@ -256,7 +246,7 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
     return data_out;
 }
 
-void data_free(bench_mode mode, void* data){
+void data_free(access_pattern mode, void* data){
     assert(data);
     switch(mode){
         case CONTIG_CONTIG_1D:
@@ -460,8 +450,11 @@ void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t fil
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sleep_time,
-        hid_t file_id, unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
+int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
+    access_pattern mode = params.bench_pattern;
+    long particle_cnt = params.cnt_particle_M * 1024 * 1024;
+    int timestep_cnt = params.cnt_time_step;
+    int sleep_time = params.sleep_time;
 
     char grp_name[128];
     unsigned long  rt_start, rt_end;
@@ -616,6 +609,14 @@ int _run_time_steps(bench_mode mode, long particle_cnt, int timestep_cnt, int sl
     return 0;
 }
 
+void set_globals(bench_params params){
+    NUM_PARTICLES = params.cnt_particle_M * 1024 *1024;
+    NUM_TIMESTEPS = params.cnt_time_step;
+    X_DIM = params.dim_1;
+    Y_DIM = params.dim_2;
+    Z_DIM = params.dim_3;
+}
+
 hid_t set_fapl(){
     hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
     return fapl;
@@ -650,82 +651,45 @@ hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long
 }
 
 void print_usage(char *name) {
-    printf("Usage: %s /path_to_file num_time_steps num_sleep_sec num_M_particles CC/CI/IC/II/CC2D/CC3D \n", name);
-    printf("CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
+    printf("Usage: %s /path_to_config_file /path_to_output_data_file \n", name);
+    printf("Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
 }
 
 int main(int argc, char* argv[]) {
-    char *file_name = argv[1];
+
 
     MPI_Init(&argc, &argv);
-    int my_rank, num_procs, nts, i, j, sleep_time = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-    MY_RANK = my_rank;
-    NUM_RANKS = num_procs;
+    int sleep_time = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
+    MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
+
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
-    if (argc != 6) {
-        print_usage(argv[0]);
-        return 0;
-    }
-    DEBUG_PRINT
-    nts = atoi(argv[2]);
-    NUM_TIMESTEPS = nts;
-    if (nts <= 0) {
-        print_usage(argv[0]);
-        return 0;
-    }
+    char *output_file;
+    bench_params bench_params;
 
-    sleep_time = atoi(argv[3]);
-    if (sleep_time < 0) {
-        print_usage(argv[0]);
+    char* cfg_file_path = argv[1];
+    output_file = argv[2];
+
+    if(read_config(cfg_file_path, &bench_params) < 0){
+        printf("Config file read failed. check path: %s\n", cfg_file_path);
         return 0;
     }
 
-    NUM_PARTICLES = (atoi(argv[4])) * 1024 * 1024;
+    if(MY_RANK == 0)
+        print_params(&bench_params);
 
-    char* mode_str = argv[5];
-    bench_mode mode;
-    char* bench_name;
-    if (strcmp(mode_str, "CC") == 0) {
-        mode = CONTIG_CONTIG_1D;
-        bench_name = "CONTIG_CONTIG_1D";
-    } else if (strcmp(mode_str, "CC2D") == 0) {
-        mode = CONTIG_CONTIG_2D;
-        bench_name = "CONTIG_CONTIG_2D";
-    } else if (strcmp(mode_str, "CI") == 0) {
-        mode = CONTIG_INTERLEAVED_1D;
-        bench_name = "CONTIG_INTERLEAVED_1D";
-    } else if (strcmp(mode_str, "CI2D") == 0) {
-        mode = CONTIG_INTERLEAVED_2D;
-        bench_name = "CONTIG_INTERLEAVED_2D";
-    }else if (strcmp(mode_str, "II") == 0) {
-        mode = INTERLEAVED_INTERLEAVED_1D;
-        bench_name = "INTERLEAVED_INTERLEAVED_1D";
-    }else if (strcmp(mode_str, "II2D") == 0) {
-        mode = INTERLEAVED_INTERLEAVED_2D;
-        bench_name = "INTERLEAVED_INTERLEAVED_2D";
-    } else if (strcmp(mode_str, "IC") == 0) {
-        mode = INTERLEAVED_CONTIG_1D;
-        bench_name = "INTERLEAVED_CONTIG_1D";
-    } else if (strcmp(mode_str, "IC2D") == 0) {
-        mode = INTERLEAVED_CONTIG_2D;
-        bench_name = "INTERLEAVED_CONTIG_2D";
-    } else if(strcmp(mode_str, "CC3D") == 0){
-        mode = CONTIG_CONTIG_3D;
-        bench_name = "CONTIG_CONTIG_3D";
-    } else {
-        printf("Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D \n");
-        return 0;
+    set_globals(bench_params);
+
+    NUM_TIMESTEPS = bench_params.cnt_time_step;
+
+
+    if (MY_RANK == 0) {
+        printf("Start benchmark: VPIC %s, Number of paritcles: %lld M\n", bench_params.pattern_name, NUM_PARTICLES/(1024*1024));
     }
 
-    if (my_rank == 0) {
-        printf("Start benchmark: %s, Number of paritcles: %lld M\n", bench_name, NUM_PARTICLES/(1024*1024));
-    }
-
-    unsigned long total_write_size = num_procs * nts * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
+    unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -734,7 +698,7 @@ int main(int argc, char* argv[]) {
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, comm);
     FILE_OFFSET -= NUM_PARTICLES;
 
-    if (my_rank == 0)
+    if (MY_RANK == 0)
         printf("Total particle number = %lldM\n", TOTAL_PARTICLES / (1024 * 1024));
 
     hid_t fapl = set_fapl();
@@ -745,51 +709,41 @@ int main(int argc, char* argv[]) {
     set_metadata(fapl, 0, 0, 0);
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
-    hid_t file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
+    hid_t file_id = H5Fcreate(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
     H5Pclose(fapl);
 
-    if (my_rank == 0)
+    if (MY_RANK == 0)
         printf("Opened HDF5 file... \n");
-
-//    hid_t filespace, memspace, plist_id;
-
-//    if(mode == CONTIG_CONTIG_2D){
-//        set_select_space_multi_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
-//    } else if(mode == CONTIG_CONTIG_3D){
-//        set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
-//    } else
-//        set_select_spaces_default(&filespace, &memspace, &plist_id);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, total_data_size;
-    _run_time_steps(mode, NUM_PARTICLES, nts, sleep_time, file_id, &total_data_size, &raw_write_time);
+    _run_time_steps(bench_params, file_id, &total_data_size, &raw_write_time);
 
     unsigned long t3 = get_time_usec(); // t3 - t2: writting data, including metadata
 
-    if (my_rank == 0) {
-        printf("\nTiming results with %d ranks\n", num_procs);
+    if (MY_RANK == 0) {
+        printf("\nTiming results with %d ranks\n", NUM_RANKS);
         printf("Total running time = %lu ms\n", (t3 - t0) / 1000);
     }
-
 
     H5Fclose(file_id);
 
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
 
-    if (my_rank == 0) {
-        printf("\nTiming results\n");
-        printf("Total sleep time %ds, total write size = %lu MB\n", sleep_time * (nts - 1), num_procs * total_data_size/(1024*1024));
+    if (MY_RANK == 0) {
+        printf("\n =================  Timing results  =================\n");
+        printf("Total sleep time %ds, total write size = %lu MB\n", sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));
         printf("RR: Raw write time = %lu ms, RR = %lu MB/sec \n", raw_write_time / 1000,
                 total_data_size / raw_write_time);
         printf("Core metadata time = %lu ms\n",
-                (t3 - t2 - raw_write_time - sleep_time * (nts - 1) * 1000 * 1000) / 1000);
+                (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000);
         printf("Opening + closing time = %lu ms\n", (t1 - t0 + t4 - t3) / 1000);
-        printf("OR (observed rate):  = %lu ms, OR = %lu MB/sec\n", (t4 - t1) / 1000 - (nts - 1) * 1000,
-                total_data_size / (t4 - t1 - (nts - 1) * 1000 * 1000));
+        printf("OR (observed rate):  = %lu ms, OR = %lu MB/sec\n", (t4 - t1) / 1000 - (NUM_TIMESTEPS - 1) * 1000,
+                total_data_size / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000));
         printf("OCT(observed completion time) = %lu ms\n", (t4 - t0) / 1000);
         printf("\n");
     }
