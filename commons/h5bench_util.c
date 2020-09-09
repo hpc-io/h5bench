@@ -165,7 +165,7 @@ void print_params(const bench_params* p){
     printf("=======================================\n");
     printf("Benchmark parameters: read from config file: %s\n", p->data_file_path);
     printf("Benchmark pattern = %s\n", p->pattern_name);
-    printf("Particle number(in M) = %d M\n", p->cnt_particle_M);
+    printf("Per rank particles number(in M) = %d M\n", p->cnt_particle_M);
     printf("Time step number = %d\n", p->cnt_time_step);
     printf("Sleep time = %d\n", p->sleep_time);
     printf("Dimension cnt = %d\n", p->_dim_cnt);

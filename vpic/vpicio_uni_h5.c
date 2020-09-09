@@ -60,65 +60,65 @@ int Z_DIM = 64;
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 // Uniform random number
-double uniform_random_number()
+float uniform_random_number()
 {
     //DEBUG_PRINT
-    return (((double)rand())/((double)(RAND_MAX)));
+    return (((float)rand())/((float)(RAND_MAX)));
 }
 
 
 
 typedef struct Particle{
-    double x, y, z;
-    double px, py, pz;
-    long id_1, id_2;
+    float x, y, z;
+    float px, py, pz;
+    int id_1, id_2;
 }particle;
 
 typedef struct data_md{
     long particle_cnt;
     long dim_1, dim_2, dim_3;
-    double *x, *y, *z;
-    double *px, *py, *pz;
-    long *id_1, *id_2;
+    float *x, *y, *z;
+    float *px, *py, *pz;
+    int *id_1, *id_2;
 }data_contig_md;
 
 hid_t make_compound_type(){
     PARTICLE_COMPOUND_TYPE = H5Tcreate(H5T_COMPOUND, sizeof(particle));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "x", HOFFSET(particle, x),   H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "y", HOFFSET(particle, y),   H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "z", HOFFSET(particle, z),   H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "px", HOFFSET(particle, px), H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "py", HOFFSET(particle, py), H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "pz", HOFFSET(particle, pz), H5T_NATIVE_DOUBLE);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_1", HOFFSET(particle, id_1), H5T_NATIVE_LONG);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_2", HOFFSET(particle, id_2), H5T_NATIVE_LONG);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "x", HOFFSET(particle, x),   H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "y", HOFFSET(particle, y),   H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "z", HOFFSET(particle, z),   H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "px", HOFFSET(particle, px), H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "py", HOFFSET(particle, py), H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "pz", HOFFSET(particle, pz), H5T_NATIVE_FLOAT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_1", HOFFSET(particle, id_1), H5T_NATIVE_INT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_2", HOFFSET(particle, id_2), H5T_NATIVE_INT);
     return PARTICLE_COMPOUND_TYPE;
 }
 
 hid_t* make_compound_type_separates(){
-    PARTICLE_COMPOUND_TYPE_SEPARATES[0] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[0], "x", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[0] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[0], "x", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[1] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[1], "y", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[1] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[1], "y", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[2] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[2], "z", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[2] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[2], "z", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[3] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[3], "px", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[3] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[3], "px", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[4] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[4], "py", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[4] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[4], "py", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[5] = H5Tcreate(H5T_COMPOUND, sizeof(double));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[5], "pz", 0, H5T_NATIVE_DOUBLE);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[5] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[5], "pz", 0, H5T_NATIVE_FLOAT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[6] = H5Tcreate(H5T_COMPOUND, sizeof(long));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[6], "id_1", 0, H5T_NATIVE_LONG);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[6] = H5Tcreate(H5T_COMPOUND, sizeof(int));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[6], "id_1", 0, H5T_NATIVE_INT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[7] = H5Tcreate(H5T_COMPOUND, sizeof(long));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[7], "id_2", 0, H5T_NATIVE_LONG);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[7] = H5Tcreate(H5T_COMPOUND, sizeof(int));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[7], "id_2", 0, H5T_NATIVE_INT);
 
     return PARTICLE_COMPOUND_TYPE_SEPARATES;
 }
@@ -132,12 +132,11 @@ particle* prepare_data_interleaved(long particle_cnt, unsigned long *data_size_o
         data_out[i].id_2 = 2 * i;
         data_out[i].x = uniform_random_number() * X_DIM;
         data_out[i].y = uniform_random_number() * Y_DIM;
-        data_out[i].z = ((double) i / particle_cnt) * Z_DIM;
+        data_out[i].z = ((float) i / particle_cnt) * Z_DIM;
         data_out[i].px = uniform_random_number() * X_DIM;
         data_out[i].py = uniform_random_number() * Y_DIM;
-        data_out[i].pz = ((double) 2 * i / particle_cnt) * Z_DIM;
+        data_out[i].pz = ((float) 2 * i / particle_cnt) * Z_DIM;
     }
-    //printf("sizeof(particle) = %lu, sizeof(double) = %lu, sizeof(long) = %lu\n", sizeof(particle), sizeof(double), sizeof(long));
     *data_size_out = particle_cnt * sizeof(particle);
     return data_out;
 }
@@ -148,14 +147,14 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
 
     data_out->particle_cnt = particle_cnt;
 
-    data_out->x =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->y =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->z =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->px = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->py = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->pz = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->id_1 = (long*) malloc(particle_cnt * sizeof(long));
-    data_out->id_2 = (long*) malloc(particle_cnt * sizeof(long));
+    data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->px = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->py = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
 
     for (long i = 0; i < particle_cnt; i++) {
         data_out->id_1[i] = i;
@@ -164,29 +163,34 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
         data_out->y[i] =  uniform_random_number() * Y_DIM;
         data_out->px[i] = uniform_random_number() * X_DIM;
         data_out->py[i] = uniform_random_number() * Y_DIM;
-        data_out->z[i] =  ((double) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
-        data_out->pz[i] = ((double) data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
+        data_out->z[i] =  ((float) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
+        data_out->pz[i] = ((float) data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
-    *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
+    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
 
     return data_out;
 }
 
 data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
+    if(particle_cnt != dim_1 * dim_2){
+        if(MY_RANK == 0)
+            printf("Dimension definition is invalid: dim_1(%ld) * dim_2(%ld) must equal num_particles (%ld) per rank.\n", dim_1, dim_2, particle_cnt);
+        return NULL;
+    }
     assert(particle_cnt == dim_1 * dim_2);
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
     data_out->dim_1 = dim_1;
     data_out->dim_2 = dim_2;
 
-    data_out->x =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->y =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->z =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->px = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->py = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->pz = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->id_1 = (long*) malloc(particle_cnt * sizeof(long));
-    data_out->id_2 = (long*) malloc(particle_cnt * sizeof(long));
+    data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->px = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->py = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
 
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
@@ -198,17 +202,22 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
             data_out->y[idx] =  uniform_random_number() * Y_DIM;
             data_out->px[idx] = uniform_random_number() * X_DIM;
             data_out->py[idx] = uniform_random_number() * Y_DIM;
-            data_out->z[idx] =  ((double) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-            data_out->pz[idx] = ((double) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+            data_out->z[idx] =  ((float) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+            data_out->pz[idx] = ((float) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
             idx++;
         }
     }
-    *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
+    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
 
     return data_out;
 }
 
 data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2, long dim_3, unsigned long * data_size_out){
+    if(particle_cnt != dim_1 * dim_2 * dim_3){
+        if(MY_RANK == 0)
+            printf("Dimension definition is invalid: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) must equal num_particles (%ld) per rank.\n", dim_1, dim_2, dim_3, particle_cnt);
+        return NULL;
+    }
     assert(particle_cnt == dim_1 * dim_2 * dim_3);
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
@@ -216,14 +225,14 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
     data_out->dim_2 = dim_2;
     data_out->dim_3 = dim_3;
 
-    data_out->x =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->y =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->z =  (double*) malloc(particle_cnt * sizeof(double));
-    data_out->px = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->py = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->pz = (double*) malloc(particle_cnt * sizeof(double));
-    data_out->id_1 = (long*) malloc(particle_cnt * sizeof(long));
-    data_out->id_2 = (long*) malloc(particle_cnt * sizeof(long));
+    data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->px = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->py = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
+    data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
         for(long i2 = 0; i2 < dim_2; i2++){
@@ -235,13 +244,13 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
                 data_out->y[idx] =  uniform_random_number() * Y_DIM;
                 data_out->px[idx] = uniform_random_number() * X_DIM;
                 data_out->py[idx] = uniform_random_number() * Y_DIM;
-                data_out->z[idx] =  ((double) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-                data_out->pz[idx] = ((double) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+                data_out->z[idx] =  ((float) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+                data_out->pz[idx] = ((float) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
                 idx++;
             }
         }
     }
-    *data_size_out = particle_cnt * (6 * sizeof(double) + 2 * sizeof(long));
+    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
 
     return data_out;
 }
@@ -347,37 +356,37 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
         data_contig_md* data_in){
     assert(data_in && data_in->x);
 
-    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_LONG, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->x);
+    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x);
     /* if (rank == 0) printf ("Written variable 1 \n"); */
 
-    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->y);
+    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y);
     /* if (rank == 0) printf ("Written variable 2 \n"); */
 
-    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->z);
+    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z);
     /* if (rank == 0) printf ("Written variable 3 \n"); */
 
-    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->px);
+    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px);
     /* if (rank == 0) printf ("Written variable 4 \n"); */
 
-    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->py);
+    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py);
     /* if (rank == 0) printf ("Written variable 5 \n"); */
 
-    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_DOUBLE, memspace, filespace, plist_id, data_in->pz);
+    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz);
     /* if (rank == 0) printf ("Written variable 6 \n"); */
 
-    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_LONG, memspace, filespace, plist_id, data_in->id_1);
+    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1);
     /* if (rank == 0) printf ("Written variable 7 \n"); */
 
-    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_LONG, memspace, filespace, plist_id, data_in->id_2);
+    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_2);
     /* if (rank == 0) printf ("Written variable 8 \n"); */
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
@@ -385,6 +394,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
 
 void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         data_contig_md* data_in){
+    assert(data_in && data_in->x);
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
@@ -401,8 +411,7 @@ void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespac
 
 void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
-    assert(data_in && data_in->x);
-
+    assert(data_in);
     dset_ids[0] = H5Dcreate(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dset_ids[1] = H5Dcreate(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dset_ids[2] = H5Dcreate(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -442,7 +451,7 @@ void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespac
 
 void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
-    assert(data_in && data_in->x);
+    assert(data_in);
 
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);//should write all things in data_in
@@ -469,13 +478,6 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     make_compound_type_separates();
     make_compound_type();
 
-    if(mode == CONTIG_CONTIG_2D){
-
-    } else if(mode == CONTIG_CONTIG_3D){
-
-    } else
-        set_select_spaces_default(&filespace, &memspace, &plist_id);
-
     switch(mode){
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(&filespace, &memspace, &plist_id);
@@ -484,8 +486,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             break;
 
         case CONTIG_CONTIG_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
-            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 8;
             break;
 
@@ -497,8 +499,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             break;
 
         case CONTIG_INTERLEAVED_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
-            data = (void*)prepare_data_contig_2D(particle_cnt, 64, particle_cnt/64, &data_size);
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 1;
             break;
 
@@ -509,7 +511,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             break;
 
         case INTERLEAVED_CONTIG_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
@@ -521,19 +523,24 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             break;
 
         case INTERLEAVED_INTERLEAVED_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, 64, NUM_PARTICLES/64);
+            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
         case CONTIG_CONTIG_3D:
-            set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, 64, 64, NUM_PARTICLES/4096);
-            data = (void*)prepare_data_contig_3D(particle_cnt, 64, 64, particle_cnt/4096, &data_size);
+            set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2, params.dim_3);
+            data = (void*)prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3, &data_size);
             dset_cnt = 8;
             break;
         default:
             assert(0 && "this mode is not yet implemented");
             break;
+    }
+
+    if(!data){
+        printf("Failed to generate data for writing, please check dimension settings in the config file.\n");
+        return -1;
     }
 
     for (int i = 0; i < timestep_cnt; i++) {
@@ -657,7 +664,6 @@ void print_usage(char *name) {
 
 int main(int argc, char* argv[]) {
 
-
     MPI_Init(&argc, &argv);
     int sleep_time = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
@@ -684,12 +690,11 @@ int main(int argc, char* argv[]) {
 
     NUM_TIMESTEPS = bench_params.cnt_time_step;
 
-
     if (MY_RANK == 0) {
-        printf("Start benchmark: VPIC %s, Number of paritcles: %lld M\n", bench_params.pattern_name, NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: VPIC %s, Number of paritcles per rank: %lld M\n", bench_params.pattern_name, NUM_PARTICLES/(1024*1024));
     }
 
-    unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(double) + 2 * sizeof(long));
+    unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(float) + 2 * sizeof(int));
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -720,12 +725,17 @@ int main(int argc, char* argv[]) {
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, total_data_size;
-    _run_time_steps(bench_params, file_id, &total_data_size, &raw_write_time);
+    int stat = _run_time_steps(bench_params, file_id, &total_data_size, &raw_write_time);
+    if(stat < 0){
+        if (MY_RANK == 0)
+            printf("=============== Benchmark failed. ===============\n");
+        assert(0);
+    }
 
     unsigned long t3 = get_time_usec(); // t3 - t2: writting data, including metadata
 
     if (MY_RANK == 0) {
-        printf("\nTiming results with %d ranks\n", NUM_RANKS);
+        printf("\n Performance measured with %d ranks\n", NUM_RANKS);
         printf("Total running time = %lu ms\n", (t3 - t0) / 1000);
     }
 
@@ -735,7 +745,7 @@ int main(int argc, char* argv[]) {
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
-        printf("\n =================  Timing results  =================\n");
+        printf("\n =================  Performance results  =================\n");
         printf("Total sleep time %ds, total write size = %lu MB\n", sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));
         printf("RR: Raw write time = %lu ms, RR = %lu MB/sec \n", raw_write_time / 1000,
                 total_data_size / raw_write_time);
@@ -749,6 +759,5 @@ int main(int argc, char* argv[]) {
     }
 
     MPI_Finalize();
-
     return 0;
 }
