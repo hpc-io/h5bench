@@ -658,11 +658,21 @@ hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long
 }
 
 void print_usage(char *name) {
-    printf("Usage: %s /path_to_config_file /path_to_output_data_file \n", name);
-    printf("Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array");
+    if(MY_RANK == 0){
+        printf("=============== Usage: %s /path_to_config_file /path_to_output_data_file =============== \n", name);
+        printf("- Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array\n");
+        printf("- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number.\n");
+        printf("- For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is invalid. \n");
+    }
 }
 
 int main(int argc, char* argv[]) {
+
+    if(argc != 3){
+        print_usage(argv[0]);
+        return 0;
+    }
+
 
     MPI_Init(&argc, &argv);
     int sleep_time = 0;
@@ -674,6 +684,7 @@ int main(int argc, char* argv[]) {
 
     char *output_file;
     bench_params bench_params;
+
 
     char* cfg_file_path = argv[1];
     output_file = argv[2];
