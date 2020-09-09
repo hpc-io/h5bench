@@ -1,0 +1,13 @@
+To build:
+	Change HDF5_DIR and H5BENCH_DIR to your HDF5 and H5bench installed location.
+	Then make.
+
+To set parameters for the  benchmark:
+	- Set VPIC parameters in a config file, see sample_cfg.cfg as an example.
+	- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is an invalid setting.
+	- No blank line and blank space are allowed.
+
+To run the benchmark:
+	Single process test: ./vpicio_h5bench your_config_file output_file
+	Parallel run:  mpirun -n 2 ./vpicio_h5bench your_config_file output_file
+
