@@ -28,6 +28,35 @@ int metric_msg_print(unsigned long number, char* msg, char* unit){
     return 0;
 }
 
+data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3){
+    data_contig_md *buf_struct = (data_contig_md*) malloc(sizeof(data_contig_md));
+    buf_struct->particle_cnt = particle_cnt;
+    buf_struct->dim_1 = dim_1;
+    buf_struct->dim_2 = dim_2;
+    buf_struct->dim_3 = dim_3;
+    buf_struct->x =  (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->y =  (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->z =  (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->px = (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->py = (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->pz = (float*) malloc(particle_cnt * sizeof(float));
+    buf_struct->id_1 = (int*) malloc(particle_cnt * sizeof(int));
+    buf_struct->id_2 = (int*) malloc(particle_cnt * sizeof(int));
+    return buf_struct;
+}
+
+void free_contig_memory(data_contig_md* data){
+    free(data->x);
+    free(data->y);
+    free(data->z);
+    free(data->px);
+    free(data->py);
+    free(data->pz);
+    free(data->id_1);
+    free(data->id_2);
+    free(data);
+}
+
 int _set_params(char* key, char* val, bench_params* params_in_out){
     if(!params_in_out)
         return 0;

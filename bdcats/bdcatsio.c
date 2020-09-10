@@ -45,8 +45,9 @@
 #include "../commons/h5bench_util.h"
 
 // Global Variables and dimensions
-long long NUM_PARTICLES = 0, FILE_OFFSET;   // 8  meg particles per process
-long long TOTAL_PARTICLES;
+long long NUM_PARTICLES = 0, FILE_OFFSET = 0;   // 8  meg particles per process
+long long TOTAL_PARTICLES = 0;
+
 int NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
 
 hid_t PARTICLE_COMPOUND_TYPE;
@@ -55,13 +56,9 @@ hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 // HDF5 specific declerations
 herr_t ierr;
 
-// Variables and dimensions
-long numparticles = 8388608;    // 8  meg particles per process
-long long total_particles, offset;
 data_contig_md* buf_struct;
 
-void print_data(int n)
-{
+void print_data(int n) {
     int i;
     for (i = 0; i < n; i++)
         printf("sample data: %f %f %f %d %d %f %f %f\n",
@@ -71,8 +68,7 @@ void print_data(int n)
 }
 
 // Create HDF5 file and read data
-void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace)
-{
+void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace) {
     hid_t dset_id, dapl;
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
@@ -118,27 +114,37 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace)
 }
 
 int set_dataspace(hid_t* filespace_out, hid_t* memspace_out){
-    *filespace_out = H5Screate_simple(1, (hsize_t *) &total_particles, NULL);//replace with getspace.
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &numparticles, NULL);
+    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
     DEBUG_PRINT
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &offset, NULL, (hsize_t *) &numparticles, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL, (hsize_t *) &NUM_PARTICLES, NULL);
     return 0;
 }
 
-int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, int nts, int sleep_time){
+int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, int nts, int sleep_time,
+        unsigned long* raw_read_time_out, unsigned long* total_data_size_out){
+    *raw_read_time_out = 0;
     hid_t filespace, memspace;
     set_dataspace(&filespace, &memspace);
     hid_t grp;
     char grp_name[128];
+    unsigned long rt1 = 0, rt2 = 0;
+
+    //Default BDCATS case, read full file.
+    *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(float) + 2 * sizeof(int));
+
     for (int i = 0; i < nts; i++) {
         DEBUG_PRINT
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen(file_id, grp_name, gapl);
-        DEBUG_PRINT
-        if (MY_RANK == 0)
-            printf ("Reading %s ... \n", grp_name);
+
+        if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
+
+        rt1 = get_time_usec();
         read_h5_data(MY_RANK, grp, filespace, memspace);
-        DEBUG_PRINT
+        rt2 = get_time_usec();
+        *raw_read_time_out += (rt2 - rt1);
+
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
             sleep(sleep_time);
@@ -146,13 +152,22 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, int nts, int slee
         H5Gclose(grp);
         MPI_Barrier(MPI_COMM_WORLD);
     }
+
     H5Sclose(memspace);
     H5Sclose(filespace);
     return -1;
 }
 
-void print_usage(char *name)
-{
+void set_pl(hid_t* fapl, hid_t* gapl ){
+    *fapl = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+    H5Pset_all_coll_metadata_ops(*fapl, true);
+    H5Pset_coll_metadata_write(*fapl, true);
+    *gapl = H5Pcreate(H5P_GROUP_ACCESS);
+    H5Pset_all_coll_metadata_ops(*gapl, true);
+}
+
+void print_usage(char *name){
     printf("Usage: %s /path/to/file #timestep sleep_sec [# mega particles]\n", name);
 }
 
@@ -164,17 +179,18 @@ int main (int argc, char* argv[])
         printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
-    int my_rank, num_procs, nts, i, sleep_time;
+    int sleep_time;
     hid_t file_id;
     hid_t filespace, memspace;
-    hid_t fapl, gapl;
-    MPI_Comm_rank (MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size (MPI_COMM_WORLD, &num_procs);
+
+    MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
+    MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
 
     char *file_name = argv[1];
 
-    nts = atoi(argv[2]);
-    if (nts <= 0) {
+    NUM_TIMESTEPS = atoi(argv[2]);
+
+    if (NUM_TIMESTEPS <= 0) {
         printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
@@ -186,69 +202,62 @@ int main (int argc, char* argv[])
     }
 
     if (argc == 5) {
-        numparticles = (atoi (argv[4]))*1024*1024;
+        NUM_PARTICLES = (atoi (argv[4]))*1024*1024;
     }
     else {
-        numparticles = 8*1024*1024;
+        NUM_PARTICLES = 8*1024*1024;
     }
 
     MPI_Info info  = MPI_INFO_NULL;
-    if (my_rank == 0) {
-        printf ("Number of paritcles: %ld \n", numparticles);
+    if (MY_RANK == 0) {
+        printf ("Number of paritcles: %lld \n", NUM_PARTICLES);
     }
     MPI_Barrier (MPI_COMM_WORLD);
 //    timer_on (0);
+    unsigned long t0 = get_time_usec();
+    MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    FILE_OFFSET -= NUM_PARTICLES;
 
-    MPI_Allreduce(&numparticles, &total_particles, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Scan(&numparticles, &offset, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-    offset -= numparticles;
+    hid_t fapl, gapl;
+    set_pl(&fapl, &gapl);
 
-DEBUG_PRINT
-    /* Set up FAPL */
-    if((fapl = H5Pcreate(H5P_FILE_ACCESS)) < 0)
-        goto error;
-    if(H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL) < 0)
-        goto error;
-    H5Pset_all_coll_metadata_ops(fapl, true);
-    H5Pset_coll_metadata_write(fapl, true);
-DEBUG_PRINT
-    if((gapl = H5Pcreate(H5P_GROUP_ACCESS)) < 0)
-        goto error;
-    if(H5Pset_all_coll_metadata_ops(gapl, true) < 0)
-        goto error;
-DEBUG_PRINT
+    buf_struct = prepare_contig_memory(NUM_PARTICLES, 0, 0, 0);
 
-    buf_struct = prepare_contig_memory(numparticles, 0, 0, 0);
-    /* Open file */
+    unsigned long t1 = get_time_usec();
     file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     if(file_id < 0) {
         printf("Error with opening file [%s]!\n", file_name);
         goto done;
     }
-DEBUG_PRINT
-    if (my_rank == 0)
-        printf ("Opened HDF5 file ... [%s]\n", file_name);
 
-    _run_benchmark_read(file_id, fapl, gapl, nts, sleep_time);
+    if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
+    unsigned long raw_read_time, total_data_size;
+    unsigned long t2 = get_time_usec();
+    _run_benchmark_read(file_id, fapl, gapl, NUM_TIMESTEPS, sleep_time, &raw_read_time, &total_data_size);
+    unsigned long t3 = get_time_usec();
 
 DEBUG_PRINT
     MPI_Barrier (MPI_COMM_WORLD);
-
 
     H5Pclose(fapl);
     H5Pclose(gapl);
     H5Fclose(file_id);
 
     MPI_Barrier (MPI_COMM_WORLD);
-//    timer_off (0);
-    if (my_rank == 0)
-    {
-        printf ("\nTiming results\n");
-        printf("Total sleep time %ds\n", sleep_time*(nts-1));
-//        timer_msg (1, "just reading data");
-//        timer_msg (0, "opening, reading, closing file");
-        printf ("\n");
+    unsigned long t4 = get_time_usec();
+
+    if (MY_RANK == 0) {
+        printf("\n =================  Performance results  =================\n");
+        printf("Total sleep time %ds, total read size = %lu MB\n", sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));
+        printf("RR: Raw read time = %lu ms, RR = %lu MB/sec \n", raw_read_time / 1000, total_data_size / raw_read_time);
+        printf("Core metadata time = %lu ms\n",
+                (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000);
+        printf("OR (observed rate):  = %lu ms, OR = %lu MB/sec\n", (t4 - t1) / 1000 - (NUM_TIMESTEPS - 1) * 1000,
+                total_data_size / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000));
+        printf("OCT(observed completion time) = %lu ms\n", (t4 - t0) / 1000);
+        printf("\n");
     }
 
     free_contig_memory(buf_struct);

@@ -40,6 +40,20 @@ typedef struct bench_params{
     int dim_3;
 } bench_params;
 
+typedef struct data_md{
+    long particle_cnt;
+    long dim_1, dim_2, dim_3;
+    float *x, *y, *z;
+    float *px, *py, *pz;
+    int *id_1, *id_2;
+}data_contig_md;
+
+// Uniform random number
+float uniform_random_number();
+
+data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3);
+void free_contig_memory(data_contig_md* data);
+
 unsigned long get_time_usec();
 
 int read_config(const char* file_path, bench_params* params_out);
