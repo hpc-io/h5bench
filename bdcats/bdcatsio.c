@@ -114,28 +114,28 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace) {
     print_data(3);
 }
 
-int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
-    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
+int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t filespace_in, hid_t* memspace_out){
+    //*filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
     DEBUG_PRINT
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
+    H5Sselect_hyperslab(filespace_in, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
             (hsize_t *) &read_elem_cnt, NULL);
     return 0;
 }
 
 //returns actual rounded read element count.
-unsigned long _set_dataspace_random_read(unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
+unsigned long _set_dataspace_random_read(unsigned long read_elem_cnt, hid_t filespace_in, hid_t* memspace_out){
     unsigned long stride = 37;//stride must be greater than block size??
     unsigned long block_size = 29; //in element
     unsigned long block_cnt = read_elem_cnt/block_size;
     unsigned long actual_elem_cnt = block_cnt * block_size;
-    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
+    //*filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
     DEBUG_PRINT
 
     printf("read_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, block_size, block_cnt);
 
-    H5Sselect_hyperslab(*filespace_out,
+    H5Sselect_hyperslab(filespace_in,
             H5S_SELECT_SET,
             (hsize_t *) &FILE_OFFSET, //start-offset
             (hsize_t *) &stride, //stride
@@ -144,19 +144,42 @@ unsigned long _set_dataspace_random_read(unsigned long read_elem_cnt, hid_t* fil
 
     return actual_elem_cnt;
 }
+
+//filespace should be read from the file.
+unsigned long _set_dataspace_seq_2D(hid_t* memspace_out,
+        unsigned long long dim_1, unsigned long long dim_2){
+    return 0;
+}
+
+unsigned long _set_dataspace_seq_3D(hid_t* memspace_out,
+        unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3){
+    return 0;
+}
+
+hid_t get_filespace(hid_t file_id){
+    char* grp_name = "/Timestep_0";
+    char* ds_name = "px";
+    hid_t gid = H5Gopen(file_id, grp_name, H5P_DEFAULT);
+    hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
+    hid_t filespace = H5Dget_space(dsid);
+    H5Dclose(dsid);
+    H5Gclose(gid);
+    return filespace;
+}
+
 typedef enum read_pattern{
     CONTIG_1D,
     RANDOM_1D
 }read_pattern;
-unsigned long set_dataspace(read_pattern pattern, unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
+unsigned long set_dataspace(read_pattern pattern, unsigned long read_elem_cnt, hid_t filespace_in, hid_t* memspace_out){
     unsigned long actual_read_cnt = 0;
     switch(pattern){
         case CONTIG_1D:
-            _set_dataspace_seq_read(read_elem_cnt, filespace_out, memspace_out);
+            _set_dataspace_seq_read(read_elem_cnt, filespace_in, memspace_out);
             actual_read_cnt = read_elem_cnt;
             break;
         case RANDOM_1D:
-            actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, filespace_out, memspace_out);
+            actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, filespace_in, memspace_out);
             break;
 
         default:
@@ -164,17 +187,9 @@ unsigned long set_dataspace(read_pattern pattern, unsigned long read_elem_cnt, h
     }
     return actual_read_cnt;
 }
-int _partial_read_rand(){
-    return -1;
-}
 
-int _partial_read_seq(){
-    return -1;
-}
 
-int _full_read(){
-    return -1;
-}
+
 int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, read_pattern pattern, int nts, int sleep_time, unsigned long read_elem_cnt,
          unsigned long* raw_read_time_out, unsigned long* total_data_size_out){
     *raw_read_time_out = 0;
@@ -189,8 +204,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, read_pattern patt
     hid_t filespace, memspace;
     //set_dataspace_seq_read(read_elem_cnt, &filespace, &memspace);
     //actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, &filespace, &memspace);
+    filespace = get_filespace(file_id);
 
-    actual_read_cnt = set_dataspace(pattern, read_elem_cnt, &filespace, &memspace);
+    actual_read_cnt = set_dataspace(pattern, read_elem_cnt, filespace, &memspace);
     for (int i = 0; i < nts; i++) {
         DEBUG_PRINT
         sprintf(grp_name, "Timestep_%d", i);
@@ -238,8 +254,6 @@ int main (int argc, char* argv[])
         return 0;
     }
     int sleep_time;
-    hid_t file_id;
-    hid_t filespace, memspace;
 
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
@@ -294,7 +308,7 @@ int main (int argc, char* argv[])
     buf_struct = prepare_contig_memory(read_elem_cnt, 0, 0, 0);
 
     unsigned long t1 = get_time_usec();
-    file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     if(file_id < 0) {
         printf("Error with opening file [%s]!\n", file_name);
         goto done;
