@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include "../commons/h5bench_util.h"
 
 // Global Variables and dimensions
@@ -113,26 +114,83 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace) {
     print_data(3);
 }
 
-int set_dataspace(hid_t* filespace_out, hid_t* memspace_out){
+int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
     *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
     DEBUG_PRINT
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL, (hsize_t *) &NUM_PARTICLES, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
+            (hsize_t *) &read_elem_cnt, NULL);
     return 0;
 }
 
-int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, int nts, int sleep_time,
-        unsigned long* raw_read_time_out, unsigned long* total_data_size_out){
+//returns actual rounded read element count.
+unsigned long _set_dataspace_random_read(unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
+    unsigned long stride = 37;//stride must be greater than block size??
+    unsigned long block_size = 29; //in element
+    unsigned long block_cnt = read_elem_cnt/block_size;
+    unsigned long actual_elem_cnt = block_cnt * block_size;
+    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//replace with getspace.
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
+    DEBUG_PRINT
+
+    printf("read_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, block_size, block_cnt);
+
+    H5Sselect_hyperslab(*filespace_out,
+            H5S_SELECT_SET,
+            (hsize_t *) &FILE_OFFSET, //start-offset
+            (hsize_t *) &stride, //stride
+            (hsize_t *) &block_cnt, //block cnt
+            (hsize_t*) &block_size); //block size
+
+    return actual_elem_cnt;
+}
+typedef enum read_pattern{
+    CONTIG_1D,
+    RANDOM_1D
+}read_pattern;
+unsigned long set_dataspace(read_pattern pattern, unsigned long read_elem_cnt, hid_t* filespace_out, hid_t* memspace_out){
+    unsigned long actual_read_cnt = 0;
+    switch(pattern){
+        case CONTIG_1D:
+            _set_dataspace_seq_read(read_elem_cnt, filespace_out, memspace_out);
+            actual_read_cnt = read_elem_cnt;
+            break;
+        case RANDOM_1D:
+            actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, filespace_out, memspace_out);
+            break;
+
+        default:
+            break;
+    }
+    return actual_read_cnt;
+}
+int _partial_read_rand(){
+    return -1;
+}
+
+int _partial_read_seq(){
+    return -1;
+}
+
+int _full_read(){
+    return -1;
+}
+int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, read_pattern pattern, int nts, int sleep_time, unsigned long read_elem_cnt,
+         unsigned long* raw_read_time_out, unsigned long* total_data_size_out){
     *raw_read_time_out = 0;
-    hid_t filespace, memspace;
-    set_dataspace(&filespace, &memspace);
+
     hid_t grp;
     char grp_name[128];
     unsigned long rt1 = 0, rt2 = 0;
 
     //Default BDCATS case, read full file.
-    *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(float) + 2 * sizeof(int));
 
+    unsigned long actual_read_cnt = 0;
+    hid_t filespace, memspace;
+    //set_dataspace_seq_read(read_elem_cnt, &filespace, &memspace);
+    //actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, &filespace, &memspace);
+
+    actual_read_cnt = set_dataspace(pattern, read_elem_cnt, &filespace, &memspace);
     for (int i = 0; i < nts; i++) {
         DEBUG_PRINT
         sprintf(grp_name, "Timestep_%d", i);
@@ -152,7 +210,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, int nts, int slee
         H5Gclose(grp);
         MPI_Barrier(MPI_COMM_WORLD);
     }
-
+    *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
     return -1;
@@ -200,12 +258,22 @@ int main (int argc, char* argv[])
         print_usage(argv[0]);
         return 0;
     }
+    int num_particles = atoi(argv[4]);
+    NUM_PARTICLES = num_particles * 1024 * 1024;
 
-    if (argc == 5) {
-        NUM_PARTICLES = (atoi (argv[4]))*1024*1024;
+    int read_elem_cnt_m = atoi(argv[5]);
+    if(read_elem_cnt_m > num_particles){
+        printf("read_elem_cnt_m <= num_particles must hold.\n");
+        return 0;
     }
+
+    unsigned long read_elem_cnt = read_elem_cnt_m * 1024 * 1024;
+
+    read_pattern pattern; //RANDOM_1D;
+    if (strcmp("S", argv[6]) == 0)
+        pattern = CONTIG_1D;
     else {
-        NUM_PARTICLES = 8*1024*1024;
+        pattern = RANDOM_1D;
     }
 
     MPI_Info info  = MPI_INFO_NULL;
@@ -219,10 +287,11 @@ int main (int argc, char* argv[])
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     FILE_OFFSET -= NUM_PARTICLES;
 
+
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
-    buf_struct = prepare_contig_memory(NUM_PARTICLES, 0, 0, 0);
+    buf_struct = prepare_contig_memory(read_elem_cnt, 0, 0, 0);
 
     unsigned long t1 = get_time_usec();
     file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
@@ -233,9 +302,11 @@ int main (int argc, char* argv[])
 
     if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
+
     unsigned long raw_read_time, total_data_size;
     unsigned long t2 = get_time_usec();
-    _run_benchmark_read(file_id, fapl, gapl, NUM_TIMESTEPS, sleep_time, &raw_read_time, &total_data_size);
+    _run_benchmark_read(file_id, fapl, gapl, pattern, NUM_TIMESTEPS, sleep_time, read_elem_cnt,
+            &raw_read_time, &total_data_size);
     unsigned long t3 = get_time_usec();
 
 DEBUG_PRINT
