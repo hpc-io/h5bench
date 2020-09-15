@@ -45,6 +45,24 @@ data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2,
     return buf_struct;
 }
 
+data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3){
+    data_contig_md *buf_struct = (data_contig_md*) malloc(sizeof(data_contig_md));
+    buf_struct->dim_1 = dim_1;
+    buf_struct->dim_2 = dim_2;
+    buf_struct->dim_3 = dim_3;
+    long num_particles = dim_1 * dim_2 * dim_3;
+    buf_struct->particle_cnt = num_particles;
+    buf_struct->x =  (float*) malloc(num_particles * sizeof(float));
+    buf_struct->y =  (float*) malloc(num_particles * sizeof(float));
+    buf_struct->z =  (float*) malloc(num_particles * sizeof(float));
+    buf_struct->px = (float*) malloc(num_particles * sizeof(float));
+    buf_struct->py = (float*) malloc(num_particles * sizeof(float));
+    buf_struct->pz = (float*) malloc(num_particles * sizeof(float));
+    buf_struct->id_1 = (int*) malloc(num_particles * sizeof(int));
+    buf_struct->id_2 = (int*) malloc(num_particles * sizeof(int));
+    return buf_struct;
+}
+
 void free_contig_memory(data_contig_md* data){
     free(data->x);
     free(data->y);
@@ -60,42 +78,44 @@ void free_contig_memory(data_contig_md* data){
 int _set_params(char* key, char* val, bench_params* params_in_out){
     if(!params_in_out)
         return 0;
+    (*params_in_out).isWrite = 1;
 
     if(strcmp(key, "PATTERN") == 0){
         if (strcmp(val, "CC") == 0) {
-            (*params_in_out).bench_pattern = CONTIG_CONTIG_1D;
+            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
+            //(*params_in_out).bench_pattern = CONTIG_CONTIG_1D; replaced with an union.
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "CC2D") == 0) {
-            (*params_in_out).bench_pattern = CONTIG_CONTIG_2D;
+            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
             (*params_in_out)._dim_cnt = 2;
         } else if (strcmp(val, "CI") == 0) {
-            (*params_in_out).bench_pattern = CONTIG_INTERLEAVED_1D;
+            (*params_in_out).access_pattern.pattern_write = CONTIG_INTERLEAVED_1D;
             (*params_in_out).pattern_name = strdup("CONTIG_INTERLEAVED_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "CI2D") == 0) {
-            (*params_in_out).bench_pattern = CONTIG_INTERLEAVED_2D;
+            (*params_in_out).access_pattern.pattern_write = CONTIG_INTERLEAVED_2D;
             (*params_in_out).pattern_name = strdup("CONTIG_INTERLEAVED_2D");
             (*params_in_out)._dim_cnt = 2;
         }else if (strcmp(val, "II") == 0) {
-            (*params_in_out).bench_pattern = INTERLEAVED_INTERLEAVED_1D;
+            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_INTERLEAVED_1D;
             (*params_in_out).pattern_name = strdup("INTERLEAVED_INTERLEAVED_1D");
             (*params_in_out)._dim_cnt = 1;
         }else if (strcmp(val, "II2D") == 0) {
-            (*params_in_out).bench_pattern = INTERLEAVED_INTERLEAVED_2D;
+            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_INTERLEAVED_2D;
             (*params_in_out).pattern_name = strdup("INTERLEAVED_INTERLEAVED_2D");
             (*params_in_out)._dim_cnt = 2;
         } else if (strcmp(val, "IC") == 0) {
-            (*params_in_out).bench_pattern = INTERLEAVED_CONTIG_1D;
+            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_CONTIG_1D;
             (*params_in_out).pattern_name = strdup("INTERLEAVED_CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "IC2D") == 0) {
-            (*params_in_out).bench_pattern = INTERLEAVED_CONTIG_2D;
+            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_CONTIG_2D;
             (*params_in_out).pattern_name = strdup("INTERLEAVED_CONTIG_2D");
             (*params_in_out)._dim_cnt = 2;
         } else if(strcmp(val, "CC3D") == 0){
-            (*params_in_out).bench_pattern = CONTIG_CONTIG_3D;
+            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
             (*params_in_out)._dim_cnt = 3;
         }
@@ -156,11 +176,15 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
     return 1;
 }
 
+//only for vpic
 int read_config(const char* file_path, bench_params* params_out){
     if(!params_out)
         params_out = (bench_params*)calloc(1, sizeof(bench_params));
     char cfg_line[CFG_LINE_LEN_MAX] = "";
     (*params_out).data_file_path = strdup(file_path);
+    (*params_out).isWrite = 1;
+    (*params_out).cnt_actual_particles_M = 0;
+
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
@@ -192,19 +216,20 @@ int read_config(const char* file_path, bench_params* params_out){
 
 void print_params(const bench_params* p){
     printf("=======================================\n");
-    printf("Benchmark parameters: read from config file: %s\n", p->data_file_path);
+    printf("Benchmark parameters: \nFile: %s\n", p->data_file_path);
     printf("Benchmark pattern = %s\n", p->pattern_name);
     printf("Per rank particles number(in M) = %d M\n", p->cnt_particle_M);
+    printf("Per rank actual read number (in M) = %d M\n", p->cnt_actual_particles_M);
     printf("Time step number = %d\n", p->cnt_time_step);
     printf("Sleep time = %d\n", p->sleep_time);
     printf("Dimension cnt = %d\n", p->_dim_cnt);
     if(p->_dim_cnt == 2){
-        printf("    Dim_1 = %d\n", p->dim_1);
-        printf("    Dim_2 = %d\n", p->dim_2);
+        printf("    Dim_1 = %lu\n", p->dim_1);
+        printf("    Dim_2 = %lu\n", p->dim_2);
     } else if(p->_dim_cnt == 3){
-        printf("    Dim_1 = %d\n", p->dim_1);
-        printf("    Dim_2 = %d\n", p->dim_2);
-        printf("    Dim_3 = %d\n", p->dim_3);
+        printf("    Dim_1 = %lu\n", p->dim_1);
+        printf("    Dim_2 = %lu\n", p->dim_2);
+        printf("    Dim_3 = %lu\n", p->dim_3);
     }
     printf("=======================================\n");
 }
@@ -224,13 +249,19 @@ void test_read_config(const char* file_path){
      if(ret != 0){
          printf("read_config() failed, ret = %d\n", ret);
      } else {
-         printf("param->bench_pattern = %d\n", param.bench_pattern);
+         printf("param->isWrite = %d\n", param.isWrite);
+         if(param.isWrite){
+             printf("param->access_pattern = pattern_write, val = %d\n", param.access_pattern.pattern_write);
+         } else {
+             printf("param->access_pattern = pattern_read, val = %d\n", param.access_pattern.pattern_read);
+         }
+
          printf("param->pattern_name = %s\n", param.pattern_name);
          printf("param->cnt_time_step = %d\n", param.cnt_time_step);
          printf("param->cnt_particle_M = %d\n", param.cnt_particle_M);
          printf("param->sleep_time = %d\n", param.sleep_time);
-         printf("param->DIM_1 = %d\n", param.dim_1);
-         printf("param->DIM_2 = %d\n", param.dim_2);
-         printf("param->DIM_3 = %d\n", param.dim_3);
+         printf("param->DIM_1 = %lu\n", param.dim_1);
+         printf("param->DIM_2 = %lu\n", param.dim_2);
+         printf("param->DIM_3 = %lu\n", param.dim_3);
      }
 }

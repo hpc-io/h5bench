@@ -5,7 +5,7 @@ CC = mpicc
 # CC = gcc-9
 
 DEBUG = -g -O0
-CFLAGS = -I$(HDF5_DIR)/include -I$(COMMON_DIR)
+CFLAGS = $(DEBUG) -I$(HDF5_DIR)/include -I$(COMMON_DIR)
 LDFLAGS = -L$(HDF5_DIR)/lib -lhdf5 -L$(COMMON_DIR) -lh5bench_util
 UTIL_SRC = $(COMMON_DIR)/h5bench_util.c
 LIB = $(COMMON_DIR)/libh5bench_util.so
