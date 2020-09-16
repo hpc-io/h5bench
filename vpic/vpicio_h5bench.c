@@ -219,6 +219,7 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
             printf("Dimension definition is invalid: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) must equal num_particles (%ld) per rank.\n", dim_1, dim_2, dim_3, particle_cnt);
         return NULL;
     }
+
     assert(particle_cnt == dim_1 * dim_2 * dim_3);
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
@@ -254,7 +255,7 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
     return data_out;
 }
 
-void data_free(access_pattern mode, void* data){
+void data_free(write_pattern mode, void* data){
     assert(data);
     switch(mode){
         case CONTIG_CONTIG_1D:
@@ -283,17 +284,20 @@ void data_free(access_pattern mode, void* data){
     }
 }
 
-int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out){
-    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
+void set_dspace_plist(hid_t* plist_id_out){
     *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+}
+
+int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out){
+    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL, (hsize_t *) &NUM_PARTICLES, NULL);
     return 0;
 }
 
-int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out,
-        unsigned long long dim_1, unsigned long long dim_2){//dim_1 * dim_2 === NUM_PARTICLES
+int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out,
+        unsigned long dim_1, unsigned long dim_2){//dim_1 * dim_2 === NUM_PARTICLES
     hsize_t mem_dims[2], file_dims[2];
     mem_dims[0] = (hsize_t)dim_1;
     mem_dims[1] = (hsize_t)dim_2;
@@ -309,16 +313,14 @@ int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* 
     DEBUG_PRINT
     *filespace_out = H5Screate_simple(2, file_dims, NULL);
     *memspace_out =  H5Screate_simple(2, mem_dims, NULL);
-    printf("%llu * %llu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n",
+    if(MY_RANK == 0) printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n",
             dim_1, dim_2, file_starts[0], file_starts[1], count[0], count[1]);
-    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
     return 0;
 }
 
-int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out, hid_t* plist_id_out,
-        unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3){
+int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out,
+        unsigned long dim_1, unsigned long dim_2, unsigned long dim_3){
     hsize_t mem_dims[3];
     hsize_t file_dims[3];
     mem_dims[0] = (hsize_t)dim_1;
@@ -327,7 +329,6 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out, h
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS;
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
-
     hsize_t file_starts[3], file_range[3];//select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -336,12 +337,9 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out, h
     file_range[1] = dim_2;
     file_range[2] = dim_3;
 
-    DEBUG_PRINT
     *filespace_out = H5Screate_simple(3, file_dims, NULL); //(1, (hsize_t *) &TOTAL_PARTICLES, NULL);//= world_size * numparticles
     *memspace_out =  H5Screate_simple(3, mem_dims, NULL);
 
-    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
     return 0;
 }
@@ -426,8 +424,8 @@ void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t fil
 }
 
 int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
-    access_pattern mode = params.bench_pattern;
-    long particle_cnt = params.cnt_particle_M * 1024 * 1024;
+    write_pattern mode = params.access_pattern.pattern_write;
+    long particle_cnt = params.cnt_particle_M * M_VAL;
     int timestep_cnt = params.cnt_time_step;
     int sleep_time = params.sleep_time;
 
@@ -440,62 +438,63 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     void* data = NULL;
     unsigned long data_size;
     hid_t plist_id, filespace, memspace;
+    set_dspace_plist(&plist_id);
 
     make_compound_type_separates();
     make_compound_type();
 
     switch(mode){
         case CONTIG_CONTIG_1D:
-            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
         case CONTIG_CONTIG_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 8;
             break;
 
 
         case CONTIG_INTERLEAVED_1D:
-            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
         case CONTIG_INTERLEAVED_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 1;
             break;
 
         case INTERLEAVED_CONTIG_1D:
-            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
         case INTERLEAVED_CONTIG_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
         case INTERLEAVED_INTERLEAVED_1D:
-            set_select_spaces_default(&filespace, &memspace, &plist_id);
+            set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
         case INTERLEAVED_INTERLEAVED_2D:
-            set_select_space_2D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2);
+            set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
         case CONTIG_CONTIG_3D:
-            set_select_space_multi_3D_array(&filespace, &memspace, &plist_id, params.dim_1, params.dim_2, params.dim_3);
+            set_select_space_multi_3D_array(&filespace, &memspace, params.dim_1, params.dim_2, params.dim_3);
             data = (void*)prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3, &data_size);
             dset_cnt = 8;
             break;
@@ -611,7 +610,7 @@ hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long
         cache_config.version = H5AC__CURR_CACHE_CONFIG_VERSION;
         H5Pget_mdc_config(fapl, &cache_config);
         cache_config.set_initial_size = 1;
-        cache_config.initial_size = 16 * 1024 * 1024;
+        cache_config.initial_size = 16 * M_VAL;
         cache_config.evictions_enabled = 0;
         cache_config.incr_mode = H5C_incr__off;
         cache_config.flash_incr_mode = H5C_flash_incr__off;
@@ -660,7 +659,8 @@ int main(int argc, char* argv[]) {
         print_params(&bench_params);
 
     set_globals(bench_params);
-
+    //printf("    Dim_1 = %d\n", bench_params.dim_1);
+    //printf("    Dim_2 = %d\n", bench_params.dim_2);
     NUM_TIMESTEPS = bench_params.cnt_time_step;
 
     if (MY_RANK == 0)
@@ -676,7 +676,7 @@ int main(int argc, char* argv[]) {
     FILE_OFFSET -= NUM_PARTICLES;
 
     if (MY_RANK == 0)
-        printf("Total particle number = %lldM\n", TOTAL_PARTICLES / (1024 * 1024));
+        printf("Total particle number = %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
 

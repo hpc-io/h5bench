@@ -69,47 +69,65 @@ void print_data(int n) {
 }
 
 // Create HDF5 file and read data
-void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace) {
+void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned long* read_time) {
     hid_t dset_id, dapl;
+    unsigned long core_read_time = 0, start_read, end;
+
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
-    DEBUG_PRINT
+
     dset_id = H5Dopen2(loc, "x", dapl);
-    DEBUG_PRINT
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x);
-    DEBUG_PRINT
+    core_read_time += (get_time_usec() - start_read);
+
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "y", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "z", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "id_1", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "id_2", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "px", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "py", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     dset_id = H5Dopen2(loc, "pz", dapl);
+    start_read = get_time_usec();
     ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz);
+    core_read_time += (get_time_usec() - start_read);
     H5Dclose(dset_id);
 
     if (rank == 0) printf ("  Read 8 variable completed\n");
 
+    *read_time = core_read_time;
     H5Pclose(dapl);
     print_data(3);
 }
@@ -123,15 +141,16 @@ int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hi
 }
 
 //returns actual rounded read element count.
-unsigned long _set_dataspace_random_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
-    unsigned long stride = 37;//stride must be greater than block size??
-    unsigned long block_size = 29; //in element
-    unsigned long block_cnt = read_elem_cnt/block_size;
+unsigned long _set_dataspace_strided_read(unsigned long read_elem_cnt, unsigned long stride, unsigned long block_size,
+        hid_t* filespace_in, hid_t* memspace_out){
+    //unsigned long stride = 37;//stride must be greater than block size??
+    //unsigned long block_size = 29; //in element
+    unsigned long block_cnt = read_elem_cnt/(block_size + stride);
     unsigned long actual_elem_cnt = block_cnt * block_size;
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
     DEBUG_PRINT
 
-    printf("read_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, block_size, block_cnt);
+    printf("read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
 
     H5Sselect_hyperslab(*filespace_in,
             H5S_SELECT_SET,
@@ -209,8 +228,8 @@ unsigned long set_dataspace(bench_params params, unsigned long read_elem_cnt, hi
             actual_read_cnt = read_elem_cnt;
             break;
 
-        case RANDOM_1D:
-            actual_read_cnt = _set_dataspace_random_read(read_elem_cnt, filespace_in_out, memspace_out);
+        case STRIDED_1D:
+            actual_read_cnt = _set_dataspace_strided_read(read_elem_cnt, params.stride, params.block_size, filespace_in_out, memspace_out);
             break;
 
         case CONTIG_2D:
@@ -242,17 +261,10 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
     print_params(&params);
     for (int i = 0; i < nts; i++) {
-        DEBUG_PRINT
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen(file_id, grp_name, gapl);
-
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
-
-        rt1 = get_time_usec();
-        read_h5_data(MY_RANK, grp, filespace, memspace);
-        rt2 = get_time_usec();
-        *raw_read_time_out += (rt2 - rt1);
-
+        read_h5_data(MY_RANK, grp, filespace, memspace, raw_read_time_out);
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
             sleep(sleep_time);
@@ -263,7 +275,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
-    return -1;
+    return 0;
 }
 
 void set_pl(hid_t* fapl, hid_t* gapl ){
@@ -290,51 +302,49 @@ bench_params* args_set_params(int argc, char* argv[]){
     params->cnt_time_step = atoi(argv[arg_idx++]);
     //sleep time
     params->sleep_time = atoi(argv[arg_idx++]);
-    //read pattern: SEQ/PART/RAND/2D/3D
+    //read pattern: SEQ/PART/STRIDED/2D/3D
+    params->stride = 0;
+    params->block_size = 0;
 
-    if(strcmp(argv[arg_idx], "SEQ") == 0){
-        DEBUG_PRINT
+    params->dim_2 = 1;
+    params->dim_3 = 1;
+
+    if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
         params->pattern_name = strdup("1D sequential read");
         params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read particles per rank
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-        params->dim_2 = 1;
-        params->dim_3 = 1;
 
     } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
-        DEBUG_PRINT
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
         params->pattern_name = strdup("1D partial read");
-        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-        params->dim_2 = 1;
-        params->dim_3 = 1;
-
         params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read dim_1 particles per rank
-    } else if(strcmp(argv[arg_idx], "RAND") == 0){
-        params->_dim_cnt = 1;
-        params->pattern_name = strdup("1D random read");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->access_pattern.pattern_read = RANDOM_1D;
-        params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read particles per rank
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-        params->dim_2 = 1;
-        params->dim_3 = 1;
 
-    } else if(strcmp(argv[arg_idx], "2D") == 0){
+
+    } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
         params->_dim_cnt = 1;
+        params->pattern_name = strdup("1D strided read");
+        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        params->access_pattern.pattern_read = STRIDED_1D;
+        params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read particles per rank
+        params->stride = atoi(argv[arg_idx + 2]);
+        params->block_size = atoi(argv[arg_idx + 3]);
+        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
+
+    } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
         params->access_pattern.pattern_read = CONTIG_2D;
         params->pattern_name = strdup("CONTIG_2D");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 2;
-        params->dim_1 = atoi(argv[arg_idx + 1]); //read a subplane of dim_1*dim_2 particles
+        params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
-        params->dim_3 = 1;
 
-    } else if(strcmp(argv[arg_idx], "3D") == 0) {
+    } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
         params->access_pattern.pattern_read = CONTIG_3D;
         params->pattern_name = strdup("CONTIG_3D");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
@@ -352,9 +362,7 @@ bench_params* args_set_params(int argc, char* argv[]){
     return params;
 }
 
-int main (int argc, char* argv[])
-{
-
+int main (int argc, char* argv[]){
     MPI_Init(&argc,&argv);
     if(argc < 3) {
         printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
@@ -364,25 +372,20 @@ int main (int argc, char* argv[])
 
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
-    DEBUG_PRINT
-
-    DEBUG_PRINT
     char *file_name = argv[1];; //strdup(params->data_file_path); //argv[1];
-    DEBUG_PRINT
     bench_params* params = args_set_params(argc, argv);
     NUM_TIMESTEPS = params->cnt_time_step;
-    DEBUG_PRINT
+
     if (NUM_TIMESTEPS <= 0) {
         printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
-    DEBUG_PRINT
+
     sleep_time = params->sleep_time;
     if (sleep_time < 0) {
         print_usage(argv[0]);
         return 0;
     }
-    DEBUG_PRINT
 
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
@@ -423,7 +426,7 @@ int main (int argc, char* argv[])
 
     NUM_PARTICLES = total_particles / NUM_RANKS;
 
-    unsigned long  read_elem_cnt = params->cnt_actual_particles_M * M_VAL; //atoi(argv[5]);
+    unsigned long  read_elem_cnt = params->cnt_actual_particles_M * M_VAL;
 
     if(read_elem_cnt  > NUM_PARTICLES){
         printf("read_elem_cnt_m <= num_particles must hold.\n");
@@ -435,14 +438,13 @@ int main (int argc, char* argv[])
         printf("Total particles in the file: %lu\n", total_particles);
         printf ("Number of particles available per rank: %lld \n", NUM_PARTICLES);
     }
+
     MPI_Barrier (MPI_COMM_WORLD);
-//    timer_on (0);
+
     unsigned long t0 = get_time_usec();
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     FILE_OFFSET -= NUM_PARTICLES;
-
-
 
     BUF_STRUCT = prepare_contig_memory_multi_dim(params->dim_1, params->dim_2, params->dim_3);
 
@@ -455,13 +457,11 @@ int main (int argc, char* argv[])
 
     if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
-
     unsigned long raw_read_time, total_data_size;
     unsigned long t2 = get_time_usec();
     _run_benchmark_read(file_id, fapl, gapl, filespace, *params, &raw_read_time, &total_data_size);
     unsigned long t3 = get_time_usec();
 
-DEBUG_PRINT
     MPI_Barrier (MPI_COMM_WORLD);
 
     H5Pclose(fapl);

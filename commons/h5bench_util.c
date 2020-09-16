@@ -51,6 +51,7 @@ data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim
     buf_struct->dim_2 = dim_2;
     buf_struct->dim_3 = dim_3;
     long num_particles = dim_1 * dim_2 * dim_3;
+
     buf_struct->particle_cnt = num_particles;
     buf_struct->x =  (float*) malloc(num_particles * sizeof(float));
     buf_struct->y =  (float*) malloc(num_particles * sizeof(float));
