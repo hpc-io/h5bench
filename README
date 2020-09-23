@@ -10,4 +10,3 @@ To set parameters for the  benchmark:
 To run the benchmark:
 	Single process test: ./vpicio_h5bench your_config_file output_file
 	Parallel run:  mpirun -n 2 ./vpicio_h5bench your_config_file output_file
-
