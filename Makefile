@@ -1,9 +1,9 @@
-HDF5_DIR = /Users/tonglin/nersc_dev_sync/hdf5_build/hdf5
-
-COMMON_DIR = ./commons
+HDF5_DIR = ${HDF5_HOME}
+H5BENCH_DIR = ${PWD}
+COMMON_DIR = $(H5BENCH_DIR)/commons
 
 CC = mpicc
-BASIC_IO_DIR = ./basic_io
+BASIC_IO_DIR = $(H5BENCH_DIR)/basic_io
 DEBUG = -g -O0
 CFLAGS = $(DEBUG) -I$(HDF5_DIR)/include -I$(COMMON_DIR)
 LDFLAGS = -L$(HDF5_DIR)/lib -lhdf5 -L$(COMMON_DIR) -lh5bench_util
