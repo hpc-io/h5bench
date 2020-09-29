@@ -10,11 +10,11 @@
 
 #define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__);
 //Maximal line length of the config file
-const int CFG_LINE_LEN_MAX = 510;
-const char* CFG_DELIMS = "=\n \t";
-const unsigned long G_VAL = 1024 * 1024 * 1024;
-const unsigned long M_VAL = 1024 * 1024;
-const unsigned long K_VAL = 1024;
+#define  CFG_LINE_LEN_MAX 510
+#define CFG_DELIMS "=\n \t"
+#define G_VAL 1024 * 1024 * 1024
+#define  M_VAL 1024 * 1024
+#define  K_VAL 1024
 typedef enum write_pattern {
     CONTIG_CONTIG_1D,
     CONTIG_INTERLEAVED_1D,

@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+project(h5bench)
+
+# Dependency: MPI
+find_package(MPI REQUIRED)
+include_directories(SYSTEM /usr/local/include)#for MPI
+
+# Dependecy: HDF5
+find_package(HDF5 REQUIRED)
+#set(HDF5_HOME "/Users/tonglin/nersc_dev_sync/hdf5_build/hdf5")
+#include_directories(${HDF5_HOME}/include)
+#link_directories(${HDF5_HOME}/lib)
+
+set(h5bench_util_src
+    commons/h5bench_util.c
+    commons/h5bench_util.h
+    )
+add_library(h5bench_util ${h5bench_util_src})
+set(vpic_src basic_io/h5bench_vpicio.c)
+set(bdcats_src basic_io/h5bench_bdcatsio.c)
+
+add_executable(h5bench_vpicio ${vpic_src})
+target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+#link_directories(./commons .)
+add_executable(h5bench_bdcatsio ${bdcats_src})
+target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
+
+install(TARGETS h5bench_vpicio h5bench_bdcatsio DESTINATION bin)
