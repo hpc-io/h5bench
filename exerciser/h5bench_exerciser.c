@@ -124,7 +124,8 @@ int main( int argc, char* argv[] )
 	hsize_t memCount_dbl = 1;
 
 	/* Parse Inpu Args */
-	for (i=1;i<argc;i++) {
+	char* file_prefix = argv[1];
+	for (i=2;i<argc;i++) {
 		if (strcmp(argv[i],"--metacoll") == 0)
 			useMetaDataCollectives = 1;
 		else if (strcmp(argv[i],"--derivedtype") == 0)
@@ -271,7 +272,7 @@ int main( int argc, char* argv[] )
 	struct timeval time;
 	gettimeofday(&time,NULL);
 	srand(((unsigned int) time.tv_sec * 1000) + ((unsigned int) time.tv_usec / 1000));
-	sprintf(testFileName,"hdf5TestFile-%d",rand());
+	sprintf(testFileName,"%s-hdf5TestFile-%d", file_prefix, rand());
 	MPI_Bcast(testFileName,NAME_LENGTH,MPI_CHAR,0,comm);
 	char dataSetName1[NAME_LENGTH] = "hdf5DataSet1";
 
@@ -847,7 +848,7 @@ int main( int argc, char* argv[] )
 	H5Pclose(accessPropList);
 
 	if (!keepFile) {
-		unlink(testFileName);
+		//unlink(testFileName);
 	}
 
 	if (rank==0) printf("All done -- Finishing normally.\n");
