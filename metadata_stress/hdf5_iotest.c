@@ -6,17 +6,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "../commons/h5bench_util.h"
 
 #define CONFIG_FILE "hdf5_iotest.ini"
 
 int main(int argc, char* argv[])
-{
-  const char* ini = (argc > 1) ? argv[1] : CONFIG_FILE;
-
+{DEBUG_PRINT
+    MPI_Init(&argc, &argv);
+	printf("argc  = %d\n", argc);
+  char* ini = argv[1];
+    printf("argc  = %d\n", argc);
+    printf("ini file = %s\n", ini);
+  DEBUG_PRINT
   configuration config;
   unsigned int strong_scaling_flg, coll_mpi_io_flg, step_first_flg;
-
+  DEBUG_PRINT
+  printf("ini file = %s\n", ini);
   int size, rank, my_proc_row, my_proc_col;
   unsigned long my_rows, my_cols;
   unsigned int istep, iarray;
@@ -33,15 +38,15 @@ int main(int argc, char* argv[])
   double min_write_time, max_write_time;
   double min_read_phase, max_read_phase;
   double min_read_time, max_read_time;
+  DEBUG_PRINT
 
-  MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+  DEBUG_PRINT
   wall_time = -MPI_Wtime();
 
   read_time = write_time = create_time = 0.0;
-
+  DEBUG_PRINT
   if (rank == 0) /* rank 0 reads and checks the config. file */
     {
       if (ini_parse(ini, handler, &config) < 0)
@@ -49,7 +54,7 @@ int main(int argc, char* argv[])
           printf("Can't load '%s'\n", ini);
           return 1;
         }
-
+      DEBUG_PRINT
       sanity_check(&config);
       validate(&config, size);
       strong_scaling_flg = (strncmp(config.scaling, "strong", 16) == 0);
@@ -61,24 +66,24 @@ int main(int argc, char* argv[])
              config.rank);
       printf("\tlayout=%s, mpi-io=%s\n", config.layout, config.mpi_io);
     }
-
+  DEBUG_PRINT
   /* broadcast the input parameters */
   MPI_Bcast(&config, sizeof(configuration), MPI_BYTE, 0, MPI_COMM_WORLD);
 
   my_proc_row = rank / config.proc_cols;
   my_proc_col = rank % config.proc_cols;
-
+  DEBUG_PRINT
   strong_scaling_flg = (strncmp(config.scaling, "strong", 16) == 0);
   my_rows = strong_scaling_flg ? config.rows/config.proc_rows : config.rows;
   my_cols = strong_scaling_flg ? config.cols/config.proc_cols : config.cols;
-
+  DEBUG_PRINT
   /* allocate the write and read arrays */
   wbuf = (double*) malloc(my_rows*my_cols*sizeof(double));
   rbuf = (double*) calloc(my_rows*my_cols, sizeof(double));
-
+  DEBUG_PRINT
   for (i = 0; i < (size_t)my_rows*my_cols; ++i)
     wbuf[i] = (double) (my_proc_row + my_proc_col);
-
+  DEBUG_PRINT
   { /* create the in-memory dataspace */
     hsize_t dims[2];
     dims[0] = (hsize_t)my_rows;
@@ -86,21 +91,21 @@ int main(int argc, char* argv[])
     mspace = H5Screate_simple(2, dims, dims);
     assert(H5Sselect_all(mspace) >= 0);
   }
-
+  DEBUG_PRINT
   assert((dxpl = H5Pcreate(H5P_DATASET_XFER)) >= 0);
   coll_mpi_io_flg = (strncmp(config.mpi_io, "collective", 16) == 0);
   if (coll_mpi_io_flg)
     assert(H5Pset_dxpl_mpio(dxpl, H5FD_MPIO_COLLECTIVE) >= 0);
   else
     assert(H5Pset_dxpl_mpio(dxpl, H5FD_MPIO_INDEPENDENT) >= 0);
-
+  DEBUG_PRINT
   assert((fapl = H5Pcreate(H5P_FILE_ACCESS)) >= 0);
   assert(H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL) >= 0);
-
+  DEBUG_PRINT
   step_first_flg = (strncmp(config.slowest_dimension, "step", 16) == 0);
-
+  DEBUG_PRINT
   MPI_Barrier(MPI_COMM_WORLD);
-
+  DEBUG_PRINT
   write_phase = -MPI_Wtime();
 
   { /* WRITE phase */
@@ -112,14 +117,14 @@ int main(int argc, char* argv[])
     switch (config.rank)
       {
       case 4:
-        {
+        {DEBUG_PRINT
           /* one 4D array */
           create_time -= MPI_Wtime();
           assert((dset = create_dataset(&config, file, "dataset")) >= 0);
           create_time += MPI_Wtime();
 
           for (istep = 0; istep < config.steps; ++istep)
-            {
+            {DEBUG_PRINT
               for (iarray = 0; iarray < config.arrays; ++iarray)
                 {
                   assert((fspace = H5Dget_space(dset)) >= 0);
@@ -139,11 +144,11 @@ int main(int argc, char* argv[])
         }
         break;
       case 3:
-        {
+        {DEBUG_PRINT
           if (step_first_flg) /* dataset per step */
             {
               for (istep = 0; istep < config.steps; ++istep)
-                {
+                {DEBUG_PRINT
                   create_time -= MPI_Wtime();
                   sprintf(path, "step=%d", istep);
                   assert((dset = create_dataset(&config, file, path)) >= 0);
@@ -167,7 +172,7 @@ int main(int argc, char* argv[])
                 }
             }
           else /* dataset per array */
-            {
+            {DEBUG_PRINT
               for (istep = 0; istep < config.steps; ++istep)
                 {
                   for (iarray = 0; iarray < config.arrays; ++iarray)
@@ -205,13 +210,13 @@ int main(int argc, char* argv[])
         }
         break;
       case 2:
-        {
+        {DEBUG_PRINT
           hid_t lcpl = H5Pcreate(H5P_LINK_CREATE);
           assert(lcpl >= 0);
           assert(H5Pset_create_intermediate_group(lcpl, 1) >= 0);
 
           for (istep = 0; istep < config.steps; ++istep)
-            {
+            {DEBUG_PRINT
               for (iarray = 0; iarray < config.arrays; ++iarray)
                 {
                   create_time -= MPI_Wtime();
@@ -247,18 +252,18 @@ int main(int argc, char* argv[])
   }
 
   write_phase += MPI_Wtime();
-
+  DEBUG_PRINT
   MPI_Barrier(MPI_COMM_WORLD);
-
+  DEBUG_PRINT
   read_phase = -MPI_Wtime();
 
   { /* READ phase */
     assert((file = H5Fopen(config.hdf5_file, H5F_ACC_RDONLY, fapl)) >= 0);
-
+    DEBUG_PRINT
     switch (config.rank)
       {
       case 4:
-        {
+        {DEBUG_PRINT
           assert((dset = H5Dopen(file, "dataset", H5P_DEFAULT)) >= 0);
 
           for (istep = 0; istep < config.steps; ++istep)
@@ -280,7 +285,7 @@ int main(int argc, char* argv[])
         }
         break;
       case 3:
-        {
+        {DEBUG_PRINT
           if (step_first_flg) /* dataset per step */
             {
               for (istep = 0; istep < config.steps; ++istep)
@@ -330,7 +335,7 @@ int main(int argc, char* argv[])
         }
         break;
       case 2:
-        {
+        {DEBUG_PRINT
           for (istep = 0; istep < config.steps; ++istep)
             {
               for (iarray = 0; iarray < config.arrays; ++iarray)

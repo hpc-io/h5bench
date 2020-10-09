@@ -35,18 +35,18 @@ target_link_libraries(h5bench_exerciser hdf5 z m MPI::MPI_C)
 
 # ===========  Build metadata stress test: hdf5_iotest  ===========
 set(meta_stress_src
+	metadata_stress/hdf5_iotest.c
 	metadata_stress/configuration.c
 	metadata_stress/configuration.h
 	metadata_stress/dataset.c
 	metadata_stress/dataset.h
-	metadata_stress/hdf5_iotest.c
 	metadata_stress/ini.c
 	metadata_stress/ini.h
 	)
 add_executable(h5bench_hdf5_iotest ${meta_stress_src})
-target_link_libraries(h5bench_hdf5_iotest hdf5 z m MPI::MPI_C)
+target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # =================================================================
 
 # =========== Install binaries ===========
-install(TARGETS h5bench_vpicio h5bench_bdcatsio h5bench_exerciser DESTINATION bin)
+install(TARGETS h5bench_vpicio h5bench_bdcatsio h5bench_exerciser h5bench_hdf5_iotest DESTINATION bin)

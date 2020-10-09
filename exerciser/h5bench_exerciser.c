@@ -848,7 +848,7 @@ int main( int argc, char* argv[] )
 	H5Pclose(accessPropList);
 
 	if (!keepFile) {
-		//unlink(testFileName);
+		unlink(testFileName);
 	}
 
 	if (rank==0) printf("All done -- Finishing normally.\n");
