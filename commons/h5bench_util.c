@@ -266,3 +266,22 @@ void test_read_config(const char* file_path){
          printf("param->DIM_3 = %lu\n", param.dim_3);
      }
 }
+
+int file_create_try(const char* path){
+    FILE* f = fopen(path, "w+");
+    if(!f){
+        printf("Failed to create file: %s, Please check permission.\n", path);
+        return -1;
+    }
+
+    return 0;
+}
+
+int file_exist(const char* path){
+    FILE* f = fopen(path, "r");
+    if(!f){
+        printf("Failed to open file: %s, Please check if the file exists.\n", path);
+        return -1;
+    }
+    return 0;
+}

@@ -1,12 +1,54 @@
-To build:
-	Change HDF5_DIR and H5BENCH_DIR to your HDF5 and H5bench installed location.
-	Then make.
+# H5bench: a Parallel I/O Benchmark suite for HDF5
 
-To set parameters for the  benchmark:
-	- Set VPIC parameters in a config file, see sample_cfg.cfg as an example.
-	- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is an invalid setting.
-	- No blank line and blank space are allowed.
+H5bench benchmark suite contains a list of applications that are used to measure the I/O performance from various aspects.
 
-To run the benchmark:
-	Single process test: ./vpicio_h5bench your_config_file output_file
-	Parallel run:  mpirun -n 2 ./vpicio_h5bench your_config_file output_file
+
+# Build
+## Build with local CMake
+#### Dependency and environment variable settings
+H5bench depends on MPI and HDF5. Assume you have installed MPI and HDF5. Several environment varibles to set:
+- **HDF5_HOME**: the location you installed HDF5. It should point to a path that look like below and contains include/, lib/ and bin/ subdirectories:  /path_to_my_hdf5_build/hdf5
+
+### Compile with CMake
+Assume the repo is cloned and now you are in the source directory h5bench, run several simple steps :
+- `mkdir build`
+- `cd build`
+- `cmake ..`
+- `make`
+And all the binaries will be built to the build/ directory.
+
+## Build with Spack
+Assuming you have installed Spack, and it will try to find and install dependencies for you.
+- Create a spack package: 
+	- `spack create --force https://bitbucket.org/berkeleylab/h5bench/downloads/h5bench-0.1.tar`
+- Then you will be put in an opend python document (for details see here https://spack-tutorial.readthedocs.io/en/latest/tutorial_packaging.html) and you only need to add 2 dependencies:
+	- `depends_on(mpi)`
+	- `depends_on(hdf5)`
+- And you are good to install: 
+	- `spack install h5bench`
+- Binaries will be added to your $PATH environment variable after you load them by 
+	- `spack load h5bench`
+
+## Benchmark usage
+### Basic I/O benchmark
+This benchmark contains two applications that are developed based on particle physics simulation software VPICIO (for write) and BDCATSIO (for read).
+#### h5bench_vpicio
+**To set parameters for the  h5bench_vpicio:**
+- Set VPIC parameters in a config file, see `basic_io/sample_cfg.cfg` as an example.
+- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is an invalid setting.
+- No blank line and blank space are allowed.
+
+**To run the vpicio_h5bench:**
+- Single process test: 
+	- `./h5bench_vpicio your_config_file output_file`
+- Parallel run:  
+	- `mpirun -n 2 ./h5bench_vpicio your_config_file output_file`
+
+#### h5bench_bdcatsio
+
+
+
+### h5bench_bdcatsio
+### h5bench_exerciser
+### h5bench_hdf5_iotest
+### h5bench_vl_stream_hl

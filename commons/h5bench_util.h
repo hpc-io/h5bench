@@ -81,5 +81,6 @@ void print_params(const bench_params* p);
 void bench_params_free(bench_params* p);
 void test_read_config(const char* file_path);
 
-
+int file_create_try(const char* path);
+int file_exist(const char* path);
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

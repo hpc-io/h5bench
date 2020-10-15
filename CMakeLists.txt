@@ -7,7 +7,7 @@ include_directories(SYSTEM /usr/local/include)#for MPI
 
 # Dependecy: HDF5
 find_package(HDF5 REQUIRED)
-#set(HDF5_HOME "/Users/tonglin/nersc_dev_sync/hdf5_build/hdf5")
+message("Detected hdf5 version: ${HDF5_VERSION}")
 set(HDF5_HOME $ENV{HDF5_HOME})
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
@@ -46,7 +46,34 @@ set(meta_stress_src
 add_executable(h5bench_hdf5_iotest ${meta_stress_src})
 target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
+# ===========  Streaming (append) test: h5bench_vl_stream ===========
+message("============== Build without USE_DEV_VL ==============")
+add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
+target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5_hl hdf5 z)
+
+
+#set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})
+#include_directories(${HDF5_VL_HOME}/include)
+#link_directories(${HDF5_VL_HOME}/lib)
+#find_package(HDF5 1.13.0)
+#	message("============== Build with USE_DEV_VL ==============")
+#	set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})
+#	include_directories(${HDF5_VL_HOME}/include)
+#	link_directories(${HDF5_VL_HOME}/lib)
+#	message("hdf5 home path = ${HDF5_VL_HOME}")
+#	add_executable(h5bench_vl_stream_lib streaming/h5bench_vl_stream.c)
+#	target_compile_definitions(h5bench_vl_stream_lib PUBLIC -DDEV_VL)
+#	target_link_libraries(h5bench_vl_stream_lib h5bench_util ${HDF5_VL_HOME}/lib/libhdf5.a z)
+#	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
+#endif()
+
 # =================================================================
 
 # =========== Install binaries ===========
-install(TARGETS h5bench_vpicio h5bench_bdcatsio h5bench_exerciser h5bench_hdf5_iotest DESTINATION bin)
+install(TARGETS 
+	h5bench_vpicio 
+	h5bench_bdcatsio 
+	h5bench_exerciser 
+	h5bench_hdf5_iotest 
+	h5bench_vl_stream_hl
+	DESTINATION bin)
