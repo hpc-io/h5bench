@@ -127,9 +127,7 @@ Example run:
 
 ## The metadata stress test: h5bench_hdf5_iotest
 This is the same benchmark as it's originally found at https://github.com/HDFGroup/hdf5-iotest. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
-Example run:
-	
-
+Example run:	`mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini`
 
 
 ## Streaming operation benchmark: h5bench_vl_stream_hl
@@ -139,6 +137,6 @@ Note: This benchmark doesn't run in parallel mode.
 
 `./h5bench_vl_stream_hl write_file_path FIXED/VLEN num_ops`
 
-Example:
-	- ` ./h5bench_vl_stream_hl here.dat FIXED 1000`
-	- ` ./h5bench_vl_stream_hl here.dat VLEN 1000`
+Example runs:
+    - ` ./h5bench_vl_stream_hl here.dat FIXED 1000`
+    - ` ./h5bench_vl_stream_hl here.dat VLEN 1000`
