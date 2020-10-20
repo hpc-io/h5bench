@@ -362,9 +362,13 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
-    if(COMPRESS_INFO.USE_COMPRESS)printf("Parallel compressed: dim_1 = %lu, dim_2 = %lu\n", COMPRESS_INFO.chunk_dims[0], COMPRESS_INFO.chunk_dims[1]);
-    else
-        printf("compression not invoked.\n");
+    if(MY_RANK == 0){
+        if(COMPRESS_INFO.USE_COMPRESS)
+            printf("Parallel compressed: chunk_dim1 = %lu, chunk_dim2 = %lu\n", COMPRESS_INFO.chunk_dims[0], COMPRESS_INFO.chunk_dims[1]);
+        else
+            printf("compression not invoked.\n");
+    }
+
     dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
     dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
     dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);

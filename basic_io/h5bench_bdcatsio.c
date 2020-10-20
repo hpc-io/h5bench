@@ -343,6 +343,7 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->_dim_cnt = 2;
         params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
+        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
 
     } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
         params->access_pattern.pattern_read = CONTIG_3D;
@@ -352,9 +353,10 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
         params->dim_3 = atoi(argv[arg_idx + 3]);
+        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
 
     } else {
-        printf("Unsupported benchmark pattern: %s. Only SEQ/PART/RAND/2D/3D are supported.\n ", argv[arg_idx]);
+        printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
         bench_params_free(params);
         return NULL;
     }
