@@ -34,9 +34,10 @@ typedef enum read_pattern{
     CONTIG_3D
 }read_pattern;
 
-//For VPIC and BDCATS
+//For VPIC ONLY
 typedef struct bench_params{
     int isWrite;
+    int useCompress;
     union access_pattern{
         read_pattern pattern_read;
         write_pattern pattern_write;
@@ -55,6 +56,9 @@ typedef struct bench_params{
     unsigned long dim_1;
     unsigned long dim_2;
     unsigned long dim_3;
+    unsigned long chunk_dim_1;
+    unsigned long chunk_dim_2;
+    unsigned long chunk_dim_3;
 } bench_params;
 
 typedef struct data_md{

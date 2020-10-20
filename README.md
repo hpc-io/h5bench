@@ -60,7 +60,13 @@ DIM_1=1024
 DIM_2=2048
 DIM_3=64
 ```
-- Set VPIC parameters in a config file, see `basic_io/sample_cfg.cfg` as an example.
+- To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size.
+```
+COMPRESS=YES # to enable parallel compression(chunking)
+CHUNK_DIM_1=512 # chunk dimensions
+CHUNK_DIM_2=256
+CHUNK_DIM_3=1
+```
 
 - For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is an invalid setting.
 - For 1D benchmarks (CC/CI/IC/II), DIM_1 must be set to the total particle number, and the rest two dimensions must be set to 1.
@@ -127,6 +133,7 @@ Example run:
 
 ## The metadata stress test: h5bench_hdf5_iotest
 This is the same benchmark as it's originally found at https://github.com/HDFGroup/hdf5-iotest. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
+
 Example run:	`mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini`
 
 

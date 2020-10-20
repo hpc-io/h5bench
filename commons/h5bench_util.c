@@ -79,12 +79,10 @@ void free_contig_memory(data_contig_md* data){
 int _set_params(char* key, char* val, bench_params* params_in_out){
     if(!params_in_out)
         return 0;
-    (*params_in_out).isWrite = 1;
 
-    if(strcmp(key, "PATTERN") == 0){
+    if(strcmp(key, "PATTERN") == 0) {
         if (strcmp(val, "CC") == 0) {
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
-            //(*params_in_out).bench_pattern = CONTIG_CONTIG_1D; replaced with an union.
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "CC2D") == 0) {
@@ -115,12 +113,19 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             (*params_in_out).access_pattern.pattern_write = INTERLEAVED_CONTIG_2D;
             (*params_in_out).pattern_name = strdup("INTERLEAVED_CONTIG_2D");
             (*params_in_out)._dim_cnt = 2;
-        } else if(strcmp(val, "CC3D") == 0){
+        } else if(strcmp(val, "CC3D") == 0) {
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
             (*params_in_out)._dim_cnt = 3;
         }
-    } else if(strcmp(key, "TIME_STEPS_CNT") == 0){
+    } else if(strcmp(key, "COMPRESS")==0) {
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+            (*params_in_out).useCompress = 1;
+        }
+        else{
+            (*params_in_out).useCompress = 0;
+        }
+    } else if(strcmp(key, "TIME_STEPS_CNT") == 0) {
         int ts_cnt = atoi(val);
         if(ts_cnt >= 1)
             (*params_in_out).cnt_time_step = ts_cnt;
@@ -128,7 +133,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("TIME_STEPS_CNT must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "PARTICLE_CNT_M") == 0){
+    } else if(strcmp(key, "PARTICLE_CNT_M") == 0) {
         int ts_cnt = atoi(val);
         if(ts_cnt >= 1)
             (*params_in_out).cnt_particle_M = ts_cnt;
@@ -136,7 +141,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("PARTICLE_CNT_M must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "SLEEP_TIME") == 0){
+    } else if(strcmp(key, "SLEEP_TIME") == 0) {
         int sleep_time = atoi(val);
         if(sleep_time >= 0)
             (*params_in_out).sleep_time = sleep_time;
@@ -144,7 +149,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("SLEEP_TIME must be at least 0.\n");
             return -1;
         }
-    } else if(strcmp(key, "DIM_1") == 0){
+    } else if(strcmp(key, "DIM_1") == 0) {
         if((*params_in_out)._dim_cnt == 1)
             return 1;
         int dim = atoi(val);
@@ -153,7 +158,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
         else {
             printf("SLEEP_TIME must be at least 0.\n");
         }
-    } else if(strcmp(key, "DIM_2") == 0){
+    } else if(strcmp(key, "DIM_2") == 0) {
         if((*params_in_out)._dim_cnt == 1)
             return 1;
         int dim = atoi(val);
@@ -163,12 +168,41 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("DIM_2 must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "DIM_3") == 0){
+    } else if(strcmp(key, "DIM_3") == 0) {
         if((*params_in_out)._dim_cnt == 1 || (*params_in_out)._dim_cnt == 2)
             return 1;
         int dim = atoi(val);
         if(dim >= 1)
             (*params_in_out).dim_3 = dim;
+        else {
+            printf("DIM_3 must be at least 1.\n");
+            return -1;
+        }
+    } else if(strcmp(key, "CHUNK_DIM_1") == 0) {
+        if((*params_in_out)._dim_cnt == 1)
+            return 1;
+        int dim = atoi(val);
+        if(dim > 0)
+            (*params_in_out).chunk_dim_1 = dim;
+        else {
+            printf("SLEEP_TIME must be at least 0.\n");
+        }
+    } else if(strcmp(key, "CHUNK_DIM_2") == 0) {
+        if((*params_in_out)._dim_cnt == 1)
+            return 1;
+        int dim = atoi(val);
+        if(dim >= 1)
+            (*params_in_out).chunk_dim_2 = dim;
+        else {
+            printf("DIM_2 must be at least 1.\n");
+            return -1;
+        }
+    } else if(strcmp(key, "CHUNK_DIM_3") == 0) {
+        if((*params_in_out)._dim_cnt == 1 || (*params_in_out)._dim_cnt == 2)
+            return 1;
+        int dim = atoi(val);
+        if(dim >= 1)
+            (*params_in_out).chunk_dim_3 = dim;
         else {
             printf("DIM_3 must be at least 1.\n");
             return -1;
@@ -189,7 +223,8 @@ int read_config(const char* file_path, bench_params* params_out){
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
-
+    (*params_out).isWrite = 1;
+    (*params_out).useCompress = 0;//by default
     while(fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)){
         if(cfg_line[0] == '#'){ //skip comment lines
             continue;
@@ -232,6 +267,10 @@ void print_params(const bench_params* p){
         printf("    Dim_2 = %lu\n", p->dim_2);
         printf("    Dim_3 = %lu\n", p->dim_3);
     }
+    printf("useCompress = %d\n", p->useCompress);
+    printf("chunk_dim1 = %lu\n", p->chunk_dim_1);
+    printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
+    printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
     printf("=======================================\n");
 }
 

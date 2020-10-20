@@ -48,9 +48,17 @@
 #include <sys/time.h>
 #include "../commons/h5bench_util.h"
 
-herr_t ierr;
+#define DIM_MAX 3
 
+herr_t ierr;
+typedef struct compress_info{
+    int USE_COMPRESS;
+    hid_t dcpl_id;
+    unsigned long chunk_dims[DIM_MAX];
+}compress_info;
 // Global Variables and dimensions
+
+compress_info COMPRESS_INFO;  //Using parallel compressing: need to set chunk dimensions for dcpl.
 long long NUM_PARTICLES = 0, FILE_OFFSET;	// 8  meg particles per process
 long long TOTAL_PARTICLES;
 int NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
@@ -310,7 +318,6 @@ int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out,
     count[0] = dim_1;
     count[1] = dim_2;
 
-    DEBUG_PRINT
     *filespace_out = H5Screate_simple(2, file_dims, NULL);
     *memspace_out =  H5Screate_simple(2, mem_dims, NULL);
     if(MY_RANK == 0) printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n",
@@ -350,15 +357,22 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out,
 void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         data_contig_md* data_in){
     assert(data_in && data_in->x);
-
-    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t dcpl;
+    if(COMPRESS_INFO.USE_COMPRESS)
+        dcpl = COMPRESS_INFO.dcpl_id;
+    else
+        dcpl = H5P_DEFAULT;
+    if(COMPRESS_INFO.USE_COMPRESS)printf("Parallel compressed: dim_1 = %lu, dim_2 = %lu\n", COMPRESS_INFO.chunk_dims[0], COMPRESS_INFO.chunk_dims[1]);
+    else
+        printf("compression not invoked.\n");
+    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 
     ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x);
     ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y);
@@ -375,7 +389,13 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
 void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         data_contig_md* data_in){
     assert(data_in && data_in->x);
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t dcpl;
+    if(COMPRESS_INFO.USE_COMPRESS)
+        dcpl = COMPRESS_INFO.dcpl_id;
+    else
+        dcpl = H5P_DEFAULT;
+
+    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y);
@@ -392,14 +412,20 @@ void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespac
 void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in);
-    dset_ids[0] = H5Dcreate(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px",  PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py",  PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz",  PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t dcpl;
+    if(COMPRESS_INFO.USE_COMPRESS)
+        dcpl = COMPRESS_INFO.dcpl_id;
+    else
+        dcpl = H5P_DEFAULT;
+
+    dset_ids[0] = H5Dcreate(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[1] = H5Dcreate(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[2] = H5Dcreate(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[3] = H5Dcreate(loc, "px",  PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[4] = H5Dcreate(loc, "py",  PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[5] = H5Dcreate(loc, "pz",  PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[6] = H5Dcreate(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[7] = H5Dcreate(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
     ierr = H5Dwrite(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
@@ -416,8 +442,13 @@ void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespac
 void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
         particle* data_in) {
     assert(data_in);
+    hid_t dcpl;
+    if(COMPRESS_INFO.USE_COMPRESS)
+        dcpl = COMPRESS_INFO.dcpl_id;
+    else
+        dcpl = H5P_DEFAULT;
 
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);//should write all things in data_in
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
@@ -587,6 +618,24 @@ void set_globals(bench_params params){
     X_DIM = X_RAND;
     Y_DIM = Y_RAND;
     Z_DIM = Z_RAND;
+    COMPRESS_INFO.USE_COMPRESS = params.useCompress;
+    COMPRESS_INFO.chunk_dims[0] = params.chunk_dim_1;
+    COMPRESS_INFO.chunk_dims[1] = params.chunk_dim_2;
+    COMPRESS_INFO.chunk_dims[2] = params.chunk_dim_3;
+
+    if(COMPRESS_INFO.USE_COMPRESS) {//set DCPL
+        herr_t ret;
+        COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
+        assert(COMPRESS_INFO.dcpl_id > 0);
+
+        /* Set chunked layout and chunk dimensions */
+        ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
+        assert(ret >= 0);
+        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params._dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
+        assert(ret >= 0);
+        ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
+        assert(ret >= 0);
+    }
 }
 
 hid_t set_fapl(){
@@ -659,8 +708,7 @@ int main(int argc, char* argv[]) {
         print_params(&bench_params);
 
     set_globals(bench_params);
-    //printf("    Dim_1 = %d\n", bench_params.dim_1);
-    //printf("    Dim_2 = %d\n", bench_params.dim_2);
+
     NUM_TIMESTEPS = bench_params.cnt_time_step;
 
     if (MY_RANK == 0)
