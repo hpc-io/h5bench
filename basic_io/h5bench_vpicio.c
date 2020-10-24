@@ -47,7 +47,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include "../commons/h5bench_util.h"
-
+#include "../commons/async_adaptor.h"
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -369,23 +369,23 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
             printf("compression not invoked.\n");
     }
 
-    dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[3] = H5Dcreate_async(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[4] = H5Dcreate_async(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
 
-    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x);
-    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y);
-    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z);
-    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px);
-    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py);
-    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz);
-    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1);
-    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_2);
+    ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, 0);
+    ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, 0);
+    ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, 0);
+    ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px, 0);
+    ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py, 0);
+    ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, 0);
+    ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, 0);
+    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_2, 0);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -399,16 +399,16 @@ void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespac
     else
         dcpl = H5P_DEFAULT;
 
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
 
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id, data_in->px);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id, data_in->py);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id, data_in->pz);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id, data_in->id_1);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id, data_in->id_2);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id, data_in->px, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id, data_in->py, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id, data_in->pz, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id, data_in->id_1, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id, data_in->id_2, 0);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -422,23 +422,23 @@ void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespac
     else
         dcpl = H5P_DEFAULT;
 
-    dset_ids[0] = H5Dcreate(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px",  PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py",  PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz",  PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] = H5Dcreate_async(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[1] = H5Dcreate_async(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[2] = H5Dcreate_async(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[3] = H5Dcreate_async(loc, "px",  PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[4] = H5Dcreate_async(loc, "py",  PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[5] = H5Dcreate_async(loc, "pz",  PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[6] = H5Dcreate_async(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[7] = H5Dcreate_async(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
 
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
+    ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -452,8 +452,8 @@ void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t fil
     else
         dcpl = H5P_DEFAULT;
 
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);//should write all things in data_in
+    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, 0);//should write all things in data_in
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -546,7 +546,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         MPI_Barrier (MPI_COMM_WORLD);
-        grp_ids[i] = H5Gcreate2(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        grp_ids[i] = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, 0);
 
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
@@ -593,8 +593,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         }
 
         for (int j = 0; j < dset_cnt; j++)
-            H5Dclose(dset_ids[i][j]);
-        H5Gclose(grp_ids[i]);
+            H5Dclose_async(dset_ids[i][j], 0);
+        H5Gclose_async(grp_ids[i], 0);
 
         MPI_Barrier (MPI_COMM_WORLD);
         free(dset_ids[i]);
@@ -738,7 +738,7 @@ int main(int argc, char* argv[]) {
     set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN);
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
-    hid_t file_id = H5Fcreate(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
+    hid_t file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     H5Pclose(fapl);
 
     if (MY_RANK == 0)
@@ -763,7 +763,7 @@ int main(int argc, char* argv[]) {
         printf("Total running time = %lu ms\n", (t3 - t0) / 1000);
     }
 
-    H5Fclose(file_id);
+    H5Fclose_async(file_id, 0);
 
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();

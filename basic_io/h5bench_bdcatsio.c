@@ -45,7 +45,7 @@
 #include <string.h>
 #include <assert.h>
 #include "../commons/h5bench_util.h"
-
+#include "../commons/async_adaptor.h"
 // Global Variables and dimensions
 long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
@@ -78,52 +78,52 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned
 
     dset_id = H5Dopen2(loc, "x", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, 0);
     core_read_time += (get_time_usec() - start_read);
 
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "y", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "z", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "id_1", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "id_2", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "px", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "py", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     dset_id = H5Dopen2(loc, "pz", dapl);
     start_read = get_time_usec();
-    ierr = H5Dread(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, 0);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose(dset_id);
+    H5Dclose_async(dset_id, 0);
 
     if (rank == 0) printf ("  Read 8 variable completed\n");
 
@@ -212,11 +212,11 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
 hid_t get_filespace(hid_t file_id){
     char* grp_name = "/Timestep_0";
     char* ds_name = "px";
-    hid_t gid = H5Gopen(file_id, grp_name, H5P_DEFAULT);
+    hid_t gid = H5Gopen_async(file_id, grp_name, H5P_DEFAULT, 0);
     hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
     hid_t filespace = H5Dget_space(dsid);
-    H5Dclose(dsid);
-    H5Gclose(gid);
+    H5Dclose_async(dsid, 0);
+    H5Gclose_async(gid, 0);
     return filespace;
 }
 
@@ -262,14 +262,14 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     print_params(&params);
     for (int i = 0; i < nts; i++) {
         sprintf(grp_name, "Timestep_%d", i);
-        grp = H5Gopen(file_id, grp_name, gapl);
+        grp = H5Gopen_async(file_id, grp_name, gapl, 0);
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
         read_h5_data(MY_RANK, grp, filespace, memspace, raw_read_time_out);
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
             sleep(sleep_time);
         }
-        H5Gclose(grp);
+        H5Gclose_async(grp, 0);
         MPI_Barrier(MPI_COMM_WORLD);
     }
     *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
@@ -393,7 +393,7 @@ int main (int argc, char* argv[]){
     set_pl(&fapl, &gapl);
     DEBUG_PRINT
     hsize_t dims[64] = {0};
-    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    hid_t file_id = H5Fopen_async(file_name, H5F_ACC_RDONLY, fapl, 0);
     hid_t filespace = get_filespace(file_id);
     int dims_cnt = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;
@@ -468,7 +468,7 @@ int main (int argc, char* argv[]){
 
     H5Pclose(fapl);
     H5Pclose(gapl);
-    H5Fclose(file_id);
+    H5Fclose_async(file_id, 0);
 
     MPI_Barrier (MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
@@ -491,7 +491,7 @@ int main (int argc, char* argv[]){
 
 error:
     H5E_BEGIN_TRY {
-        H5Fclose(file_id);
+        H5Fclose_async(file_id, 0);
         H5Pclose(fapl);
     } H5E_END_TRY;
 

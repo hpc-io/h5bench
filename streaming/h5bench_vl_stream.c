@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <hdf5.h>
-//#include "H5DOpublic.h"
 
 #include "../commons/h5bench_util.h"
+#include "../commons/async_adaptor.h"
 
 #define ERROR_RETURN do{\
             printf("%s:L%d: failed.\n", __func__, __LINE__);\
@@ -50,7 +50,7 @@ int test_ds_append(int n_elem, int vlen){
     if(H5Pset_libver_bounds(fapl, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST) < 0)
         ERROR_RETURN;
 
-    if((fid = H5Fcreate(FILE_PATH, H5F_ACC_TRUNC, H5P_DEFAULT, fapl)) < 0)
+    if((fid = H5Fcreate_async(FILE_PATH, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0)) < 0)
         ERROR_RETURN;
 
     if(vlen == 1){
@@ -71,10 +71,10 @@ int test_ds_append(int n_elem, int vlen){
 
     /* Create the dataset */
     if(vlen != 1){
-        if((did = H5Dcreate2(fid, "my_test_dataset", H5T_NATIVE_INT, sid, H5P_DEFAULT, dcpl, H5P_DEFAULT)) < 0)
+        if((did = H5Dcreate_async(fid, "my_test_dataset", H5T_NATIVE_INT, sid, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0)) < 0)
             ERROR_RETURN;
     } else {//VLen
-        if((did = H5Dcreate2(fid, "my_test_dataset", filetype, sid, H5P_DEFAULT, dcpl, H5P_DEFAULT)) < 0)
+        if((did = H5Dcreate_async(fid, "my_test_dataset", filetype, sid, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0)) < 0)
             ERROR_RETURN;
     }
 
@@ -125,7 +125,7 @@ int test_ds_append(int n_elem, int vlen){
 	free(elem_type);
 	free(func_name);
     /* Closing */
-    if(H5Dclose(did) < 0)
+    if(H5Dclose_async(did, 0) < 0)
         ERROR_RETURN;
     if(H5Sclose(sid) < 0)
         ERROR_RETURN;
@@ -140,7 +140,7 @@ int test_ds_append(int n_elem, int vlen){
         ERROR_RETURN;
     if(H5Pclose(fapl) < 0)
         ERROR_RETURN;
-    if(H5Fclose(fid) < 0)
+    if(H5Fclose_async(fid, 0) < 0)
         ERROR_RETURN;
 
     printf("All test passed.\n");

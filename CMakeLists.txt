@@ -23,9 +23,13 @@ add_library(h5bench_util ${h5bench_util_src})
 # ===========  Build basic_io: vpic and bdcats ===========
 set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
+
 add_executable(h5bench_vpicio ${vpic_src})
+target_compile_definitions(h5bench_vpicio PUBLIC -DH5ES_WAIT_FOREVER)
 target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+
 add_executable(h5bench_bdcatsio ${bdcats_src})
+target_compile_definitions(h5bench_bdcatsio PUBLIC -DH5ES_WAIT_FOREVER)
 target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
@@ -49,6 +53,7 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
 message("============== Build without USE_DEV_VL ==============")
 add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
+target_compile_definitions(h5bench_vl_stream_hl PUBLIC -DH5ES_WAIT_FOREVER)
 target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5_hl hdf5 z)
 
 
