@@ -68,7 +68,7 @@ CHUNK_DIM_2=256
 CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 ```
 
-- For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is an invalid setting.
+- For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64 * 64 * 256 = 1,048,576 (1M); and 10 * 20 * 30 is an invalid setting.
 - For 1D benchmarks (CC/CI/IC/II), DIM_1 must be set to the total particle number, and the rest two dimensions must be set to 1.
 
 - No blank line and blank space are allowed.
