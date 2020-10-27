@@ -3,9 +3,14 @@ H5bench benchmark suite contains a list of applications that are used to measure
   
 # Build
 ## Build with local CMake
-#### Dependency and environment variable settings
-H5bench depends on MPI and HDF5. Assume you have installed or loaded MPI and parallel HDF5. Several environment variables to set:
+### Dependency and environment variable settings
+H5bench depends on MPI and parallel HDF5, here we assume you already have a working MPI. 
 
+#### Use system provided HDF5
+- `module load cray-hdf5-parallel` or load any parallel HDF5 provided on your system, and you are good to go.
+
+#### Use your own installed HDF5
+Make sure to unload any system provided version, and set an environment variable to specify the HDF5 install path:
 - **HDF5_HOME**: the location you installed HDF5. It should point to a path that look like below and contains include/, lib/ and bin/ subdirectories: /path_to_my_hdf5_build/hdf5
 
 ### Compile with CMake
