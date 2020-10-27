@@ -2,7 +2,7 @@
 H5bench benchmark suite contains a list of applications that are used to measure the I/O performance from various aspects.
   
 # Build
-## Build with local CMake
+## Build with local CMake (**recommended**)
 ### Dependency and environment variable settings
 H5bench depends on MPI and parallel HDF5, here we assume you already have a working MPI. 
 
@@ -11,7 +11,8 @@ H5bench depends on MPI and parallel HDF5, here we assume you already have a work
 
 #### Use your own installed HDF5
 Make sure to unload any system provided version, and set an environment variable to specify the HDF5 install path:
-- **HDF5_HOME**: the location you installed HDF5. It should point to a path that look like below and contains include/, lib/ and bin/ subdirectories: /path_to_my_hdf5_build/hdf5
+
+- **HDF5_HOME**: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories. 
 
 ### Compile with CMake
 Assume the repo is cloned and now you are in the source directory h5bench, run several simple steps:
@@ -26,7 +27,7 @@ Assume the repo is cloned and now you are in the source directory h5bench, run s
 
 And all the binaries will be built to the build/ directory.
 
-## Build with Spack
+## Build with Spack (experimental)
 Assuming you have installed Spack, and it will try to find and install dependencies for you.
 
 - Create a spack package:
