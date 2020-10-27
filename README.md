@@ -91,7 +91,7 @@ Always set these parameters in ascending order, and set unused dimensions to 1, 
 - Single process test:
     - `./h5bench_vpicio your_config_file output_file`
 
-- Parallel run:
+- Parallel run (replace mpirun with your system provided command, for example, srun on Cori/NERSC and jsrun on Summit/OLCF):
     - `mpirun -n 2 ./h5bench_vpicio your_config_file output_file`
 
 ## Basic read benchmark - h5bench_bdcatsio
@@ -107,7 +107,7 @@ Following read patterns are supported: Contiguous reading on 1D/2D/3D, Partial r
 Parameter $pattern can only be one of 5 below. The examples used below assume the file has 8M particles in total, and we use 2 MPI processes.
 
 -   **SEQ**: contiguously read through the whole 1D data file.
-    - Followed by $cnt_element_to_read per rank in 1024*1024.
+    - Followed by $cnt_element_to_read per rank in 1024 * 1024.
     - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time SEQ $M_particles_to_read`
     - Example run: `mpirun -n 2 ./h5bench_bdcatsio data_1d.h5 1 1 SEQ 8` 
 
@@ -178,13 +178,16 @@ DIM_3=64 # extra dimension take no effects.
 We modified this benchmark slightly so to be able to specify a file location that is writable. Except for the first argument $write_file_prefix, it's identical to the original one. Original README can be found here https://xgitlab.cels.anl.gov/ExaHDF5/BuildAndTest/-/blob/master/Exerciser/README.md
 
 Example run:
-    `mpirun -n 8 ./h5bench_exerciser $write_file_prefix -numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 --dimranks 8 4`
+
+   - `mpirun -n 8 ./h5bench_exerciser $write_file_prefix -numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 --dimranks 8 4`
 
 
 ## The metadata stress test: h5bench_hdf5_iotest
 This is the same benchmark as it's originally found at https://github.com/HDFGroup/hdf5-iotest. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
 
-Example run:    `mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini`
+Example run:
+
+   - `mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini`
 
 
 ## Streaming operation benchmark: h5bench_vl_stream_hl
@@ -195,5 +198,6 @@ Note: This benchmark doesn't run in parallel mode.
 `./h5bench_vl_stream_hl write_file_path FIXED/VLEN num_ops`
 
 Example runs:
+
     - ` ./h5bench_vl_stream_hl here.dat FIXED 1000`
     - ` ./h5bench_vl_stream_hl here.dat VLEN 1000`

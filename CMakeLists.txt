@@ -6,9 +6,10 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
 
 # Dependecy: HDF5
+set(HDF5_HOME $ENV{HDF5_HOME})
+set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
 message("Detected hdf5 version: ${HDF5_VERSION}")
-set(HDF5_HOME $ENV{HDF5_HOME})
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
