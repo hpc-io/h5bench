@@ -267,10 +267,13 @@ void print_params(const bench_params* p){
         printf("    Dim_2 = %lu\n", p->dim_2);
         printf("    Dim_3 = %lu\n", p->dim_3);
     }
-    printf("useCompress = %d\n", p->useCompress);
-    printf("chunk_dim1 = %lu\n", p->chunk_dim_1);
-    printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
-    printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
+    if(p->useCompress){
+        printf("useCompress = %d\n", p->useCompress);
+        printf("chunk_dim1 = %lu\n", p->chunk_dim_1);
+        printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
+        printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
+    }
+
     printf("=======================================\n");
 }
 

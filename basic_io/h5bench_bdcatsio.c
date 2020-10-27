@@ -129,12 +129,13 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned
 
     *read_time = core_read_time;
     H5Pclose(dapl);
-    print_data(3);
+    if(MY_RANK == 0)
+        print_data(3);
 }
 
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
-    DEBUG_PRINT
+
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
             (hsize_t *) &read_elem_cnt, NULL);
     return read_elem_cnt;
@@ -143,14 +144,12 @@ int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hi
 //returns actual rounded read element count.
 unsigned long _set_dataspace_strided_read(unsigned long read_elem_cnt, unsigned long stride, unsigned long block_size,
         hid_t* filespace_in, hid_t* memspace_out){
-    //unsigned long stride = 37;//stride must be greater than block size??
-    //unsigned long block_size = 29; //in element
     unsigned long block_cnt = read_elem_cnt/(block_size + stride);
     unsigned long actual_elem_cnt = block_cnt * block_size;
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
     DEBUG_PRINT
-
-    printf("read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
+    if(MY_RANK == 0)
+        printf("read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
 
     H5Sselect_hyperslab(*filespace_in,
             H5S_SELECT_SET,
@@ -259,7 +258,8 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     hid_t memspace;
 
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
-    print_params(&params);
+    if(MY_RANK == 0)
+        print_params(&params);
     for (int i = 0; i < nts; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen_async(file_id, grp_name, gapl, 0);
@@ -310,19 +310,21 @@ bench_params* args_set_params(int argc, char* argv[]){
     params->dim_3 = 1;
 
     if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
+        params->pattern_name = strdup("1D sequential read");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
-        params->pattern_name = strdup("1D sequential read");
-        params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read particles per rank
+        params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
+        params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
     } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
+        params->pattern_name = strdup("1D partial read");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
-        params->pattern_name = strdup("1D partial read");
-        params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read dim_1 particles per rank
+        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
+        params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
 
@@ -331,7 +333,8 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->pattern_name = strdup("1D strided read");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->access_pattern.pattern_read = STRIDED_1D;
-        params->cnt_actual_particles_M = atoi(argv[arg_idx + 1]);//to read particles per rank
+        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
+        params->cnt_actual_particles_M = params->cnt_particle_M;
         params->stride = atoi(argv[arg_idx + 2]);
         params->block_size = atoi(argv[arg_idx + 3]);
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
@@ -391,7 +394,7 @@ int main (int argc, char* argv[]){
 
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
-    DEBUG_PRINT
+
     hsize_t dims[64] = {0};
     hid_t file_id = H5Fopen_async(file_name, H5F_ACC_RDONLY, fapl, 0);
     hid_t filespace = get_filespace(file_id);
@@ -399,7 +402,7 @@ int main (int argc, char* argv[]){
     unsigned long total_particles = 1;
     if(dims_cnt > 0){
         for(int i = 0; i < dims_cnt; i++){
-            printf("dims[%d] = %llu\n", i, dims[i]);
+            printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
             total_particles *= dims[i];
         }
     } else {
@@ -408,8 +411,8 @@ int main (int argc, char* argv[]){
     }
 
     if(dims_cnt > 0){//1D
-        if(params->dim_1 > dims[0]){
-            printf("Failed: Required dimension(%lu) is greater than file dimension(%llu).\n", params->dim_1, dims[0]);
+        if(params->dim_1 > dims[0]/NUM_RANKS){
+            printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n", params->dim_1, dims[0]/NUM_RANKS);
             goto error;
         }
     }
