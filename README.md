@@ -1,21 +1,27 @@
 # H5bench: a Parallel I/O Benchmark suite for HDF5
-H5bench benchmark suite contains a list of applications that are used to measure the I/O performance from various aspects.
+H5bench is a suite of I/O benchmarks or kernels representing I/O patterns that are used in HDF5 applications. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
   
 # Build
 ## Build with local CMake (**recommended**)
 ### Dependency and environment variable settings
-H5bench depends on MPI and parallel HDF5, here we assume you already have a working MPI. 
+H5bench depends on MPI and Parallel HDF5. 
 
 #### Use system provided HDF5
-- `module load cray-hdf5-parallel` or load any parallel HDF5 provided on your system, and you are good to go.
+For instance on the Cori system at NERSC:
+
+- `module load cray-hdf5-parallel` 
+
+or 
+
+load any parallel HDF5 provided on your system, and you are good to go.
 
 #### Use your own installed HDF5
-Make sure to unload any system provided version, and set an environment variable to specify the HDF5 install path:
+Make sure to unload any system provided HDF5 version, and set an environment variable to specify the HDF5 install path:
 
 - **HDF5_HOME**: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories. 
 
 ### Compile with CMake
-Assume the repo is cloned and now you are in the source directory h5bench, run several simple steps:
+Assume that the repo is cloned and now you are in the source directory h5bench, run the following simple steps:
 
 - `mkdir build`
 
@@ -25,7 +31,7 @@ Assume the repo is cloned and now you are in the source directory h5bench, run s
 
 - `make`
 
-And all the binaries will be built to the build/ directory.
+And all the binaries will be built to the build / directory.
 
 ## Build with Spack (experimental)
 Assuming you have installed Spack, and it will try to find and install dependencies for you.
@@ -47,8 +53,9 @@ And now you can call the benchmark apps in your scripts directly.
   
 # Benchmark suite usage
 ## Basic I/O benchmark
-This benchmark contains two applications that are developed based on particle physics simulation software VPICIO (for write) and BDCATSIO (for read).
- 
+This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
+
+
 ## Basic write benchmark - h5bench_vpicio
 
 **To set parameters for the h5bench_vpicio:**
@@ -81,6 +88,8 @@ CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 
 
 #### Parameter PATTERN: the write pattern
+The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark.
+
 This defines the write access pattern, including CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D where C strands for “contiguous” and I stands for “interleaved” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, CI2D is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
   
 #### Parameter PARTICLE_CNT_M: the number of particles that each rank needs to process, in M (1024*1024)
