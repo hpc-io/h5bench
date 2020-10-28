@@ -41,7 +41,7 @@ data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2,
     buf_struct->py = (float*) malloc(particle_cnt * sizeof(float));
     buf_struct->pz = (float*) malloc(particle_cnt * sizeof(float));
     buf_struct->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    buf_struct->id_2 = (int*) malloc(particle_cnt * sizeof(int));
+    buf_struct->id_2 = (float*) malloc(particle_cnt * sizeof(float));
     return buf_struct;
 }
 
@@ -60,7 +60,7 @@ data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim
     buf_struct->py = (float*) malloc(num_particles * sizeof(float));
     buf_struct->pz = (float*) malloc(num_particles * sizeof(float));
     buf_struct->id_1 = (int*) malloc(num_particles * sizeof(int));
-    buf_struct->id_2 = (int*) malloc(num_particles * sizeof(int));
+    buf_struct->id_2 = (float*) malloc(num_particles * sizeof(float));
     return buf_struct;
 }
 

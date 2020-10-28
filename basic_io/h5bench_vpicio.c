@@ -84,7 +84,8 @@ int DEFER_METADATA_FLUSH = 1;
 typedef struct Particle{
     float x, y, z;
     float px, py, pz;
-    int id_1, id_2;
+    int id_1;
+    float id_2;
 }particle;
 
 float uniform_random_number(){
@@ -100,7 +101,7 @@ hid_t make_compound_type(){
     H5Tinsert(PARTICLE_COMPOUND_TYPE, "py", HOFFSET(particle, py), H5T_NATIVE_FLOAT);
     H5Tinsert(PARTICLE_COMPOUND_TYPE, "pz", HOFFSET(particle, pz), H5T_NATIVE_FLOAT);
     H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_1", HOFFSET(particle, id_1), H5T_NATIVE_INT);
-    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_2", HOFFSET(particle, id_2), H5T_NATIVE_INT);
+    H5Tinsert(PARTICLE_COMPOUND_TYPE, "id_2", HOFFSET(particle, id_2), H5T_NATIVE_FLOAT);
     return PARTICLE_COMPOUND_TYPE;
 }
 
@@ -126,8 +127,8 @@ hid_t* make_compound_type_separates(){
     PARTICLE_COMPOUND_TYPE_SEPARATES[6] = H5Tcreate(H5T_COMPOUND, sizeof(int));
     H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[6], "id_1", 0, H5T_NATIVE_INT);
 
-    PARTICLE_COMPOUND_TYPE_SEPARATES[7] = H5Tcreate(H5T_COMPOUND, sizeof(int));
-    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[7], "id_2", 0, H5T_NATIVE_INT);
+    PARTICLE_COMPOUND_TYPE_SEPARATES[7] = H5Tcreate(H5T_COMPOUND, sizeof(float));
+    H5Tinsert(PARTICLE_COMPOUND_TYPE_SEPARATES[7], "id_2", 0, H5T_NATIVE_FLOAT);
 
     return PARTICLE_COMPOUND_TYPE_SEPARATES;
 }
@@ -138,7 +139,7 @@ particle* prepare_data_interleaved(long particle_cnt, unsigned long *data_size_o
 
     for (long i = 0; i < particle_cnt; i++) {
         data_out[i].id_1 = i;
-        data_out[i].id_2 = 2 * i;
+        data_out[i].id_2 = (float)(2 * i);
         data_out[i].x = uniform_random_number() * X_DIM;
         data_out[i].y = uniform_random_number() * Y_DIM;
         data_out[i].z = ((float) i / particle_cnt) * Z_DIM;
@@ -163,19 +164,19 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
     data_out->py = (float*) malloc(particle_cnt * sizeof(float));
     data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
     data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
 
     for (long i = 0; i < particle_cnt; i++) {
         data_out->id_1[i] = i;
-        data_out->id_2[i] = i * 2;
+        data_out->id_2[i] = (float)(i * 2);
         data_out->x[i] =  uniform_random_number() * X_DIM;
         data_out->y[i] =  uniform_random_number() * Y_DIM;
         data_out->px[i] = uniform_random_number() * X_DIM;
         data_out->py[i] = uniform_random_number() * Y_DIM;
         data_out->z[i] =  ((float) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
-        data_out->pz[i] = ((float) data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
+        data_out->pz[i] = ( data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
-    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
+    *data_size_out = particle_cnt * (7 * sizeof(float) +  sizeof(int));
 
     return data_out;
 }
@@ -199,24 +200,24 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
     data_out->py = (float*) malloc(particle_cnt * sizeof(float));
     data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
     data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
 
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
         for(long i2 = 0; i2 < dim_2; i2++){
             data_out->x[idx] = uniform_random_number() * X_DIM;
             data_out->id_1[idx] = i1;
-            data_out->id_2[idx] = i1 * 2;
+            data_out->id_2[idx] = (float)(i1 * 2);
             data_out->x[idx] =  uniform_random_number() * X_DIM;
             data_out->y[idx] =  uniform_random_number() * Y_DIM;
             data_out->px[idx] = uniform_random_number() * X_DIM;
             data_out->py[idx] = uniform_random_number() * Y_DIM;
             data_out->z[idx] =  ((float) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-            data_out->pz[idx] = ((float) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+            data_out->pz[idx] = ( data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
             idx++;
         }
     }
-    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
+    *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
 }
@@ -241,25 +242,25 @@ data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2
     data_out->py = (float*) malloc(particle_cnt * sizeof(float));
     data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
     data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    data_out->id_2 = (int*) malloc(particle_cnt * sizeof(int));
+    data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
         for(long i2 = 0; i2 < dim_2; i2++){
             for(long i3 = 0; i3 < dim_3; i3++){
                 data_out->x[idx] = uniform_random_number() * X_DIM;
                 data_out->id_1[idx] = i1;
-                data_out->id_2[idx] = i1 * 2;
+                data_out->id_2[idx] = (float)(i1 * 2);
                 data_out->x[idx] =  uniform_random_number() * X_DIM;
                 data_out->y[idx] =  uniform_random_number() * Y_DIM;
                 data_out->px[idx] = uniform_random_number() * X_DIM;
                 data_out->py[idx] = uniform_random_number() * Y_DIM;
                 data_out->z[idx] =  ((float) data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-                data_out->pz[idx] = ((float) data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+                data_out->pz[idx] = (data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
                 idx++;
             }
         }
     }
-    *data_size_out = particle_cnt * (6 * sizeof(float) + 2 * sizeof(int));
+    *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
     return data_out;
 }
 
@@ -376,7 +377,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     dset_ids[4] = H5Dcreate_async(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
     dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
-    dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
+    dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, 0);
 
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, 0);
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, 0);
@@ -385,7 +386,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py, 0);
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, 0);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, 0);
-    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_2, 0);
+    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, 0);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }

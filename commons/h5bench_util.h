@@ -66,7 +66,8 @@ typedef struct data_md{
     long dim_1, dim_2, dim_3;
     float *x, *y, *z;
     float *px, *py, *pz;
-    int *id_1, *id_2;
+    int *id_1;
+    float *id_2;
 }data_contig_md;
 
 // Uniform random number
