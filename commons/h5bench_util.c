@@ -150,13 +150,11 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             return -1;
         }
     } else if(strcmp(key, "DIM_1") == 0) {
-        if((*params_in_out)._dim_cnt == 1)
-            return 1;
         int dim = atoi(val);
         if(dim > 0)
             (*params_in_out).dim_1 = dim;
         else {
-            printf("SLEEP_TIME must be at least 0.\n");
+            printf("DIM_1 must be at least 1\n");
         }
     } else if(strcmp(key, "DIM_2") == 0) {
         if((*params_in_out)._dim_cnt == 1)
@@ -165,7 +163,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
         if(dim >= 1)
             (*params_in_out).dim_2 = dim;
         else {
-            printf("DIM_2 must be at least 1.\n");
+            printf("DIM_2 must be at least 1\n");
             return -1;
         }
     } else if(strcmp(key, "DIM_3") == 0) {
@@ -175,17 +173,15 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
         if(dim >= 1)
             (*params_in_out).dim_3 = dim;
         else {
-            printf("DIM_3 must be at least 1.\n");
+            printf("DIM_3 must be at least 1\n");
             return -1;
         }
     } else if(strcmp(key, "CHUNK_DIM_1") == 0) {
-        if((*params_in_out)._dim_cnt == 1)
-            return 1;
         int dim = atoi(val);
         if(dim > 0)
             (*params_in_out).chunk_dim_1 = dim;
         else {
-            printf("SLEEP_TIME must be at least 0.\n");
+            printf("CHUNK_DIM_1 must be at least 1\n");
         }
     } else if(strcmp(key, "CHUNK_DIM_2") == 0) {
         if((*params_in_out)._dim_cnt == 1)
@@ -194,7 +190,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
         if(dim >= 1)
             (*params_in_out).chunk_dim_2 = dim;
         else {
-            printf("DIM_2 must be at least 1.\n");
+            printf("CHUNK_DIM_2 must be at least 1.\n");
             return -1;
         }
     } else if(strcmp(key, "CHUNK_DIM_3") == 0) {
@@ -204,7 +200,7 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
         if(dim >= 1)
             (*params_in_out).chunk_dim_3 = dim;
         else {
-            printf("DIM_3 must be at least 1.\n");
+            printf("CHUNK_DIM_3 must be at least 1.\n");
             return -1;
         }
     }
@@ -259,19 +255,20 @@ void print_params(const bench_params* p){
     printf("Time step number = %d\n", p->cnt_time_step);
     printf("Sleep time = %d\n", p->sleep_time);
     printf("Dimension cnt = %d\n", p->_dim_cnt);
-    if(p->_dim_cnt == 2){
-        printf("    Dim_1 = %lu\n", p->dim_1);
+    printf("    Dim_1 = %lu\n", p->dim_1);
+    if(p->_dim_cnt >= 2){
         printf("    Dim_2 = %lu\n", p->dim_2);
-    } else if(p->_dim_cnt == 3){
-        printf("    Dim_1 = %lu\n", p->dim_1);
-        printf("    Dim_2 = %lu\n", p->dim_2);
+    } else if(p->_dim_cnt >= 3){
         printf("    Dim_3 = %lu\n", p->dim_3);
     }
     if(p->useCompress){
         printf("useCompress = %d\n", p->useCompress);
         printf("chunk_dim1 = %lu\n", p->chunk_dim_1);
-        printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
-        printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
+        if(p->_dim_cnt >= 2){
+           printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
+        } else if(p->_dim_cnt >= 3){
+           printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
+        }
     }
 
     printf("=======================================\n");
