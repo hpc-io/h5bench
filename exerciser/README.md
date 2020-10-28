@@ -83,8 +83,9 @@ Using `NUM_ITERATIONS` samples for each local buffer size (`Bufsize`), the minim
 
 
 ## Building Exerciser
+H5bench's make process builds the h5bench_exerciser. 
 
-Given the path to a parallel HDF5 installation, building the Exerciser benchmark is straightforward. The following Makefile can be used as a reference:
+In case, Exerciser needs to be built separately, given the path to a parallel HDF5 installation, building it is straightforward. The following Makefile can be used as a reference:
 
 ```
 default: hdf5Exerciser
