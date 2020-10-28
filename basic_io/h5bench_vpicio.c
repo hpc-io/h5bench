@@ -74,7 +74,7 @@ const int Z_RAND = 3701;
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
-//Optimization glabals
+//Optimization globals
 int ALIGN = 1;
 unsigned long ALIGN_THRESHOLD = 16777216;
 unsigned long ALIGN_LEN = 16777216;
