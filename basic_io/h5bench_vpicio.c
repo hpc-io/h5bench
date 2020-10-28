@@ -719,7 +719,7 @@ int main(int argc, char* argv[]) {
     if (MY_RANK == 0)
         printf("Start benchmark: VPIC %s, Number of paritcles per rank: %lld M\n", bench_params.pattern_name, NUM_PARTICLES/(1024*1024));
 
-    unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (6 * sizeof(float) + 2 * sizeof(int));
+    unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
 
     MPI_Barrier(MPI_COMM_WORLD);
 
