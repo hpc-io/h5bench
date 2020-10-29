@@ -1,5 +1,5 @@
 # H5bench: a Parallel I/O Benchmark suite for HDF5
-H5bench is a suite of I/O benchmarks or kernels representing I/O patterns that are used in HDF5 applications. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
+H5bench is a suite of parallel I/O benchmarks or kernels representing I/O patterns that are commonly used in HDF5 applications on high performance computing systems. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
   
 # Build
 ## Build with local CMake (**recommended**)
