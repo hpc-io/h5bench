@@ -248,10 +248,10 @@ int read_config(const char* file_path, bench_params* params_out){
 
 void print_params(const bench_params* p){
     printf("=======================================\n");
-    printf("Benchmark parameters: \nFile: %s\n", p->data_file_path);
+    printf("Benchmark parameter list: \nFile: %s\n", p->data_file_path);
     printf("Benchmark pattern = %s\n", p->pattern_name);
     printf("Per rank particles number(in M) = %d M\n", p->cnt_particle_M);
-    printf("Per rank actual read number (in M) = %d M\n", p->cnt_actual_particles_M);
+    //printf("Per rank actual read number (in M) = %d M\n", p->cnt_actual_particles_M);
     printf("Time step number = %d\n", p->cnt_time_step);
     printf("Sleep time = %d\n", p->sleep_time);
     printf("Dimension cnt = %d\n", p->_dim_cnt);

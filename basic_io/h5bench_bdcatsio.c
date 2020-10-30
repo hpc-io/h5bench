@@ -129,8 +129,7 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned
 
     *read_time = core_read_time;
     H5Pclose(dapl);
-    if(MY_RANK == 0)
-        print_data(3);
+    //if(MY_RANK == 0) print_data(3); //print sample data
 }
 
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
@@ -147,9 +146,9 @@ unsigned long _set_dataspace_strided_read(unsigned long read_elem_cnt, unsigned 
     unsigned long block_cnt = read_elem_cnt/(block_size + stride);
     unsigned long actual_elem_cnt = block_cnt * block_size;
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
-    DEBUG_PRINT
+
     if(MY_RANK == 0)
-        printf("read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
+        printf("Stride parameters: read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
 
     H5Sselect_hyperslab(*filespace_in,
             H5S_SELECT_SET,
@@ -332,31 +331,32 @@ bench_params* args_set_params(int argc, char* argv[]){
     params->useCSV = 0;
     if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
         params->pattern_name = strdup("1D sequential read");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
         params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
         params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
-        int arg_csv = arg_idx + 2;
-        _fill_csv_args(params, argv, arg_idx + 2);
+        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
+            return NULL;
 
     } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
         params->pattern_name = strdup("1D partial read");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 1;
         params->access_pattern.pattern_read = CONTIG_1D;
         params->cnt_particle_M = atoi(argv[arg_idx + 1]);
         params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
-        _fill_csv_args(params, argv, arg_idx + 2);
+        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
+            return NULL;
 
     } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
         params->_dim_cnt = 1;
         params->pattern_name = strdup("1D strided read");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->access_pattern.pattern_read = STRIDED_1D;
         params->cnt_particle_M = atoi(argv[arg_idx + 1]);
         params->cnt_actual_particles_M = params->cnt_particle_M;
@@ -364,33 +364,36 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->block_size = atoi(argv[arg_idx + 3]);
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
-        _fill_csv_args(params, argv, arg_idx + 4);
+        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
+            return NULL;
 
     } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
         params->access_pattern.pattern_read = CONTIG_2D;
         params->pattern_name = strdup("CONTIG_2D");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 2;
         params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
         params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
 
-        _fill_csv_args(params, argv, arg_idx + 3);
+        if(_fill_csv_args(params, argv, arg_idx + 3) != 0)
+            return NULL;
 
     } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
         params->access_pattern.pattern_read = CONTIG_3D;
         params->pattern_name = strdup("CONTIG_3D");
-        printf("Read benchmark pattern = %s\n", params->pattern_name);
+        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
         params->_dim_cnt = 3;
         params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
         params->dim_3 = atoi(argv[arg_idx + 3]);
         params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
 
-        _fill_csv_args(params, argv, arg_idx + 4);
+        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
+            return NULL;
 
     } else {
-        printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
+        if(MY_RANK == 0) printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
         bench_params_free(params);
         return NULL;
     }
@@ -402,20 +405,26 @@ csv_handle CSV_HDL;
 
 int main (int argc, char* argv[]){
     MPI_Init(&argc,&argv);
-    if(argc < 3) {
-        printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
-        return 0;
-    }
-    int sleep_time;
-
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
+
+    if(argc < 3) {
+        if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
+        return 0;
+    }
+
+    int sleep_time;
     char *file_name = argv[1];; //strdup(params->data_file_path); //argv[1];
     bench_params* params = args_set_params(argc, argv);
+    if(!params){
+        if(MY_RANK == 0) printf("ERROR: Invalid parameters.\n");
+        return -1;
+    }
+
     NUM_TIMESTEPS = params->cnt_time_step;
 
     if (NUM_TIMESTEPS <= 0) {
-        printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
+        if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
 
@@ -435,29 +444,29 @@ int main (int argc, char* argv[]){
     unsigned long total_particles = 1;
     if(dims_cnt > 0){
         for(int i = 0; i < dims_cnt; i++){
-            printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
+            if(MY_RANK == 0) printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
             total_particles *= dims[i];
         }
     } else {
-        printf("Failed to read dimensions. \n");
+        if(MY_RANK == 0) printf("Failed to read dimensions. \n");
         return 0;
     }
 
     if(dims_cnt > 0){//1D
         if(params->dim_1 > dims[0]/NUM_RANKS){
-            printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n", params->dim_1, dims[0]/NUM_RANKS);
+            if(MY_RANK == 0) printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n", params->dim_1, dims[0]/NUM_RANKS);
             goto error;
         }
     }
     if(dims_cnt > 1){//2D
         if(params->dim_2 > dims[1]){
-            printf("Failed: Required dimension_2(%lu) is greater than file dimension(%llu).\n", params->dim_2, dims[1]);
+            if(MY_RANK == 0) printf("Failed: Required dimension_2(%lu) is greater than file dimension(%llu).\n", params->dim_2, dims[1]);
             goto error;
         }
     }
     if(dims_cnt > 2){//3D
         if(params->dim_2 > dims[1]){
-            printf("Failed: Required dimension_3(%lu) is greater than file dimension(%llu).\n", params->dim_3, dims[2]);
+            if(MY_RANK == 0) printf("Failed: Required dimension_3(%lu) is greater than file dimension(%llu).\n", params->dim_3, dims[2]);
             goto error;
         }
     }
@@ -467,7 +476,7 @@ int main (int argc, char* argv[]){
     unsigned long  read_elem_cnt = params->cnt_actual_particles_M * M_VAL;
 
     if(read_elem_cnt  > NUM_PARTICLES){
-        printf("read_elem_cnt_m <= num_particles must hold.\n");
+        if(MY_RANK == 0) printf("read_elem_cnt_m <= num_particles must hold.\n");
         return 0;
     }
 
@@ -489,7 +498,7 @@ int main (int argc, char* argv[]){
     unsigned long t1 = get_time_usec();
 
     if(file_id < 0) {
-        printf("Error with opening file [%s]!\n", file_name);
+        if(MY_RANK == 0) printf("Error with opening file [%s]!\n", file_name);
         goto done;
     }
 
@@ -508,23 +517,40 @@ int main (int argc, char* argv[]){
 
     MPI_Barrier (MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
+    free_contig_memory(BUF_STRUCT);
 
     if (MY_RANK == 0) {
-        printf("use_csv = %d\n", params->useCSV);
         printf("\n =================  Performance results  =================\n");
-        printf("Total sleep time %ds, total read size = %lu MB\n",
-                sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));
-        printf("RR: Raw read time = %lu ms, RR = %lu MB/sec \n",
-                raw_read_time / 1000, total_data_size / raw_read_time);
-        printf("Core metadata time = %lu ms\n",
-                (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000);
-        printf("OR (observed rate):  = %lu ms, OR = %lu MB/sec\n",
-                (t4 - t1)/1000 - (NUM_TIMESTEPS - 1) * 1000, total_data_size/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000));
-        printf("OCT(observed completion time) = %lu ms\n", (t4 - t0) / 1000);
-        printf("\n");
-    }
+        int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
+        unsigned long total_size_mb = NUM_RANKS * total_data_size/(1024*1024);
+        printf("Total sleep time %ds, total read size = %lu MB\n", total_sleep_time, total_size_mb);
 
-    free_contig_memory(BUF_STRUCT);
+        float rrt_s = (float)raw_read_time / (1000*1000);
+        unsigned long raw_rate_mbs = total_data_size / raw_read_time;
+        printf("RR: Raw read time = %.3f sec, RR = %lu MB/sec \n", rrt_s, raw_rate_mbs);
+
+        unsigned long meta_time_ms = (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
+        printf("Core metadata time = %lu ms\n", meta_time_ms);
+
+        unsigned long or_mbs = total_data_size/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
+        printf("OR (observed rate) = %lu MB/sec\n", or_mbs);
+
+        float oct_s = (float)(t4 - t0) / (1000*1000);
+        printf("OCT(observed completion time) = %.3f sec\n", oct_s);
+        printf("\n");
+
+        if(params->useCSV){
+            fprintf(params->csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
+            fprintf(params->csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
+            fprintf(params->csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
+            fprintf(params->csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
+            fprintf(params->csv_fs, "Raw_write_rate, %lu, MB/sec\n", raw_rate_mbs);
+            fprintf(params->csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
+            fprintf(params->csv_fs, "Observed_rate, %lu, MB/sec\n", or_mbs);
+            fprintf(params->csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
+            fclose(params->csv_fs);
+        }
+    }
 
 error:
     H5E_BEGIN_TRY {
