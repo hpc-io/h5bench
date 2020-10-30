@@ -118,6 +118,13 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
             (*params_in_out)._dim_cnt = 3;
         }
+    } else if(strcmp(key, "COLLECTIVE")==0){
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+            (*params_in_out).collective = 1;
+        }
+        else{
+            (*params_in_out).collective = 0;
+        }
     } else if(strcmp(key, "COMPRESS")==0) {
         if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
             (*params_in_out).useCompress = 1;
@@ -219,8 +226,12 @@ int read_config(const char* file_path, bench_params* params_out){
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
+
+    //default values
     (*params_out).isWrite = 1;
     (*params_out).useCompress = 0;//by default
+    (*params_out).collective = 0;
+
     while(fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)){
         if(cfg_line[0] == '#'){ //skip comment lines
             continue;

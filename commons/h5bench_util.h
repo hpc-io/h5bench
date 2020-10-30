@@ -47,6 +47,7 @@ typedef struct bench_params{
     //write_pattern bench_pattern;
     char* data_file_path;
     char* pattern_name;
+    int collective;//for write only
     int cnt_time_step;
     int cnt_particle_M;//total number per rank
     int cnt_actual_particles_M;// to read

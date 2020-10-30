@@ -67,6 +67,7 @@ Take `basic_io/sample_2d.cfg` as an example, it looks like below, and we will di
 # this is a comment
 # Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D
 PATTERN=CC2D
+COLLECTIVE=YES # Optional, specify to use collective operations instead of independent ones.
 PARTICLE_CNT_M=8
 TIME_STEPS_CNT=1
 SLEEP_TIME=1

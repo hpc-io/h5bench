@@ -649,14 +649,18 @@ hid_t set_fapl(){
     return fapl;
 }
 
-hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len){
+hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len, int collective){
     if(align != 0)
         H5Pset_alignment(fapl, threshold, alignment_len);
 
-    // Collective metadata
-    if(COLL_METADATA){
+    if(collective == 1){
+        if(MY_RANK == 0)
+            printf("Collective write: enabled.\n");
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
+    } else {
+        if(MY_RANK == 0)
+            printf("Collective write: disabled.\n");
     }
 
     // Defer metadata flush
@@ -757,7 +761,7 @@ int main(int argc, char* argv[]) {
     H5Pset_fapl_mpio(fapl, comm, info);
 
     int align = 0;
-    set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN);
+    set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.collective);
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
     hid_t file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
@@ -782,6 +786,10 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n Performance measured with %d ranks\n", NUM_RANKS);
+        if(params.collective == 1)
+            printf("CollectiveWrite: YES\n");
+        else
+            printf("CollectiveWrite: NO\n");
     }
 
     H5Fclose_async(file_id, 0);
@@ -811,6 +819,8 @@ int main(int argc, char* argv[]) {
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
+            if(params.collective == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
+            else fprintf(params.csv_fs, "CollectiveWrite, NO\n");
             fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
