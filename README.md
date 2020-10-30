@@ -62,7 +62,7 @@ This set of benchmarks contains an I/O kernel developed based on a particle phys
 **To set parameters for the h5bench_vpicio:**
 
 The h5bench_vpicio takes all parameters in a plain text config file. The content format is strict.
-Take `basic_io/sample_cc2d.cfg` as an example, it looks like below, and we will discus them one by one:
+Take `basic_io/sample_config/sample_cc2d.cfg` as an example, it looks like below, and we will discus them one by one:
 ```
 # this is a comment
 # Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D
@@ -152,7 +152,7 @@ Parameter $pattern can only be one of 5 below. The examples used below assume th
 ## Example combination runs of h5bench_vpicio and h5bench_bdcatsio 
 ### 1D array data
 - 1D array write: the file is generated with with 4 ranks, each rank write 8M elements. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_cc1d.cfg 1d_4ranks_8M.h5`
+    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_config/sample_cc1d.cfg 1d_4ranks_8M.h5`
 
 Config file:    
 ```
@@ -176,7 +176,7 @@ Some valid bdcats runs:
 
 ### Multi-dimensional array data 
 - Using 2D as the example, 3D cases are similar, the file is generated with with 4 ranks, each rank write 8M elements, organized in a 4096 * 2048 array, in total it forms a (4 * 4096) * 2048 2D array. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_cc2d.cfg 2d_4ranks_8M.h5`
+    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_config/sample_cc2d.cfg 2d_4ranks_8M.h5`
     
 Config file:
 ```

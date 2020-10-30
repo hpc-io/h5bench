@@ -343,6 +343,15 @@ int file_exist(const char* path){
     return 0;
 }
 
+
+/*  TODO:
+ *      - read lines from metadata_list_file, each presents an environment variable name.
+ *      - get val from getrnv(), write to fs.
+ * */
+int record_env_metadata(FILE* fs, const char* metadata_list_file){
+    return 0;
+}
+
 FILE* csv_init(const char* path){
     FILE* fs = fopen(path, "w+");
     if(!fs){
