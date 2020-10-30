@@ -117,6 +117,9 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
             (*params_in_out)._dim_cnt = 3;
+        } else {
+            printf("Unknown PATTERN: %s\n", val);
+            return -1;
         }
     } else if(strcmp(key, "COLLECTIVE")==0){
         if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
@@ -210,6 +213,9 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("CHUNK_DIM_3 must be at least 1.\n");
             return -1;
         }
+    } else {
+        printf("Unknown Parameter: %s\n", key);
+        return -1;
     }
     return 1;
 }

@@ -691,13 +691,12 @@ void print_usage(char *name) {
 
 int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
-
-    int sleep_time = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
+    int sleep_time = 0;
     if(MY_RANK == 0){
         if(argc != 3 && argc != 5){
             print_usage(argv[0]);
@@ -710,6 +709,8 @@ int main(int argc, char* argv[]) {
 
     char* cfg_file_path = argv[1];
     output_file = argv[2];
+    if (MY_RANK == 0)
+        printf("config file: %s, output data file: %s\n", argv[1], argv[2]);
 
     if(read_config(cfg_file_path, &params) < 0){
         if (MY_RANK == 0)
@@ -717,20 +718,23 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    params.useCSV = 0;
     int arg_idx_csv = 3;
-    if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
-        char* csv_path = argv[arg_idx_csv + 1];
-        if(csv_path){
-            FILE* csv_fs = csv_init(csv_path);
-            if(!csv_fs){
-                printf("Failed to create CSV file. \n");
+    if(argc ==5){
+        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
+            char* csv_path = argv[arg_idx_csv + 1];
+            if(csv_path){
+                FILE* csv_fs = csv_init(csv_path);
+                if(!csv_fs){
+                    printf("Failed to create CSV file. \n");
+                    return -1;
+                }
+                params.csv_fs = csv_fs;
+                params.useCSV = 1;
+            } else {
+                printf("CSV option is enabled but file path is not specified.\n");
                 return -1;
             }
-            params.csv_fs = csv_fs;
-            params.useCSV = 1;
-        } else {
-            printf("CSV option is enabled but file path is not specified.\n");
-            return -1;
         }
     }
 
@@ -771,11 +775,11 @@ int main(int argc, char* argv[]) {
         printf("Opened HDF5 file... \n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, total_data_size;
     int stat = _run_time_steps(params, file_id, &total_data_size, &raw_write_time);
+
     if(stat < 0){
         if (MY_RANK == 0)
             printf("=============== Benchmark failed. ===============\n");

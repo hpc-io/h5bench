@@ -62,12 +62,12 @@ This set of benchmarks contains an I/O kernel developed based on a particle phys
 **To set parameters for the h5bench_vpicio:**
 
 The h5bench_vpicio takes all parameters in a plain text config file. The content format is strict.
-Take `basic_io/sample_2d.cfg` as an example, it looks like below, and we will discus them one by one:
+Take `basic_io/sample_cc2d.cfg` as an example, it looks like below, and we will discus them one by one:
 ```
 # this is a comment
 # Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D
 PATTERN=CC2D
-COLLECTIVE=YES # Optional, specify to use collective operations instead of independent ones.
+COLLECTIVE=NO # Optional, specify to use independent or collective operations, if not set, it will be treated as NO.
 PARTICLE_CNT_M=8
 TIME_STEPS_CNT=1
 SLEEP_TIME=1
@@ -141,22 +141,22 @@ Parameter $pattern can only be one of 5 below. The examples used below assume th
 -   **2D**: contiguously read through the whole 2D data file.
     - Followed by $cnt_element_to_read $dim_1 $dim_2
     - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time 2D $dim_1 $dim_2` 
-    - Example run: ` mpirun -n 2 ./h5bench_bdcatsio data_2d.h5 1 1 2D 1024 2048` reads a 2D array with dimensionality of 1024 * 2048, dimensioanl values must no greater than that of the data file, in this case 4096 * 2048 (sample_2d.cfg).
+    - Example run: ` mpirun -n 2 ./h5bench_bdcatsio data_2d.h5 1 1 2D 1024 2048` reads a 2D array with dimensionality of 1024 * 2048, dimensioanl values must no greater than that of the data file, in this case 4096 * 2048 (sample_cc2d.cfg).
 
 -   **3D**: contiguously read through the whole 3D data file.
     - Followed by $dim_1 $dim_2 $dim_3
     - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time 3D $dim_1 $dim_2 $dim_3` 
-    - Example: `mpirun -n 2 ./h5bench_bdcatsio data_3d.h5 1 1 3D 512 256 32` reads a 3D array of elements with dimensionality of 512 * 256 * 32, dimensioanl values must no greater than that of the data file, in this case 1024 * 2048 * 64 (sample_3d.cfg).
+    - Example: `mpirun -n 2 ./h5bench_bdcatsio data_3d.h5 1 1 3D 512 256 32` reads a 3D array of elements with dimensionality of 512 * 256 * 32, dimensioanl values must no greater than that of the data file, in this case 1024 * 2048 * 64 (sample_cc3d.cfg).
 
 
 ## Example combination runs of h5bench_vpicio and h5bench_bdcatsio 
 ### 1D array data
 - 1D array write: the file is generated with with 4 ranks, each rank write 8M elements. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_1d.cfg 1d_4ranks_8M.h5`
+    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_cc1d.cfg 1d_4ranks_8M.h5`
 
 Config file:    
 ```
-# sample_1d.cfg 
+# sample_cc1d.cfg 
 PATTERN=CC
 PARTICLE_CNT_M=8
 TIME_STEPS_CNT=1
@@ -176,7 +176,7 @@ Some valid bdcats runs:
 
 ### Multi-dimensional array data 
 - Using 2D as the example, 3D cases are similar, the file is generated with with 4 ranks, each rank write 8M elements, organized in a 4096 * 2048 array, in total it forms a (4 * 4096) * 2048 2D array. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_2d.cfg 2d_4ranks_8M.h5`
+    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_cc2d.cfg 2d_4ranks_8M.h5`
     
 Config file:
 ```
