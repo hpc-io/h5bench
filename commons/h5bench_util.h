@@ -15,6 +15,7 @@
 #define G_VAL 1024 * 1024 * 1024
 #define  M_VAL 1024 * 1024
 #define  K_VAL 1024
+
 typedef enum write_pattern {
     CONTIG_CONTIG_1D,
     CONTIG_INTERLEAVED_1D,
@@ -34,10 +35,10 @@ typedef enum read_pattern{
     CONTIG_3D
 }read_pattern;
 
-//For VPIC ONLY
 typedef struct bench_params{
     int isWrite;
     int useCompress;
+    int useCSV;
     union access_pattern{
         read_pattern pattern_read;
         write_pattern pattern_write;
@@ -59,6 +60,7 @@ typedef struct bench_params{
     unsigned long chunk_dim_1;
     unsigned long chunk_dim_2;
     unsigned long chunk_dim_3;
+    FILE* csv_fs;
 } bench_params;
 
 typedef struct data_md{
@@ -69,6 +71,11 @@ typedef struct data_md{
     int *id_1;
     float *id_2;
 }data_contig_md;
+
+typedef struct csv_hanle{
+    int use_csv;
+    FILE* fs;
+}csv_handle;
 
 // Uniform random number
 float uniform_random_number();
@@ -88,4 +95,7 @@ void test_read_config(const char* file_path);
 
 int file_create_try(const char* path);
 int file_exist(const char* path);
+FILE* csv_init(const char* path);
+int csv_output_line(FILE* fs, char* name, char* val_str);
+
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

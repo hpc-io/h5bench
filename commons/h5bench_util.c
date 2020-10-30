@@ -307,12 +307,12 @@ void test_read_config(const char* file_path){
 }
 
 int file_create_try(const char* path){
-    FILE* f = fopen(path, "w+");
-    if(!f){
+    FILE* fs = fopen(path, "w+");
+    if(!fs){
         printf("Failed to create file: %s, Please check permission.\n", path);
         return -1;
     }
-
+    fclose(fs);
     return 0;
 }
 
@@ -322,5 +322,21 @@ int file_exist(const char* path){
         printf("Failed to open file: %s, Please check if the file exists.\n", path);
         return -1;
     }
+    fclose(f);
+    return 0;
+}
+
+FILE* csv_init(const char* path){
+    FILE* fs = fopen(path, "w+");
+    if(!fs){
+        printf("Failed to create file: %s, Please check permission.\n", path);
+        return NULL;
+    }
+    return fs;
+}
+
+int csv_output_line(FILE* fs, char* name, char* val_str){
+    fprintf(fs, "%s,", name);
+    fprintf(fs, " %s\n", val_str);
     return 0;
 }

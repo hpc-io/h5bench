@@ -291,7 +291,28 @@ void print_usage(char *name){
     printf("Usage: %s /path/to/file #timestep sleep_sec [# mega particles]\n", name);
 }
 
-//
+
+int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
+    if(argv[arg_idx_csv]){//CSV
+        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
+                char* csv_path = argv[arg_idx_csv + 1];
+                if(csv_path){
+                    FILE* csv_fs = csv_init(csv_path);
+                    if(!csv_fs){
+                        printf("Failed to create CSV file. \n");
+                        return -1;
+                    }
+                    params->csv_fs = csv_fs;
+                    params->useCSV = 1;
+                } else {
+                    printf("CSV option is enabled but file path is not specified.\n");
+                    return -1;
+                }
+            }
+    }
+    return 0;
+}
+
 bench_params* args_set_params(int argc, char* argv[]){
     bench_params* params = calloc(1, sizeof(bench_params));
     int arg_idx = 1;
@@ -308,7 +329,7 @@ bench_params* args_set_params(int argc, char* argv[]){
 
     params->dim_2 = 1;
     params->dim_3 = 1;
-
+    params->useCSV = 0;
     if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
         params->pattern_name = strdup("1D sequential read");
         printf("Read benchmark pattern = %s\n", params->pattern_name);
@@ -317,6 +338,9 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
         params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
+
+        int arg_csv = arg_idx + 2;
+        _fill_csv_args(params, argv, arg_idx + 2);
 
     } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
         params->pattern_name = strdup("1D partial read");
@@ -327,6 +351,7 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
+        _fill_csv_args(params, argv, arg_idx + 2);
 
     } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
         params->_dim_cnt = 1;
@@ -339,6 +364,8 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->block_size = atoi(argv[arg_idx + 3]);
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
 
+        _fill_csv_args(params, argv, arg_idx + 4);
+
     } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
         params->access_pattern.pattern_read = CONTIG_2D;
         params->pattern_name = strdup("CONTIG_2D");
@@ -347,6 +374,8 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->dim_1 = atoi(argv[arg_idx + 1]);
         params->dim_2 = atoi(argv[arg_idx + 2]);
         params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
+
+        _fill_csv_args(params, argv, arg_idx + 3);
 
     } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
         params->access_pattern.pattern_read = CONTIG_3D;
@@ -358,6 +387,8 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->dim_3 = atoi(argv[arg_idx + 3]);
         params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
 
+        _fill_csv_args(params, argv, arg_idx + 4);
+
     } else {
         printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
         bench_params_free(params);
@@ -366,6 +397,8 @@ bench_params* args_set_params(int argc, char* argv[]){
 
     return params;
 }
+
+csv_handle CSV_HDL;
 
 int main (int argc, char* argv[]){
     MPI_Init(&argc,&argv);
@@ -477,6 +510,7 @@ int main (int argc, char* argv[]){
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
+        printf("use_csv = %d\n", params->useCSV);
         printf("\n =================  Performance results  =================\n");
         printf("Total sleep time %ds, total read size = %lu MB\n",
                 sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));

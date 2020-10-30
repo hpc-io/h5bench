@@ -540,7 +540,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     }
 
     if(!data){
-        printf("Failed to generate data for writing, please check dimension settings in the config file.\n");
+        if (MY_RANK == 0)
+            printf("Failed to generate data for writing, please check dimension settings in the config file.\n");
         return -1;
     }
 
@@ -676,7 +677,8 @@ hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long
 
 void print_usage(char *name) {
     if(MY_RANK == 0){
-        printf("=============== Usage: %s /path_to_config_file /path_to_output_data_file =============== \n", name);
+        printf("=============== Usage: %s /path_to_config_file /path_to_output_data_file [CSV csv_file_path]=============== \n", name);
+        printf("- CSV is optional.\n");
         printf("- Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array\n");
         printf("- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number.\n");
         printf("- For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is invalid. \n");
@@ -684,29 +686,50 @@ void print_usage(char *name) {
 }
 
 int main(int argc, char* argv[]) {
-
-    if(argc != 3){
-        print_usage(argv[0]);
-        return 0;
-    }
-
     MPI_Init(&argc, &argv);
+
     int sleep_time = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
+    if(MY_RANK == 0){
+        printf("argc = %d\n", argc);
+        printf("argv[3] = %s\n", argv[3]);
+        if(argc != 3 && argc != 5){
+            print_usage(argv[0]);
+            return 0;
+        }
+    }
+
     char *output_file;
     bench_params bench_params;
-
 
     char* cfg_file_path = argv[1];
     output_file = argv[2];
 
     if(read_config(cfg_file_path, &bench_params) < 0){
-        printf("Config file read failed. check path: %s\n", cfg_file_path);
+        if (MY_RANK == 0)
+            printf("Config file read failed. check path: %s\n", cfg_file_path);
         return 0;
+    }
+
+    int arg_idx_csv = 3;
+    if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
+        char* csv_path = argv[arg_idx_csv + 1];
+        if(csv_path){
+            FILE* csv_fs = csv_init(csv_path);
+            if(!csv_fs){
+                printf("Failed to create CSV file. \n");
+                return -1;
+            }
+            bench_params.csv_fs = csv_fs;
+            bench_params.useCSV = 1;
+        } else {
+            printf("CSV option is enabled but file path is not specified.\n");
+            return -1;
+        }
     }
 
     if(MY_RANK == 0)
@@ -761,7 +784,6 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n Performance measured with %d ranks\n", NUM_RANKS);
-        printf("Total running time = %lu ms\n", (t3 - t0) / 1000);
     }
 
     H5Fclose_async(file_id, 0);
@@ -771,14 +793,34 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        printf("Total sleep time %ds, total write size = %lu MB\n", sleep_time * (NUM_TIMESTEPS - 1), NUM_RANKS * total_data_size/(1024*1024));
-        printf("RR: Raw write time = %lu ms, RR = %lu MB/sec \n", raw_write_time / 1000,
-                total_data_size / raw_write_time);
-        printf("Core metadata time = %lu ms\n",
-                (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000);
-        printf("OR (observed rate):  = %lu ms, OR = %lu MB/sec\n", (t4 - t1) / 1000 - (NUM_TIMESTEPS - 1) * 1000,
-                total_data_size / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000));
-        printf("OCT(observed completion time) = %lu ms\n", (t4 - t0) / 1000);
+        int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
+        unsigned long total_size_mb = NUM_RANKS * total_data_size/(1024*1024);
+        printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
+
+        float rwt_s = (float)raw_write_time / (1000*1000);
+        unsigned long raw_rate_mbs = total_data_size / raw_write_time;
+        printf("RR: Raw write time = %.3f s, RR = %lu MB/sec \n", rwt_s, raw_rate_mbs);
+
+        unsigned long meta_time_ms = (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000;
+        printf("Core metadata time = %lu ms\n", meta_time_ms);
+
+        unsigned long or_mbs = total_data_size / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000);
+        printf("OR (observed rate) = %lu MB/sec\n", or_mbs);
+
+        float oct_s = (float)(t4 - t0) / (1000*1000);
+        printf("OCT(observed completion time) = %.3f sec\n", oct_s);
+
+        if(bench_params.useCSV){
+            fprintf(bench_params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);//ranks
+            fprintf(bench_params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
+            fprintf(bench_params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
+            fprintf(bench_params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
+            fprintf(bench_params.csv_fs, "Raw_write_rate, %lu, MB/sec\n", raw_rate_mbs);
+            fprintf(bench_params.csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
+            fprintf(bench_params.csv_fs, "Observed_rate, %lu, MB/sec\n", or_mbs);
+            fprintf(bench_params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
+            fclose(bench_params.csv_fs);
+        }
         printf("\n");
     }
 
