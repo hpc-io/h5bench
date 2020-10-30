@@ -55,6 +55,7 @@ And now you can call the benchmark apps in your scripts directly.
 ## Basic I/O benchmark
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
+- Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
 
 ## Basic write benchmark - h5bench_vpicio
 
