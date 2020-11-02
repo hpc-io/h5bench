@@ -348,21 +348,74 @@ int file_exist(const char* path){
  *      - read lines from metadata_list_file, each presents an environment variable name.
  *      - get val from getrnv(), write to fs.
  * */
+
+
 int record_env_metadata(FILE* fs, const char* metadata_list_file){
+    //read list file line, use each line as a key to search env
+    if(!fs)
+        return -1;
+    FILE* lfs = fopen(metadata_list_file, "r");
+    if(!lfs){
+        printf("Can not open metadata list file: %s\n", metadata_list_file);
+        return -1;
+    }
+
+    fprintf(fs, "======================= Metadata =====================\n");
+
+    char line[10 * CFG_LINE_LEN_MAX];//some env val could be very large, such as PATH
+    while(fgets(line, CFG_LINE_LEN_MAX, lfs)){
+        if(line[0] == '#') //skip comment lines
+            continue;
+        if(line[0]=='\n')
+            continue;
+
+        if(line[strlen(line) - 1] == '\n'){
+            line[strlen(line) - 1] = 0;
+        }
+
+        char* val = getenv(line);
+        //printf("%s = %s\n", line, val);
+        fprintf(fs, "%s = %s\n", line, val);
+
+        if(!val){//null
+            printf("    %s not set.\n", line);
+            continue;
+        }
+    }
+
+    fprintf(fs, "======================= Metadata end ====================\n");
+    fclose(lfs);
     return 0;
 }
 
-FILE* csv_init(const char* path){
-    FILE* fs = fopen(path, "w+");
-    if(!fs){
-        printf("Failed to create file: %s, Please check permission.\n", path);
+FILE* csv_init(const char* csv_path, const char* metadata_list_file) {//, const char* metadata_list_file: should be optional.
+    FILE* fs = fopen(csv_path, "w+");
+
+    if(!fs) {
+        printf("Failed to create file: %s, Please check permission.\n", csv_path);
         return NULL;
     }
+
+    if (metadata_list_file) {
+        if (record_env_metadata(fs, metadata_list_file) < 0)
+            return NULL;
+    }
+
     return fs;
 }
 
 int csv_output_line(FILE* fs, char* name, char* val_str){
     fprintf(fs, "%s,", name);
     fprintf(fs, " %s\n", val_str);
+    return 0;
+}
+
+int argv_print(int argc, char* argv[]){
+    if(argc < 1)
+        return -1;
+    printf("%d arguments provided.\n", argc);
+    for(int i = 0; i < argc; i++){
+        printf("idx = %d, argv = %s\n", i, argv[i]);
+    }
     return 0;
 }

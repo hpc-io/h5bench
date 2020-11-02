@@ -698,7 +698,7 @@ int main(int argc, char* argv[]) {
 
     int sleep_time = 0;
     if(MY_RANK == 0){
-        if(argc != 3 && argc != 5){
+        if(argc != 3 && argc != 5 && argc != 7){
             print_usage(argv[0]);
             return 0;
         }
@@ -720,11 +720,22 @@ int main(int argc, char* argv[]) {
 
     params.useCSV = 0;
     int arg_idx_csv = 3;
-    if(argc ==5){
+    if(argc >4){
         if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
             char* csv_path = argv[arg_idx_csv + 1];
+            char* metadata_list = NULL;
+            if(argv[arg_idx_csv + 2]){
+                if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
+                    if(!argv[arg_idx_csv + 3]){
+                        printf("META is requested but metadata lit file is not specified.\n");
+                        return -1;
+                    }
+                    metadata_list = argv[arg_idx_csv + 3];
+                }
+            }
+
             if(csv_path){
-                FILE* csv_fs = csv_init(csv_path);
+                FILE* csv_fs = csv_init(csv_path, metadata_list);
                 if(!csv_fs){
                     printf("Failed to create CSV file. \n");
                     return -1;

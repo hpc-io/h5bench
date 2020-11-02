@@ -57,6 +57,8 @@ This set of benchmarks contains an I/O kernel developed based on a particle phys
 
 - Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
 
+- **Use this only when you select to use the above CSV option**: If you want to collect running metadata, add `META metadata_list_file` after the two CSV arguments. The metadata_list_file contains a list of envaronment variable names that you want to capture, such as LSB_JOBID for the systems that run LSB scheduler, or SLURM_JOB_ID for Slurm.
+
 ## Basic write benchmark - h5bench_vpicio
 
 **To set parameters for the h5bench_vpicio:**

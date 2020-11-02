@@ -8,7 +8,7 @@
 #ifndef COMMONS_H5BENCH_UTIL_H_
 #define COMMONS_H5BENCH_UTIL_H_
 
-#define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__);
+#define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__); fflush(stdout);
 //Maximal line length of the config file
 #define  CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
@@ -96,7 +96,9 @@ void test_read_config(const char* file_path);
 
 int file_create_try(const char* path);
 int file_exist(const char* path);
-FILE* csv_init(const char* path);
+FILE* csv_init(const char* csv_path, const char* metadata_list_file);
 int csv_output_line(FILE* fs, char* name, char* val_str);
+int record_env_metadata(FILE* fs, const char* metadata_list_file);//set metadata_list_file to NULL if you don't need metadata.
 
+int argv_print(int argc, char* argv[]);
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

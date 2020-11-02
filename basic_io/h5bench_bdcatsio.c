@@ -200,7 +200,7 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
     file_range[1] = dim_2;
     file_range[2] = dim_3;
 
-    DEBUG_PRINT
+
     *memspace_out =  H5Screate_simple(3, mem_dims, NULL);
 
     H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
@@ -295,8 +295,19 @@ int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
     if(argv[arg_idx_csv]){//CSV
         if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
                 char* csv_path = argv[arg_idx_csv + 1];
+                char* metadata_list = NULL;
+                if(argv[arg_idx_csv + 2]){
+                    if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
+                        if(!argv[arg_idx_csv + 3]){
+                            printf("META is requested but metadata lit file is not specified.\n");
+                            return -1;
+                        }
+                        metadata_list = argv[arg_idx_csv + 3];
+                    }
+                }
                 if(csv_path){
-                    FILE* csv_fs = csv_init(csv_path);
+                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list);
+                    FILE* csv_fs = csv_init(csv_path, metadata_list);
                     if(!csv_fs){
                         printf("Failed to create CSV file. \n");
                         return -1;
@@ -337,7 +348,6 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
         params->cnt_actual_particles_M = params->cnt_particle_M;
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-
         if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
             return NULL;
 
@@ -408,14 +418,20 @@ int main (int argc, char* argv[]){
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
 
-    if(argc < 3) {
-        if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
-        return 0;
-    }
+//    if (MY_RANK == 0) {
+//        if (argc != 3 && argc != 5 && argc != 7) {
+//            if (MY_RANK == 0)
+//                printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
+//            return 0;
+//        }
+//    }
+
+    argv_print(argc, argv);
 
     int sleep_time;
-    char *file_name = argv[1];; //strdup(params->data_file_path); //argv[1];
+    char *file_name = argv[1]; //strdup(params->data_file_path); //argv[1];
     bench_params* params = args_set_params(argc, argv);
+
     if(!params){
         if(MY_RANK == 0) printf("ERROR: Invalid parameters.\n");
         return -1;
