@@ -293,9 +293,12 @@ void data_free(write_pattern mode, void* data){
     }
 }
 
-void set_dspace_plist(hid_t* plist_id_out){
+void set_dspace_plist(hid_t* plist_id_out, int data_collective){
     *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    if(data_collective == 1)
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    else
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
 
 int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out){
@@ -474,7 +477,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     void* data = NULL;
     unsigned long data_size;
     hid_t plist_id, filespace, memspace;
-    set_dspace_plist(&plist_id);
+    set_dspace_plist(&plist_id, params.data_coll);
 
     make_compound_type_separates();
     make_compound_type();
@@ -649,11 +652,11 @@ hid_t set_fapl(){
     return fapl;
 }
 
-hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len, int collective){
+hid_t set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len, int meta_collective){
     if(align != 0)
         H5Pset_alignment(fapl, threshold, alignment_len);
 
-    if(collective == 1){
+    if(meta_collective == 1){
         if(MY_RANK == 0)
             printf("Collective write: enabled.\n");
         H5Pset_all_coll_metadata_ops(fapl, 1);
@@ -776,7 +779,7 @@ int main(int argc, char* argv[]) {
     H5Pset_fapl_mpio(fapl, comm, info);
 
     int align = 0;
-    set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.collective);
+    set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
     hid_t file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
@@ -801,7 +804,7 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n Performance measured with %d ranks\n", NUM_RANKS);
-        if(params.collective == 1)
+        if(params.meta_coll == 1)
             printf("CollectiveWrite: YES\n");
         else
             printf("CollectiveWrite: NO\n");
@@ -834,7 +837,7 @@ int main(int argc, char* argv[]) {
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            if(params.collective == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
+            if(params.meta_coll == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else fprintf(params.csv_fs, "CollectiveWrite, NO\n");
             fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);

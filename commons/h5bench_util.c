@@ -121,12 +121,19 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("Unknown PATTERN: %s\n", val);
             return -1;
         }
-    } else if(strcmp(key, "COLLECTIVE")==0){
+    } else if(strcmp(key, "META_COLL")==0){
         if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
-            (*params_in_out).collective = 1;
+            (*params_in_out).meta_coll = 1;
         }
         else{
-            (*params_in_out).collective = 0;
+            (*params_in_out).meta_coll = 0;
+        }
+    } else if (strcmp(key, "DATA_COLL")==0) {
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+            (*params_in_out).data_coll = 1;
+        }
+        else{
+            (*params_in_out).data_coll = 0;
         }
     } else if(strcmp(key, "COMPRESS")==0) {
         if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
@@ -228,7 +235,8 @@ int read_config(const char* file_path, bench_params* params_out){
     (*params_out).data_file_path = strdup(file_path);
     (*params_out).isWrite = 1;
     (*params_out).cnt_actual_particles_M = 0;
-
+    (*params_out).meta_coll = 0;
+    (*params_out).data_coll = 0;
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
@@ -236,7 +244,7 @@ int read_config(const char* file_path, bench_params* params_out){
     //default values
     (*params_out).isWrite = 1;
     (*params_out).useCompress = 0;//by default
-    (*params_out).collective = 0;
+    (*params_out).meta_coll = 0;
 
     while(fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)){
         if(cfg_line[0] == '#'){ //skip comment lines
@@ -271,6 +279,16 @@ void print_params(const bench_params* p){
     //printf("Per rank actual read number (in M) = %d M\n", p->cnt_actual_particles_M);
     printf("Time step number = %d\n", p->cnt_time_step);
     printf("Sleep time = %d\n", p->sleep_time);
+
+    if(p->meta_coll == 1)
+        printf("Metadata collective ops: YES.\n");
+    else
+        printf("Metadata collective ops: NO.\n");
+    if(p->data_coll == 1)
+        printf("Data collective ops: YES.\n");
+    else
+        printf("Data collective ops: NO.\n");
+
     printf("Dimension cnt = %d\n", p->_dim_cnt);
     printf("    Dim_1 = %lu\n", p->dim_1);
     if(p->_dim_cnt >= 2){

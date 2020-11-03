@@ -69,7 +69,8 @@ Take `basic_io/sample_config/sample_cc2d.cfg` as an example, it looks like below
 # this is a comment
 # Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D
 PATTERN=CC2D
-COLLECTIVE=NO # Optional, specify to use independent or collective operations, if not set, it will be treated as NO.
+DATA_COLL=NO # Optional, specify to use independent or collective data operations, if not set, it will be treated as NO.
+META_COLL=NO # Optional, specify to use independent or collective metadata, NO for default.
 PARTICLE_CNT_M=8
 TIME_STEPS_CNT=1
 SLEEP_TIME=1
@@ -101,6 +102,9 @@ This number and the three dimension parameters (DIM_1, DIM_2, and DIM_3) must be
   
 #### Parameters TIME_STEPS_CNT and SLEEP_TIME: the number of iterations
 In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $SLEEP_TIME seconds to emulate the application computation.
+
+#### Parameters DATA_COLL and META_COLL: optional lines for collective operations.
+These are optional, set to "YES" to collective operations on data and metadata respectively, otherwise and default (not set) cases independent.
 
 #### Parameters DIM_1, DIM_2, and DIM_3: the dimensionality of the source data
 Always set these parameters in ascending order, and set unused dimensions to 1, and remember that PARTICLE_CNT_M * (1024 * 1024) == DIM_1 * DIM_2 * DIM_3 must hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array.
