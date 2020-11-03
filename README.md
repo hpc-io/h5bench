@@ -113,6 +113,13 @@ Always set these parameters in ascending order, and set unused dimensions to 1, 
 - Parallel run (replace mpirun with your system provided command, for example, srun on Cori/NERSC and jsrun on Summit/OLCF):
     - `mpirun -n 2 ./h5bench_vpicio your_config_file output_file`
     - `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` will also generate a CSV file that contains performance data and job metadata.
+        - A sample metadata list file for systems runing Slurm can be found in metalist_cori.txt, looks like this:
+        ```
+        SLURM_PROCID
+        SLURM_JOB_GID
+        SLURM_CPU_BIND
+        SLURMD_NODENAME
+        ```
 
 ## Basic read benchmark - h5bench_bdcatsio
 
