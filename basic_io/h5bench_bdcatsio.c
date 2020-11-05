@@ -271,7 +271,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         H5Gclose_async(grp, 0);
         MPI_Barrier(MPI_COMM_WORLD);
     }
-    *total_data_size_out = NUM_RANKS * NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
+    *total_data_size_out = NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
     return 0;
