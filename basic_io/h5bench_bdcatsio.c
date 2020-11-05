@@ -540,8 +540,8 @@ int main (int argc, char* argv[]){
         unsigned long meta_time_ms = (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
-        unsigned long or_mbs = total_data_size/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
-        printf("OR (observed rate) = %lu MB/sec\n", or_mbs);
+        double or_mbs = (float)total_data_size/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
+        printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT(observed completion time) = %.3f sec\n", oct_s);
@@ -550,11 +550,11 @@ int main (int argc, char* argv[]){
         if(params->useCSV){
             fprintf(params->csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             fprintf(params->csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
-            fprintf(params->csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
+            fprintf(params->csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
             fprintf(params->csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
-            fprintf(params->csv_fs, "Raw_write_rate, %lu, MB/sec\n", raw_rate_mbs);
+            fprintf(params->csv_fs, "Raw_read_rate, %lu, MB/sec\n", raw_rate_mbs);
             fprintf(params->csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
-            fprintf(params->csv_fs, "Observed_rate, %lu, MB/sec\n", or_mbs);
+            fprintf(params->csv_fs, "Observed_rate, %.3f, MB/sec\n", or_mbs);
             fprintf(params->csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose(params->csv_fs);
         }
