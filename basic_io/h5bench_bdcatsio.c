@@ -62,7 +62,7 @@ data_contig_md* BUF_STRUCT;
 void print_data(int n) {
     int i;
     for (i = 0; i < n; i++)
-        printf("sample data: %f %f %f %d %d %f %f %f\n",
+        printf("sample data: %f %f %f %d %f %f %f %f\n",
             BUF_STRUCT->x[i], BUF_STRUCT->y[i], BUF_STRUCT->z[i],
             BUF_STRUCT->id_1[i], BUF_STRUCT->id_2[i],
             BUF_STRUCT->px[i], BUF_STRUCT->py[i], BUF_STRUCT->pz[i]);

@@ -45,11 +45,11 @@ static hid_t H5Acreate_async(hid_t loc_id, const char *attr_name, hid_t type_id,
 
 static hid_t H5Acreate_by_name_async(hid_t loc_id, const char *obj_name, const char *attr_name, hid_t type_id,
         hid_t space_id, hid_t acpl_id, hid_t aapl_id, hid_t lapl_id, hid_t es_id) {
-    return H5Acreate_by_name(loc_id, *obj_name, *attr_name, type_id, space_id, acpl_id, aapl_id, lapl_id);
+    return H5Acreate_by_name(loc_id, obj_name, attr_name, type_id, space_id, acpl_id, aapl_id, lapl_id);
 }
 
 static hid_t H5Aopen_async(hid_t obj_id, const char *attr_name, hid_t aapl_id, hid_t es_id) {
-    return H5Aopen(obj_id, *attr_name, aapl_id);
+    return H5Aopen(obj_id, attr_name, aapl_id);
 }
 
 static hid_t H5Aopen_by_name_async(hid_t loc_id, const char *obj_name, const char *attr_name, hid_t aapl_id,
