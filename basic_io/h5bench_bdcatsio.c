@@ -418,15 +418,7 @@ int main (int argc, char* argv[]){
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
 
-//    if (MY_RANK == 0) {
-//        if (argc != 3 && argc != 5 && argc != 7) {
-//            if (MY_RANK == 0)
-//                printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
-//            return 0;
-//        }
-//    }
-
-    argv_print(argc, argv);
+    //argv_print(argc, argv);
 
     int sleep_time;
     char *file_name = argv[1]; //strdup(params->data_file_path); //argv[1];
