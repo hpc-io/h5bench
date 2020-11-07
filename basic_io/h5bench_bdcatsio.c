@@ -540,7 +540,7 @@ int main (int argc, char* argv[]){
         unsigned long meta_time_ms = (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
-        double or_mbs = (float)total_size_mb/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
+        double or_mbs = (float)total_size_mb/((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));
         printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
@@ -552,7 +552,7 @@ int main (int argc, char* argv[]){
             fprintf(params->csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
             fprintf(params->csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
             fprintf(params->csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
-            fprintf(params->csv_fs, "Raw_read_rate, %lu, MB/sec\n", raw_rate_mbs);
+            fprintf(params->csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
             fprintf(params->csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
             fprintf(params->csv_fs, "Observed_rate, %.3f, MB/sec\n", or_mbs);
             fprintf(params->csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);

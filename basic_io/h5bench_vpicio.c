@@ -828,7 +828,7 @@ int main(int argc, char* argv[]) {
         unsigned long meta_time_ms = (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000;
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
-        float or_mbs = (float)total_size_mb / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000);
+        float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000)); //
         printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
