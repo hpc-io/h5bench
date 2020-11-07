@@ -829,7 +829,7 @@ int main(int argc, char* argv[]) {
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
         float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000)); //
-        printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
+        printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT(observed completion time) = %.3f sec\n", oct_s);
@@ -844,7 +844,7 @@ int main(int argc, char* argv[]) {
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
             fprintf(params.csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
-            fprintf(params.csv_fs, "Observed_rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Observed_write_rate, %.3f, MB/sec\n", or_mbs);
             fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose(params.csv_fs);
         }
