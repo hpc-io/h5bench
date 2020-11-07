@@ -78,7 +78,7 @@ hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 int ALIGN = 1;
 unsigned long ALIGN_THRESHOLD = 16777216;
 unsigned long ALIGN_LEN = 16777216;
-int COLL_METADATA = 1;
+int COLL_METADATA = 0;
 int DEFER_METADATA_FLUSH = 1;
 
 typedef struct Particle{
@@ -791,8 +791,8 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
-    unsigned long raw_write_time, total_data_size;
-    int stat = _run_time_steps(params, file_id, &total_data_size, &raw_write_time);
+    unsigned long raw_write_time, local_data_size;
+    int stat = _run_time_steps(params, file_id, &local_data_size, &raw_write_time);
 
     if(stat < 0){
         if (MY_RANK == 0)
@@ -818,17 +818,17 @@ int main(int argc, char* argv[]) {
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
-        unsigned long total_size_mb = NUM_RANKS * total_data_size/(1024*1024);
+        unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
-        float raw_rate_mbs = (float)total_data_size / raw_write_time;
+        float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("RR: Raw write time = %.3f sec, RR = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
 
         unsigned long meta_time_ms = (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000;
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
-        float or_mbs = (float)total_data_size / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000);
+        float or_mbs = (float)total_size_mb / (t4 - t1 - (NUM_TIMESTEPS - 1) * 1000 * 1000);
         printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);

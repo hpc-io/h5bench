@@ -512,9 +512,9 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
-    unsigned long raw_read_time, total_data_size;
+    unsigned long raw_read_time, local_data_size;
     unsigned long t2 = get_time_usec();
-    _run_benchmark_read(file_id, fapl, gapl, filespace, *params, &raw_read_time, &total_data_size);
+    _run_benchmark_read(file_id, fapl, gapl, filespace, *params, &raw_read_time, &local_data_size);
     unsigned long t3 = get_time_usec();
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -530,17 +530,17 @@ int main (int argc, char* argv[]){
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
-        unsigned long total_size_mb = NUM_RANKS * total_data_size/(1024*1024);
+        unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %ds, total read size = %lu MB\n", total_sleep_time, total_size_mb);
 
         float rrt_s = (float)raw_read_time / (1000*1000);
-        unsigned long raw_rate_mbs = total_data_size / raw_read_time;
-        printf("RR: Raw read time = %.3f sec, RR = %lu MB/sec \n", rrt_s, raw_rate_mbs);
+        float raw_rate_mbs = total_size_mb / rrt_s;
+        printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n", rrt_s, raw_rate_mbs);
 
         unsigned long meta_time_ms = (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
         printf("Core metadata time = %lu ms\n", meta_time_ms);
 
-        double or_mbs = (float)total_data_size/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
+        double or_mbs = (float)total_size_mb/(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000);
         printf("OR (observed rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
