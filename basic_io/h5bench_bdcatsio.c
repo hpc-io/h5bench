@@ -545,7 +545,6 @@ int main (int argc, char* argv[]){
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT(observed completion time) = %.3f sec\n", oct_s);
-        printf("\n");
 
         if(params->useCSV){
             fprintf(params->csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
