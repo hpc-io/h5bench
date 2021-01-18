@@ -836,7 +836,7 @@ int main(int argc, char* argv[]) {
         printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
-        printf("OCT(observed completion time) = %.3f sec\n", oct_s);
+        printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
