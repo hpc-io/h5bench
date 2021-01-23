@@ -13,6 +13,15 @@ message("Detected hdf5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
+# Optional Dependency: CUDA
+set(USE_GPU OFF)
+find_package(CUDA)
+if(CUDA_FOUND)
+  set(HDF5_USE_GPU ON)
+endif(CUDA_FOUND)
+option(WITH_GPU "Compile Source Code with NVIDIA GPU" ${HDF5_USE_GPU})
+message(STATUS "WITH_GPU=" ${WITH_GPU})
+
 # =========== Utilility libs ==============
 set(h5bench_util_src
     commons/h5bench_util.c
@@ -25,7 +34,12 @@ add_library(h5bench_util ${h5bench_util_src})
 set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
-add_executable(h5bench_vpicio ${vpic_src})
+if(WITH_GPU)
+  cuda_add_executable(h5bench_vpicio ${vpic_src})
+  set_target_properties(h5bench_vpicio PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+else()
+  add_executable(h5bench_vpicio ${vpic_src})
+endif()
 target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
 
 add_executable(h5bench_bdcatsio ${bdcats_src})

@@ -83,6 +83,14 @@ typedef struct data_md{
     float *px, *py, *pz;
     int *id_1;
     float *id_2;
+
+#ifdef HDF5_USE_CUDA
+    float *d_x, *d_y, *d_z;
+    float *d_px, *d_py, *d_pz;
+    int *d_id_1;
+    float *d_id_2;
+#endif
+
 }data_contig_md;
 
 typedef struct csv_hanle{

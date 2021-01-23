@@ -35,6 +35,7 @@
 // Created:	in 2011
 // Modified:	01/06/2014 --> Removed all H5Part calls and using HDF5 calls
 //          	02/19/2019 --> Add option to write multiple timesteps of data - Tang
+//          	07/2020 --> Add GPU transfers, computation - John Ravi
 //
 
 
@@ -47,6 +48,20 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+
+#ifdef HDF5_USE_CUDA
+#include <cuda_runtime.h>
+#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                 \
+  {                                                                        \
+    cudaError_t _status = apiFuncCall;                                     \
+    if (_status != cudaSuccess) {                                          \
+      fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", \
+        __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));    \
+      exit(-1);                                                            \
+    }                                                                      \
+  }
+#endif
+
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 #define DIM_MAX 3
@@ -164,6 +179,17 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
     data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
     data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
 
+#ifdef HDF5_USE_CUDA
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_x, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_y, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_z, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_px, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_py, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_pz, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_1, particle_cnt*sizeof(int)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_2, particle_cnt*sizeof(int)));
+#endif
+
     for (long i = 0; i < particle_cnt; i++) {
         data_out->id_1[i] = i;
         data_out->id_2[i] = (float)(i * 2);
@@ -174,6 +200,18 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
         data_out->z[i] =  ((float) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
         data_out->pz[i] = ( data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
+
+#ifdef HDF5_USE_CUDA
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_x, data_out->x, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_y, data_out->y, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_z, data_out->z, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_px, data_out->px, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_py, data_out->py, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_pz, data_out->pz, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_1, data_out->id_1, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_2, data_out->id_2, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+#endif
+
     *data_size_out = particle_cnt * (7 * sizeof(float) +  sizeof(int));
 
     return data_out;
@@ -352,6 +390,23 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out,
 
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
     return 0;
+}
+
+/*
+ *  copy data from gpu to host memory: copy an m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
+ */
+void data_dtohcopy_contig_contig_MD_array(data_contig_md* data_in){
+
+#ifdef HDF5_USE_CUDA
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->x, data_in->d_x, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->y, data_in->d_y, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->z, data_in->d_z, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->px, data_in->d_px, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->py, data_in->d_py, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->pz, data_in->d_pz, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_1, data_in->d_id_1, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_2, data_in->d_id_2, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+#endif
 }
 
 /*
@@ -581,6 +636,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
             case CONTIG_CONTIG_3D:
+                data_dtohcopy_contig_contig_MD_array((data_contig_md*)data);
                 data_write_contig_contig_MD_array(grp_id, dset_ids, filespace, memspace, plist_id, (data_contig_md*)data, &metadata_time, &data_time);
                 break;
 
@@ -736,6 +792,31 @@ int main(int argc, char* argv[]) {
             return 0;
         }
     }
+
+#ifdef HDF5_USE_CUDA
+    int devCount;
+    CUDA_RUNTIME_API_CALL(cudaGetDeviceCount(&devCount));
+    printf("CUDA Device Query...\n");
+    printf("There are %d CUDA devices.\n", devCount);
+    printf("mpi_rank: %d\n", MY_RANK);
+    fflush(stdout);
+    int local_rank;
+    char *str;
+
+    int gpu_id = -1;
+
+    if ((str = getenv ("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
+      local_rank = atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
+      gpu_id = local_rank;
+    }
+    else {
+      printf("OMPI_COMM_WORLD_LOCAL_RANK is NULL\n");
+      gpu_id = 0;
+    }
+
+    gpu_id %= devCount; // there are only devCount
+    CUDA_RUNTIME_API_CALL(cudaSetDevice(gpu_id));
+#endif
 
     char *output_file;
     bench_params params;
