@@ -51,7 +51,7 @@ long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
 
 int NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
-
+hid_t ES_ID;
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
@@ -76,54 +76,54 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
 
-    dset_id = H5Dopen2(loc, "x", dapl);
+    dset_id = H5Dopen_async(loc, "x", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ES_ID);
     core_read_time += (get_time_usec() - start_read);
 
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "y", dapl);
+    dset_id = H5Dopen_async(loc, "y", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "z", dapl);
+    dset_id = H5Dopen_async(loc, "z", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "id_1", dapl);
+    dset_id = H5Dopen_async(loc, "id_1", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "id_2", dapl);
+    dset_id = H5Dopen_async(loc, "id_2", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "px", dapl);
+    dset_id = H5Dopen_async(loc, "px", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "py", dapl);
+    dset_id = H5Dopen_async(loc, "py", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
-    dset_id = H5Dopen2(loc, "pz", dapl);
+    dset_id = H5Dopen_async(loc, "pz", dapl, ES_ID);
     start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, 0);
+    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ES_ID);
     core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, 0);
+    H5Dclose_async(dset_id, ES_ID);
 
     if (rank == 0) printf ("  Read 8 variable completed\n");
 
@@ -259,18 +259,23 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
     if(MY_RANK == 0)
         print_params(&params);
+    ES_ID = H5EScreate();
     for (int i = 0; i < nts; i++) {
         sprintf(grp_name, "Timestep_%d", i);
-        grp = H5Gopen_async(file_id, grp_name, gapl, 0);
+        grp = H5Gopen_async(file_id, grp_name, gapl, ES_ID);
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
         read_h5_data(MY_RANK, grp, filespace, memspace, raw_read_time_out);
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
             sleep(sleep_time);
+            size_t num_in_progress;
+            H5ES_status_t op_failed;
+            H5ESwait(ES_ID, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
         }
-        H5Gclose_async(grp, 0);
+        H5Gclose_async(grp, ES_ID);
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    H5ESclose(ES_ID);
     *total_data_size_out = NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
