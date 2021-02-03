@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <hdf5.h>
 
 #include "h5bench_util.h"
 
@@ -26,6 +27,41 @@ unsigned long get_time_usec(){
 int metric_msg_print(unsigned long number, char* msg, char* unit){
     printf("%s %lu %s\n", msg, number, unit);
     return 0;
+}
+
+hid_t es_id_set(async_mode mode) {
+    hid_t es_id = 0;
+    switch(mode) {
+        case ASYNC_NON:
+            es_id = H5ES_NONE;
+            break;
+        case ASYNC_EXPLICIT:
+            es_id = H5EScreate();
+            break;
+        case ASYNC_IMPLICIT:
+            break;
+        default:
+            break;
+    }
+    return es_id;
+}
+
+void es_id_close(hid_t es_id, async_mode mode) {
+    switch(mode) {
+        case ASYNC_NON:
+            break;
+        case ASYNC_EXPLICIT:
+            H5ESclose(es_id);
+            break;
+        case ASYNC_IMPLICIT:
+            break;
+        default:
+            break;
+    }
+}
+
+float uniform_random_number(){
+    return (((float)rand())/((float)(RAND_MAX)));
 }
 
 data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3){
@@ -76,11 +112,16 @@ void free_contig_memory(data_contig_md* data){
     free(data);
 }
 
-int _set_params(char* key, char* val, bench_params* params_in_out){
+int _set_params(char* key, char* val, bench_params* params_in_out, int do_write){
     if(!params_in_out)
         return 0;
 
-    if(strcmp(key, "PATTERN") == 0) {
+    if(strcmp(key, "WRITE_PATTERN") == 0) {
+        if(do_write < 1) {
+            printf("This is NOT a write benchmark, but try to set a WRITE_PATTERN\n");
+            return -1;
+        }
+
         if (strcmp(val, "CC") == 0) {
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
@@ -118,9 +159,39 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
             (*params_in_out)._dim_cnt = 3;
         } else {
-            printf("Unknown PATTERN: %s\n", val);
+            printf("Unknown WRITE_PATTERN: %s\n", val);
             return -1;
         }
+    } else if(strcmp(key, "READ_PATTERN") == 0) {
+        if(do_write > 0) {
+            printf("This is a write benchmark, but try to set a READ_PATTERN\n");
+            return -1;
+        }
+        if (strcmp(val, "SEQ") == 0) {
+            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "PART") == 0) {
+            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "STRIDED") == 0) {
+            (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "2D") == 0) {
+            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "3D") == 0) {
+            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out)._dim_cnt = 1;
+        }else {
+            printf("Unknown READ_PATTERN: %s\n", val);
+            return -1;
+        }
+
     } else if(strcmp(key, "META_COLL")==0){
         if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
             (*params_in_out).meta_coll = 1;
@@ -220,20 +291,42 @@ int _set_params(char* key, char* val, bench_params* params_in_out){
             printf("CHUNK_DIM_3 must be at least 1.\n");
             return -1;
         }
-    } else {
+    } else if(strcmp(key, "STRIDE_SIZE") == 0) {
+        (*params_in_out).stride = atoi(val);
+
+    } else if(strcmp(key, "BLOCK_SIZE") == 0) {
+        (*params_in_out).block_size = atoi(val);
+    } else if(strcmp(key, "CSV_FILE") == 0) {
+        (*params_in_out).useCSV = 1;
+        (*params_in_out).csv_path = strdup(val);
+    } else if(strcmp(key, "META_LIST_FILE") == 0) {
+        (*params_in_out).meta_list_path = strdup(val);
+    }
+    else if(strcmp(key, "ASYNC_MODE") == 0) {
+        if (strcmp(val, "ASYNC_NON") == 0) {
+            (*params_in_out).asyncMode = ASYNC_NON;
+        } else if(strcmp(val, "ASYNC_EXP") == 0 || strcmp(val, "ASYNC_EXPLICIT") == 0) {
+            (*params_in_out).asyncMode = ASYNC_EXPLICIT;
+        } else if(strcmp(val, "ASYNC_IMP") == 0 || strcmp(val, "ASYNC_IMPLICIT") == 0) {
+            (*params_in_out).asyncMode = ASYNC_IMPLICIT;
+        }
+    }
+    else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
     }
+    if((*params_in_out).useCSV)
+        (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->meta_list_path);
+
     return 1;
 }
 
 //only for vpic
-int read_config(const char* file_path, bench_params* params_out){
+int read_config(const char* file_path, bench_params* params_out, int do_write){
     if(!params_out)
         params_out = (bench_params*)calloc(1, sizeof(bench_params));
     char cfg_line[CFG_LINE_LEN_MAX] = "";
     (*params_out).data_file_path = strdup(file_path);
-    (*params_out).isWrite = 1;
     (*params_out).cnt_actual_particles_M = 0;
     (*params_out).meta_coll = 0;
     (*params_out).data_coll = 0;
@@ -242,7 +335,11 @@ int read_config(const char* file_path, bench_params* params_out){
     int parsed = 1;
 
     //default values
-    (*params_out).isWrite = 1;
+    (*params_out).useCSV = 0;
+    if(do_write)
+        (*params_out).isWrite = 1;
+    else
+        (*params_out).isWrite = 0;
     (*params_out).useCompress = 0;//by default
     (*params_out).meta_coll = 0;
 
@@ -262,7 +359,7 @@ int read_config(const char* file_path, bench_params* params_out){
         } else
             return -1;
         //printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
-        parsed = _set_params(tokens[0], tokens[1], params_out);
+        parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
 
     if(parsed < 0)
@@ -316,10 +413,10 @@ void bench_params_free(bench_params* p){
     free(p->pattern_name);
 }
 
-void test_read_config(const char* file_path){
+void test_read_config(const char* file_path, int do_write){
      bench_params param;
      DEBUG_PRINT
-     int ret = read_config(file_path, &param);
+     int ret = read_config(file_path, &param, do_write);
      DEBUG_PRINT
      if(ret != 0){
          printf("read_config() failed, ret = %d\n", ret);

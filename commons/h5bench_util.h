@@ -16,6 +16,12 @@
 #define  M_VAL 1024 * 1024
 #define  K_VAL 1024
 
+typedef enum async_mode {
+    ASYNC_NON,
+    ASYNC_EXPLICIT,
+    ASYNC_IMPLICIT
+} async_mode;
+
 typedef enum write_pattern {
     CONTIG_CONTIG_1D,
     CONTIG_INTERLEAVED_1D,
@@ -39,6 +45,7 @@ typedef struct bench_params{
     int isWrite;
     int useCompress;
     int useCSV;
+    async_mode asyncMode;
     union access_pattern{
         read_pattern pattern_read;
         write_pattern pattern_write;
@@ -62,6 +69,8 @@ typedef struct bench_params{
     unsigned long chunk_dim_1;
     unsigned long chunk_dim_2;
     unsigned long chunk_dim_3;
+    char* csv_path;
+    char* meta_list_path;
     FILE* csv_fs;
 } bench_params;
 
@@ -82,6 +91,9 @@ typedef struct csv_hanle{
 // Uniform random number
 float uniform_random_number();
 
+hid_t es_id_set(async_mode mode);
+void es_id_close(hid_t es_id, async_mode mode);
+
 data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3);
 data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3);
 
@@ -89,11 +101,11 @@ void free_contig_memory(data_contig_md* data);
 
 unsigned long get_time_usec();
 
-int read_config(const char* file_path, bench_params* params_out);
+int read_config(const char* file_path, bench_params* params_out, int do_write);
 
 void print_params(const bench_params* p);
 void bench_params_free(bench_params* p);
-void test_read_config(const char* file_path);
+void test_read_config(const char* file_path, int do_write);
 
 int file_create_try(const char* path);
 int file_exist(const char* path);

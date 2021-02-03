@@ -49,7 +49,7 @@
 // Global Variables and dimensions
 long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
-
+async_mode ASYNC_MODE;
 int NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
 hid_t ES_ID;
 hid_t PARTICLE_COMPOUND_TYPE;
@@ -259,7 +259,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
     if(MY_RANK == 0)
         print_params(&params);
-    ES_ID = H5EScreate();
+
+    ES_ID = es_id_set(ASYNC_MODE);
+
     for (int i = 0; i < nts; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen_async(file_id, grp_name, gapl, ES_ID);
@@ -275,7 +277,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         H5Gclose_async(grp, ES_ID);
         MPI_Barrier(MPI_COMM_WORLD);
     }
-    H5ESclose(ES_ID);
+
+    es_id_close(ES_ID, ASYNC_MODE);
+
     *total_data_size_out = NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
@@ -300,19 +304,19 @@ int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
     if(argv[arg_idx_csv]){//CSV
         if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
                 char* csv_path = argv[arg_idx_csv + 1];
-                char* metadata_list = NULL;
+                char* metadata_list_file = NULL;
                 if(argv[arg_idx_csv + 2]){
                     if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
                         if(!argv[arg_idx_csv + 3]){
                             printf("META is requested but metadata lit file is not specified.\n");
                             return -1;
                         }
-                        metadata_list = argv[arg_idx_csv + 3];
+                        metadata_list_file = argv[arg_idx_csv + 3];
                     }
                 }
                 if(csv_path){
-                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list);
-                    FILE* csv_fs = csv_init(csv_path, metadata_list);
+                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list_file);
+                    FILE* csv_fs = csv_init(csv_path, metadata_list_file);
                     if(!csv_fs){
                         printf("Failed to create CSV file. \n");
                         return -1;
@@ -355,6 +359,9 @@ bench_params* args_set_params(int argc, char* argv[]){
         params->dim_1 = params->cnt_actual_particles_M * M_VAL;
         if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
             return NULL;
+
+
+
 
     } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
         params->pattern_name = strdup("1D partial read");

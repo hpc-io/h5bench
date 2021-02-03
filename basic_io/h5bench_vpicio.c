@@ -57,7 +57,7 @@ typedef struct compress_info{
     unsigned long chunk_dims[DIM_MAX];
 }compress_info;
 // Global Variables and dimensions
-
+async_mode ASYNC_MODE;
 compress_info COMPRESS_INFO;  //Using parallel compressing: need to set chunk dimensions for dcpl.
 long long NUM_PARTICLES = 0, FILE_OFFSET;	// 8  meg particles per process
 long long TOTAL_PARTICLES;
@@ -88,9 +88,6 @@ typedef struct Particle{
     float id_2;
 }particle;
 
-float uniform_random_number(){
-    return (((float)rand())/((float)(RAND_MAX)));
-}
 
 hid_t make_compound_type(){
     PARTICLE_COMPOUND_TYPE = H5Tcreate(H5T_COMPOUND, sizeof(particle));
@@ -548,7 +545,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         return -1;
     }
 
-    ES_ID = H5EScreate();
+    ES_ID = es_id_set(ASYNC_MODE);
+
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         MPI_Barrier (MPI_COMM_WORLD);
@@ -608,7 +606,9 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         MPI_Barrier (MPI_COMM_WORLD);
         free(dset_ids[i]);
     }
-    H5ESclose(ES_ID);
+
+    es_id_close(ES_ID, ASYNC_MODE);
+
     H5Tclose(PARTICLE_COMPOUND_TYPE);
     for(int i = 0; i < 8; i++)
         H5Tclose(PARTICLE_COMPOUND_TYPE_SEPARATES[i]);
@@ -649,6 +649,8 @@ void set_globals(bench_params params){
         ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
         assert(ret >= 0);
     }
+
+    ASYNC_MODE = params.asyncMode;
 }
 
 hid_t set_fapl(){
@@ -705,7 +707,7 @@ int main(int argc, char* argv[]) {
 
     int sleep_time = 0;
     if(MY_RANK == 0){
-        if(argc != 3 && argc != 5 && argc != 7){
+        if(argc != 3){
             print_usage(argv[0]);
             return 0;
         }
@@ -718,42 +720,11 @@ int main(int argc, char* argv[]) {
     output_file = argv[2];
     if (MY_RANK == 0)
         printf("config file: %s, output data file: %s\n", argv[1], argv[2]);
-
-    if(read_config(cfg_file_path, &params) < 0){
+    int do_write = 1;
+    if(read_config(cfg_file_path, &params, do_write) < 0){
         if (MY_RANK == 0)
             printf("Config file read failed. check path: %s\n", cfg_file_path);
         return 0;
-    }
-
-    params.useCSV = 0;
-    int arg_idx_csv = 3;
-    if(argc >4){
-        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
-            char* csv_path = argv[arg_idx_csv + 1];
-            char* metadata_list = NULL;
-            if(argv[arg_idx_csv + 2]){
-                if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
-                    if(!argv[arg_idx_csv + 3]){
-                        printf("META is requested but metadata lit file is not specified.\n");
-                        return -1;
-                    }
-                    metadata_list = argv[arg_idx_csv + 3];
-                }
-            }
-
-            if(csv_path){
-                FILE* csv_fs = csv_init(csv_path, metadata_list);
-                if(!csv_fs){
-                    printf("Failed to create CSV file. \n");
-                    return -1;
-                }
-                params.csv_fs = csv_fs;
-                params.useCSV = 1;
-            } else {
-                printf("CSV option is enabled but file path is not specified.\n");
-                return -1;
-            }
-        }
     }
 
     if(params.useCompress){
