@@ -305,141 +305,13 @@ void print_usage(char *name){
 }
 
 
-//int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
-//    if(argv[arg_idx_csv]){//CSV
-//        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
-//                char* csv_path = argv[arg_idx_csv + 1];
-//                char* metadata_list_file = NULL;
-//                if(argv[arg_idx_csv + 2]){
-//                    if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
-//                        if(!argv[arg_idx_csv + 3]){
-//                            printf("META is requested but metadata lit file is not specified.\n");
-//                            return -1;
-//                        }
-//                        metadata_list_file = argv[arg_idx_csv + 3];
-//                    }
-//                }
-//                if(csv_path){
-//                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list_file);
-//                    FILE* csv_fs = csv_init(csv_path, metadata_list_file);
-//                    if(!csv_fs){
-//                        printf("Failed to create CSV file. \n");
-//                        return -1;
-//                    }
-//                    params->csv_fs = csv_fs;
-//                    params->useCSV = 1;
-//                } else {
-//                    printf("CSV option is enabled but file path is not specified.\n");
-//                    return -1;
-//                }
-//            }
-//    }
-//    return 0;
-//}
-
-//bench_params* args_set_params(int argc, char* argv[]){
-//    bench_params* params = calloc(1, sizeof(bench_params));
-//    int arg_idx = 1;
-//
-//    //file name
-//    params->data_file_path = strdup(argv[arg_idx++]);
-//    //time steps
-//    params->cnt_time_step = atoi(argv[arg_idx++]);
-//    //sleep time
-//    params->sleep_time = atoi(argv[arg_idx++]);
-//    //read pattern: SEQ/PART/STRIDED/2D/3D
-//    params->stride = 0;
-//    params->block_size = 0;
-//
-//    params->dim_2 = 1;
-//    params->dim_3 = 1;
-//    params->useCSV = 0;
-//    if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
-//        params->pattern_name = strdup("1D sequential read");
-//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-//        params->_dim_cnt = 1;
-//        params->access_pattern.pattern_read = CONTIG_1D;
-//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
-//        params->cnt_actual_particles_M = params->cnt_particle_M;
-//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-//        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
-//            return NULL;
-//
-//
-//
-//
-//    } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
-//        params->pattern_name = strdup("1D partial read");
-//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-//        params->_dim_cnt = 1;
-//        params->access_pattern.pattern_read = CONTIG_1D;
-//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
-//        params->cnt_actual_particles_M = params->cnt_particle_M;
-//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-//
-//        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
-//            return NULL;
-//
-//    } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
-//        params->_dim_cnt = 1;
-//        params->pattern_name = strdup("1D strided read");
-//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-//        params->access_pattern.pattern_read = STRIDED_1D;
-//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
-//        params->cnt_actual_particles_M = params->cnt_particle_M;
-//        params->stride = atoi(argv[arg_idx + 2]);
-//        params->block_size = atoi(argv[arg_idx + 3]);
-//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-//
-//        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
-//            return NULL;
-//
-//    } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
-//        params->access_pattern.pattern_read = CONTIG_2D;
-//        params->pattern_name = strdup("CONTIG_2D");
-//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-//        params->_dim_cnt = 2;
-//        params->dim_1 = atoi(argv[arg_idx + 1]);
-//        params->dim_2 = atoi(argv[arg_idx + 2]);
-//        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
-//
-//        if(_fill_csv_args(params, argv, arg_idx + 3) != 0)
-//            return NULL;
-//
-//    } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
-//        params->access_pattern.pattern_read = CONTIG_3D;
-//        params->pattern_name = strdup("CONTIG_3D");
-//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-//        params->_dim_cnt = 3;
-//        params->dim_1 = atoi(argv[arg_idx + 1]);
-//        params->dim_2 = atoi(argv[arg_idx + 2]);
-//        params->dim_3 = atoi(argv[arg_idx + 3]);
-//        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
-//
-//        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
-//            return NULL;
-//
-//    } else {
-//        if(MY_RANK == 0) printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
-//        bench_params_free(params);
-//        return NULL;
-//    }
-//
-//    return params;
-//}
-
-csv_handle CSV_HDL;
-
 int main (int argc, char* argv[]){
     MPI_Init(&argc,&argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
 
-    //argv_print(argc, argv);
-
     int sleep_time;
 
-    //bench_params* params = args_set_params(argc, argv);
     bench_params params;
 
     char* cfg_file_path = argv[1];
@@ -454,11 +326,6 @@ int main (int argc, char* argv[]){
             printf("Config file read failed. check path: %s\n", cfg_file_path);
         return 0;
     }
-
-//    if(!params){
-//        if(MY_RANK == 0) printf("ERROR: Invalid parameters.\n");
-//        return -1;
-//    }
 
     NUM_TIMESTEPS = params.cnt_time_step;
 
