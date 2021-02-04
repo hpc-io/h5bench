@@ -36,6 +36,7 @@ typedef enum write_pattern {
 
 typedef enum read_pattern{
     CONTIG_1D,
+    CONTIG_1D_PART,
     STRIDED_1D,
     CONTIG_2D,
     CONTIG_3D
@@ -58,7 +59,7 @@ typedef struct bench_params{
     int data_coll;//data collective
     int cnt_time_step;
     int cnt_particle_M;//total number per rank
-    int cnt_actual_particles_M;// to read
+    int cnt_try_particles_M;// to read
     int sleep_time;
     int _dim_cnt;
     unsigned long stride;

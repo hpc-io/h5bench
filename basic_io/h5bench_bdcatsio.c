@@ -78,7 +78,9 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned
 
     dset_id = H5Dopen_async(loc, "x", dapl, ES_ID);
     start_read = get_time_usec();
+
     ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ES_ID);
+
     core_read_time += (get_time_usec() - start_read);
 
     H5Dclose_async(dset_id, ES_ID);
@@ -218,16 +220,16 @@ hid_t get_filespace(hid_t file_id){
     return filespace;
 }
 
-unsigned long set_dataspace(bench_params params, unsigned long read_elem_cnt, hid_t* filespace_in_out, hid_t* memspace_out){
+unsigned long set_dataspace(bench_params params, unsigned long try_read_elem_cnt, hid_t* filespace_in_out, hid_t* memspace_out){
     unsigned long actual_read_cnt = 0;
     switch(params.access_pattern.pattern_read){
         case CONTIG_1D:
-            _set_dataspace_seq_read(read_elem_cnt, filespace_in_out, memspace_out);
-            actual_read_cnt = read_elem_cnt;
+            _set_dataspace_seq_read(try_read_elem_cnt, filespace_in_out, memspace_out);
+            actual_read_cnt = try_read_elem_cnt;
             break;
 
         case STRIDED_1D:
-            actual_read_cnt = _set_dataspace_strided_read(read_elem_cnt, params.stride, params.block_size, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_strided_read(try_read_elem_cnt, params.stride, params.block_size, filespace_in_out, memspace_out);
             break;
 
         case CONTIG_2D:
@@ -239,6 +241,7 @@ unsigned long set_dataspace(bench_params params, unsigned long read_elem_cnt, hi
             break;
 
         default:
+            printf("Unknown read pattern\n");
             break;
     }
     return actual_read_cnt;
@@ -248,7 +251,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     *raw_read_time_out = 0;
     int nts = params.cnt_time_step;
     int sleep_time = params.sleep_time;
-    unsigned long read_elem_cnt = params.cnt_actual_particles_M * M_VAL;
+    unsigned long read_elem_cnt = params.cnt_try_particles_M * M_VAL;
     hid_t grp;
     char grp_name[128];
     unsigned long rt1 = 0, rt2 = 0;
@@ -266,7 +269,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen_async(file_id, grp_name, gapl, ES_ID);
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
+
         read_h5_data(MY_RANK, grp, filespace, memspace, raw_read_time_out);
+
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
             sleep(sleep_time);
@@ -300,128 +305,128 @@ void print_usage(char *name){
 }
 
 
-int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
-    if(argv[arg_idx_csv]){//CSV
-        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
-                char* csv_path = argv[arg_idx_csv + 1];
-                char* metadata_list_file = NULL;
-                if(argv[arg_idx_csv + 2]){
-                    if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
-                        if(!argv[arg_idx_csv + 3]){
-                            printf("META is requested but metadata lit file is not specified.\n");
-                            return -1;
-                        }
-                        metadata_list_file = argv[arg_idx_csv + 3];
-                    }
-                }
-                if(csv_path){
-                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list_file);
-                    FILE* csv_fs = csv_init(csv_path, metadata_list_file);
-                    if(!csv_fs){
-                        printf("Failed to create CSV file. \n");
-                        return -1;
-                    }
-                    params->csv_fs = csv_fs;
-                    params->useCSV = 1;
-                } else {
-                    printf("CSV option is enabled but file path is not specified.\n");
-                    return -1;
-                }
-            }
-    }
-    return 0;
-}
+//int _fill_csv_args(bench_params* params, char* argv[], int arg_idx_csv){
+//    if(argv[arg_idx_csv]){//CSV
+//        if(MY_RANK == 0 && strcmp(argv[arg_idx_csv], "CSV") == 0) {
+//                char* csv_path = argv[arg_idx_csv + 1];
+//                char* metadata_list_file = NULL;
+//                if(argv[arg_idx_csv + 2]){
+//                    if(strcmp(argv[arg_idx_csv + 2], "META") == 0){
+//                        if(!argv[arg_idx_csv + 3]){
+//                            printf("META is requested but metadata lit file is not specified.\n");
+//                            return -1;
+//                        }
+//                        metadata_list_file = argv[arg_idx_csv + 3];
+//                    }
+//                }
+//                if(csv_path){
+//                    printf("csv_path = %s, metadata_list = %s\n", csv_path, metadata_list_file);
+//                    FILE* csv_fs = csv_init(csv_path, metadata_list_file);
+//                    if(!csv_fs){
+//                        printf("Failed to create CSV file. \n");
+//                        return -1;
+//                    }
+//                    params->csv_fs = csv_fs;
+//                    params->useCSV = 1;
+//                } else {
+//                    printf("CSV option is enabled but file path is not specified.\n");
+//                    return -1;
+//                }
+//            }
+//    }
+//    return 0;
+//}
 
-bench_params* args_set_params(int argc, char* argv[]){
-    bench_params* params = calloc(1, sizeof(bench_params));
-    int arg_idx = 1;
-
-    //file name
-    params->data_file_path = strdup(argv[arg_idx++]);
-    //time steps
-    params->cnt_time_step = atoi(argv[arg_idx++]);
-    //sleep time
-    params->sleep_time = atoi(argv[arg_idx++]);
-    //read pattern: SEQ/PART/STRIDED/2D/3D
-    params->stride = 0;
-    params->block_size = 0;
-
-    params->dim_2 = 1;
-    params->dim_3 = 1;
-    params->useCSV = 0;
-    if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
-        params->pattern_name = strdup("1D sequential read");
-        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->_dim_cnt = 1;
-        params->access_pattern.pattern_read = CONTIG_1D;
-        params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
-        params->cnt_actual_particles_M = params->cnt_particle_M;
-        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
-            return NULL;
-
-
-
-
-    } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
-        params->pattern_name = strdup("1D partial read");
-        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->_dim_cnt = 1;
-        params->access_pattern.pattern_read = CONTIG_1D;
-        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
-        params->cnt_actual_particles_M = params->cnt_particle_M;
-        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-
-        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
-            return NULL;
-
-    } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
-        params->_dim_cnt = 1;
-        params->pattern_name = strdup("1D strided read");
-        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->access_pattern.pattern_read = STRIDED_1D;
-        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
-        params->cnt_actual_particles_M = params->cnt_particle_M;
-        params->stride = atoi(argv[arg_idx + 2]);
-        params->block_size = atoi(argv[arg_idx + 3]);
-        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
-
-        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
-            return NULL;
-
-    } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
-        params->access_pattern.pattern_read = CONTIG_2D;
-        params->pattern_name = strdup("CONTIG_2D");
-        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->_dim_cnt = 2;
-        params->dim_1 = atoi(argv[arg_idx + 1]);
-        params->dim_2 = atoi(argv[arg_idx + 2]);
-        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
-
-        if(_fill_csv_args(params, argv, arg_idx + 3) != 0)
-            return NULL;
-
-    } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
-        params->access_pattern.pattern_read = CONTIG_3D;
-        params->pattern_name = strdup("CONTIG_3D");
-        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
-        params->_dim_cnt = 3;
-        params->dim_1 = atoi(argv[arg_idx + 1]);
-        params->dim_2 = atoi(argv[arg_idx + 2]);
-        params->dim_3 = atoi(argv[arg_idx + 3]);
-        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
-
-        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
-            return NULL;
-
-    } else {
-        if(MY_RANK == 0) printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
-        bench_params_free(params);
-        return NULL;
-    }
-
-    return params;
-}
+//bench_params* args_set_params(int argc, char* argv[]){
+//    bench_params* params = calloc(1, sizeof(bench_params));
+//    int arg_idx = 1;
+//
+//    //file name
+//    params->data_file_path = strdup(argv[arg_idx++]);
+//    //time steps
+//    params->cnt_time_step = atoi(argv[arg_idx++]);
+//    //sleep time
+//    params->sleep_time = atoi(argv[arg_idx++]);
+//    //read pattern: SEQ/PART/STRIDED/2D/3D
+//    params->stride = 0;
+//    params->block_size = 0;
+//
+//    params->dim_2 = 1;
+//    params->dim_3 = 1;
+//    params->useCSV = 0;
+//    if(strcmp(argv[arg_idx], "SEQ") == 0){//$file $nts $sleeptime $OP $to_read_particles
+//        params->pattern_name = strdup("1D sequential read");
+//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
+//        params->_dim_cnt = 1;
+//        params->access_pattern.pattern_read = CONTIG_1D;
+//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);//to read particles per rank
+//        params->cnt_actual_particles_M = params->cnt_particle_M;
+//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
+//        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
+//            return NULL;
+//
+//
+//
+//
+//    } else if(strcmp(argv[arg_idx], "PART") == 0){//same with SEQ
+//        params->pattern_name = strdup("1D partial read");
+//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
+//        params->_dim_cnt = 1;
+//        params->access_pattern.pattern_read = CONTIG_1D;
+//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
+//        params->cnt_actual_particles_M = params->cnt_particle_M;
+//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
+//
+//        if(_fill_csv_args(params, argv, arg_idx + 2) != 0)
+//            return NULL;
+//
+//    } else if(strcmp(argv[arg_idx], "STRIDED") == 0){//$file $nts $sleeptime $OP $attempt_to_read_particles $stride $block_size
+//        params->_dim_cnt = 1;
+//        params->pattern_name = strdup("1D strided read");
+//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
+//        params->access_pattern.pattern_read = STRIDED_1D;
+//        params->cnt_particle_M = atoi(argv[arg_idx + 1]);
+//        params->cnt_actual_particles_M = params->cnt_particle_M;
+//        params->stride = atoi(argv[arg_idx + 2]);
+//        params->block_size = atoi(argv[arg_idx + 3]);
+//        params->dim_1 = params->cnt_actual_particles_M * M_VAL;
+//
+//        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
+//            return NULL;
+//
+//    } else if(strcmp(argv[arg_idx], "2D") == 0){//$file $nts $sleeptime $OP $dim_1 $dim_2
+//        params->access_pattern.pattern_read = CONTIG_2D;
+//        params->pattern_name = strdup("CONTIG_2D");
+//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
+//        params->_dim_cnt = 2;
+//        params->dim_1 = atoi(argv[arg_idx + 1]);
+//        params->dim_2 = atoi(argv[arg_idx + 2]);
+//        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 / M_VAL;
+//
+//        if(_fill_csv_args(params, argv, arg_idx + 3) != 0)
+//            return NULL;
+//
+//    } else if(strcmp(argv[arg_idx], "3D") == 0) {//$file $nts $sleeptime $OP $dim_1 $dim_2 $dim_3
+//        params->access_pattern.pattern_read = CONTIG_3D;
+//        params->pattern_name = strdup("CONTIG_3D");
+//        if(MY_RANK == 0) printf("Read benchmark pattern = %s\n", params->pattern_name);
+//        params->_dim_cnt = 3;
+//        params->dim_1 = atoi(argv[arg_idx + 1]);
+//        params->dim_2 = atoi(argv[arg_idx + 2]);
+//        params->dim_3 = atoi(argv[arg_idx + 3]);
+//        params->cnt_actual_particles_M = params->dim_1 * params->dim_2 * params->dim_3 / M_VAL;
+//
+//        if(_fill_csv_args(params, argv, arg_idx + 4) != 0)
+//            return NULL;
+//
+//    } else {
+//        if(MY_RANK == 0) printf("Unsupported benchmark pattern: [%s]. Only SEQ/PART/STRIDED/2D/3D are supported.\n ", argv[arg_idx]);
+//        bench_params_free(params);
+//        return NULL;
+//    }
+//
+//    return params;
+//}
 
 csv_handle CSV_HDL;
 
@@ -433,22 +438,36 @@ int main (int argc, char* argv[]){
     //argv_print(argc, argv);
 
     int sleep_time;
-    char *file_name = argv[1]; //strdup(params->data_file_path); //argv[1];
-    bench_params* params = args_set_params(argc, argv);
 
-    if(!params){
-        if(MY_RANK == 0) printf("ERROR: Invalid parameters.\n");
-        return -1;
+    //bench_params* params = args_set_params(argc, argv);
+    bench_params params;
+
+    char* cfg_file_path = argv[1];
+    char *file_name = argv[2]; //data file to read
+
+
+    if (MY_RANK == 0)
+        printf("config file: %s, read data file: %s\n", argv[1], argv[2]);
+    int do_write = 0;
+    if(read_config(cfg_file_path, &params, do_write) < 0){
+        if (MY_RANK == 0)
+            printf("Config file read failed. check path: %s\n", cfg_file_path);
+        return 0;
     }
 
-    NUM_TIMESTEPS = params->cnt_time_step;
+//    if(!params){
+//        if(MY_RANK == 0) printf("ERROR: Invalid parameters.\n");
+//        return -1;
+//    }
+
+    NUM_TIMESTEPS = params.cnt_time_step;
 
     if (NUM_TIMESTEPS <= 0) {
         if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
 
-    sleep_time = params->sleep_time;
+    sleep_time = params.sleep_time;
     if (sleep_time < 0) {
         print_usage(argv[0]);
         return 0;
@@ -473,27 +492,30 @@ int main (int argc, char* argv[]){
     }
 
     if(dims_cnt > 0){//1D
-        if(params->dim_1 > dims[0]/NUM_RANKS){
-            if(MY_RANK == 0) printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n", params->dim_1, dims[0]/NUM_RANKS);
+        if(params.dim_1 > dims[0]/NUM_RANKS){
+            if(MY_RANK == 0) printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n",
+                    params.dim_1, dims[0]/NUM_RANKS);
             goto error;
         }
     }
     if(dims_cnt > 1){//2D
-        if(params->dim_2 > dims[1]){
-            if(MY_RANK == 0) printf("Failed: Required dimension_2(%lu) is greater than file dimension(%llu).\n", params->dim_2, dims[1]);
+        if(params.dim_2 > dims[1]){
+            if(MY_RANK == 0) printf("Failed: Required dimension_2(%lu) is greater than file dimension(%llu).\n",
+                    params.dim_2, dims[1]);
             goto error;
         }
     }
     if(dims_cnt > 2){//3D
-        if(params->dim_2 > dims[1]){
-            if(MY_RANK == 0) printf("Failed: Required dimension_3(%lu) is greater than file dimension(%llu).\n", params->dim_3, dims[2]);
+        if(params.dim_2 > dims[1]){
+            if(MY_RANK == 0) printf("Failed: Required dimension_3(%lu) is greater than file dimension(%llu).\n",
+                    params.dim_3, dims[2]);
             goto error;
         }
     }
 
     NUM_PARTICLES = total_particles / NUM_RANKS;
 
-    unsigned long  read_elem_cnt = params->cnt_actual_particles_M * M_VAL;
+    unsigned long  read_elem_cnt = params.cnt_try_particles_M * M_VAL;
 
     if(read_elem_cnt  > NUM_PARTICLES){
         if(MY_RANK == 0) printf("read_elem_cnt_m <= num_particles must hold.\n");
@@ -512,9 +534,7 @@ int main (int argc, char* argv[]){
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     FILE_OFFSET -= NUM_PARTICLES;
-
-    BUF_STRUCT = prepare_contig_memory_multi_dim(params->dim_1, params->dim_2, params->dim_3);
-
+    BUF_STRUCT = prepare_contig_memory_multi_dim(params.dim_1, params.dim_2, params.dim_3);
     unsigned long t1 = get_time_usec();
 
     if(file_id < 0) {
@@ -526,7 +546,7 @@ int main (int argc, char* argv[]){
 
     unsigned long raw_read_time, local_data_size;
     unsigned long t2 = get_time_usec();
-    _run_benchmark_read(file_id, fapl, gapl, filespace, *params, &raw_read_time, &local_data_size);
+    _run_benchmark_read(file_id, fapl, gapl, filespace, params, &raw_read_time, &local_data_size);
     unsigned long t3 = get_time_usec();
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -537,6 +557,7 @@ int main (int argc, char* argv[]){
 
     MPI_Barrier (MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
+
     free_contig_memory(BUF_STRUCT);
 
     if (MY_RANK == 0) {
@@ -558,16 +579,16 @@ int main (int argc, char* argv[]){
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed read completion time) = %.3f sec\n", oct_s);
 
-        if(params->useCSV){
-            fprintf(params->csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params->csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
-            fprintf(params->csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
-            fprintf(params->csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
-            fprintf(params->csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params->csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
-            fprintf(params->csv_fs, "Observed_read_rate, %.3f, MB/sec\n", or_mbs);
-            fprintf(params->csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
-            fclose(params->csv_fs);
+        if(params.useCSV){
+            fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
+            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
+            fprintf(params.csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
+            fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
+            fprintf(params.csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
+            fprintf(params.csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Observed_read_rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
+            fclose (params.csv_fs);
         }
     }
 

@@ -181,7 +181,8 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
 data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
     if(particle_cnt != dim_1 * dim_2){
         if(MY_RANK == 0)
-            printf("Dimension definition is invalid: dim_1(%ld) * dim_2(%ld) must equal num_particles (%ld) per rank.\n", dim_1, dim_2, particle_cnt);
+            printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) = %ld, must equal num_particles (%ld) per rank.\n",
+                    dim_1, dim_2, dim_1 * dim_2, particle_cnt);
         return NULL;
     }
     assert(particle_cnt == dim_1 * dim_2);
@@ -222,7 +223,8 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
 data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2, long dim_3, unsigned long * data_size_out){
     if(particle_cnt != dim_1 * dim_2 * dim_3){
         if(MY_RANK == 0)
-            printf("Dimension definition is invalid: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) must equal num_particles (%ld) per rank.\n", dim_1, dim_2, dim_3, particle_cnt);
+            printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) = %ld, must equal num_particles (%ld) per rank.\n",
+                    dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3, particle_cnt);
         return NULL;
     }
 

@@ -172,47 +172,50 @@ int _set_params(char* key, char* val, bench_params* params_in_out, int do_write)
             (*params_in_out).pattern_name = strdup("CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if(strcmp(val, "PART") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out).access_pattern.pattern_read = CONTIG_1D_PART;
+            (*params_in_out).pattern_name = strdup("CONTIG_1D_PART");
             (*params_in_out)._dim_cnt = 1;
         } else if(strcmp(val, "STRIDED") == 0) {
             (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
             (*params_in_out).pattern_name = strdup("CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if(strcmp(val, "2D") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
-            (*params_in_out)._dim_cnt = 1;
+            (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
+            (*params_in_out).pattern_name = strdup("CONTIG_2D");
+            (*params_in_out)._dim_cnt = 2;
         } else if(strcmp(val, "3D") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
-            (*params_in_out)._dim_cnt = 1;
+            (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
+            (*params_in_out).pattern_name = strdup("CONTIG_3D");
+            (*params_in_out)._dim_cnt = 3;
         }else {
             printf("Unknown READ_PATTERN: %s\n", val);
             return -1;
         }
 
+    } else if(strcmp(key, "TO_READ_CNT_M")==0) {
+        if((*params_in_out).isWrite) {
+            printf("TO_READ_CNT_M parameter is only used with READ_PATTERNs, please check config file.\n");
+            return -1;
+        }
+        (*params_in_out).cnt_try_particles_M = atoi(val);
     } else if(strcmp(key, "META_COLL")==0){
-        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
             (*params_in_out).meta_coll = 1;
-        }
-        else{
+        else
             (*params_in_out).meta_coll = 0;
-        }
+
     } else if (strcmp(key, "DATA_COLL")==0) {
-        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
             (*params_in_out).data_coll = 1;
-        }
-        else{
+        else
             (*params_in_out).data_coll = 0;
-        }
+
     } else if(strcmp(key, "COMPRESS")==0) {
-        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0){
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
             (*params_in_out).useCompress = 1;
-        }
-        else{
+        else
             (*params_in_out).useCompress = 0;
-        }
+
     } else if(strcmp(key, "TIME_STEPS_CNT") == 0) {
         int ts_cnt = atoi(val);
         if(ts_cnt >= 1)
@@ -327,9 +330,12 @@ int read_config(const char* file_path, bench_params* params_out, int do_write){
         params_out = (bench_params*)calloc(1, sizeof(bench_params));
     char cfg_line[CFG_LINE_LEN_MAX] = "";
     (*params_out).data_file_path = strdup(file_path);
-    (*params_out).cnt_actual_particles_M = 0;
+    (*params_out).cnt_try_particles_M = 0;
     (*params_out).meta_coll = 0;
     (*params_out).data_coll = 0;
+    (*params_out).csv_path = NULL;
+    (*params_out).csv_fs = NULL;
+    (*params_out).meta_list_path = NULL;
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
@@ -342,6 +348,9 @@ int read_config(const char* file_path, bench_params* params_out, int do_write){
         (*params_out).isWrite = 0;
     (*params_out).useCompress = 0;//by default
     (*params_out).meta_coll = 0;
+    (*params_out).dim_1 = 1;
+    (*params_out).dim_2 = 1;
+    (*params_out).dim_3 = 1;
 
     while(fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)){
         if(cfg_line[0] == '#'){ //skip comment lines
@@ -362,6 +371,13 @@ int read_config(const char* file_path, bench_params* params_out, int do_write){
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
 
+    if(params_out->isWrite){
+
+    } else {//read
+        if(params_out->access_pattern.pattern_read == CONTIG_1D){//read whole file
+            params_out->cnt_try_particles_M = params_out->cnt_particle_M;
+        }
+    }
     if(parsed < 0)
         return -1;
     else
@@ -415,9 +431,9 @@ void bench_params_free(bench_params* p){
 
 void test_read_config(const char* file_path, int do_write){
      bench_params param;
-     DEBUG_PRINT
+
      int ret = read_config(file_path, &param, do_write);
-     DEBUG_PRINT
+
      if(ret != 0){
          printf("read_config() failed, ret = %d\n", ret);
      } else {
