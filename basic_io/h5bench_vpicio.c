@@ -477,7 +477,12 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     void* data = NULL;
     unsigned long data_size;
     hid_t plist_id, filespace, memspace;
-    set_dspace_plist(&plist_id, params.data_coll);
+    if (params.file_per_proc) {
+      plist_id = H5Pcreate(H5P_DATASET_XFER);
+    }
+    else {
+      set_dspace_plist(&plist_id, params.data_coll);
+    }
 
     make_compound_type_separates();
     make_compound_type();
@@ -760,13 +765,27 @@ int main(int argc, char* argv[]) {
 
     hid_t fapl = set_fapl();
 
-    H5Pset_fapl_mpio(fapl, comm, info);
+    if(params.file_per_proc) {
 
-    int align = 0;
-    set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
+    }
+    else {
+      H5Pset_fapl_mpio(fapl, comm, info);
+      set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
+    }
 
     unsigned long t1 = get_time_usec(); // t1 - t0: cost of settings
-    hid_t file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
+
+    hid_t file_id;
+
+    if(params.file_per_proc) {
+      char mpi_rank_output_file_path[4096];
+      sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(output_file), MY_RANK, get_file_name_from_path(output_file));
+      file_id = H5Fcreate_async(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
+    }
+    else {
+      file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
+    }
+
     H5Pclose(fapl);
 
     if (MY_RANK == 0)

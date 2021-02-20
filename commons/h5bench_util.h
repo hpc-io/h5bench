@@ -73,6 +73,7 @@ typedef struct bench_params{
     char* csv_path;
     char* meta_list_path;
     FILE* csv_fs;
+    int file_per_proc;
 } bench_params;
 
 typedef struct data_md{
@@ -115,4 +116,8 @@ int csv_output_line(FILE* fs, char* name, char* val_str);
 int record_env_metadata(FILE* fs, const char* metadata_list_file);//set metadata_list_file to NULL if you don't need metadata.
 
 int argv_print(int argc, char* argv[]);
+
+char* get_file_name_from_path( char* path );
+char* get_dir_from_path( char* path );
+
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

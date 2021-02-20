@@ -313,6 +313,11 @@ int _set_params(char* key, char* val, bench_params* params_in_out, int do_write)
         } else if(strcmp(val, "ASYNC_IMP") == 0 || strcmp(val, "ASYNC_IMPLICIT") == 0) {
             (*params_in_out).asyncMode = ASYNC_IMPLICIT;
         }
+    } else if (strcmp(key, "FILE_PER_PROC")==0) {
+        if(strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
+            (*params_in_out).file_per_proc = 1;
+        else
+            (*params_in_out).file_per_proc = 0;
     }
     else {
         printf("Unknown Parameter: %s\n", key);
@@ -549,4 +554,44 @@ int argv_print(int argc, char* argv[]){
         printf("idx = %d, argv = %s\n", i, argv[i]);
     }
     return 0;
+}
+
+char* get_file_name_from_path( char* path ) {
+  if( path == NULL )
+    return NULL;
+
+  char * pFileName = path;
+  for( char * pCur = path; *pCur != '\0'; pCur++) {
+    if( *pCur == '/' || *pCur == '\\' )
+      pFileName = pCur+1;
+  }
+
+  return pFileName;
+}
+
+char* substr (char* src, size_t start, size_t len) {
+	if (start + len > strlen (src)) {
+		fprintf (stderr, "%s() error: invalid substring index (start+len > length).\n", __func__);
+		return NULL;
+	}
+
+	char* sub = calloc (1, len + 1);
+	if (!sub) {
+		fprintf (stderr, "%s() error: memory allocation failed.\n", __func__);
+		return NULL;
+	}
+
+	memcpy (sub, src + start, len);
+	// sub[len] = '\0';  // by using calloc, sub is filled with 0 (null)
+
+	return sub;
+}
+
+char* get_dir_from_path( char* path ) {
+  if( path == NULL )
+    return NULL;
+
+  char * pDir = substr(path, 0, strlen(path)-strlen(get_file_name_from_path(path)));
+
+  return pDir;
 }
