@@ -46,6 +46,7 @@
 #include <assert.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 #define DIM_MAX 3
@@ -706,6 +707,8 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
+
+    srand(time(NULL));
 
     int sleep_time = 0;
     if(MY_RANK == 0){
