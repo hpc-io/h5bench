@@ -715,7 +715,12 @@ int main(int argc, char* argv[]) {
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
 
-    srand(time(NULL));
+    int rand_seed_value = time(NULL);
+    srand(rand_seed_value);
+
+    if(MY_RANK == 0) {
+      printf("rand_seed_value: %d\n", rand_seed_value);
+    }
 
     int sleep_time = 0;
     if(MY_RANK == 0){
