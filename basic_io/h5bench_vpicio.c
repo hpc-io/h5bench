@@ -707,7 +707,9 @@ void print_usage(char *name) {
 }
 
 int main(int argc, char* argv[]) {
-    MPI_Init(&argc, &argv);
+    int mpi_thread_lvl_provided = -1;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
+    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm comm = MPI_COMM_WORLD;
