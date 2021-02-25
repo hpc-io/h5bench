@@ -77,6 +77,7 @@ SLEEP_TIME=1
 DIM_1=4096
 DIM_2=2048
 DIM_3=64 # extra dimension take no effects.
+FILE_PER_PROC=NO #Optional, default is NO.
 ```
 - To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size. **Note:** There is a know bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.  
 ```
@@ -88,6 +89,7 @@ CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 
 - For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64 * 64 * 256 = 1,048,576 (1M); and 10 * 20 * 30 is an invalid setting.
 - For 1D benchmarks (CC/CI/IC/II), DIM_1 must be set to the total particle number, and the rest two dimensions must be set to 1.
+- FILE_PER_PROC enables file-per-process mode. This mode does not utilize mpio for I/O.
 
 - No blank line and blank space are allowed.
 
