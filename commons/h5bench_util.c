@@ -341,6 +341,7 @@ int read_config(const char* file_path, bench_params* params_out, int do_write){
     (*params_out).csv_path = NULL;
     (*params_out).csv_fs = NULL;
     (*params_out).meta_list_path = NULL;
+    (*params_out).file_per_proc = 0;
     FILE* file = fopen(file_path, "r");
     char* key, val;
     int parsed = 1;
