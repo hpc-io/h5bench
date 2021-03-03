@@ -373,7 +373,6 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
             printf("compression not invoked.\n");
     }
 
-printf("%s:%u - rank = %d, before H5Dcreate_async calls\n", __func__, __LINE__, MY_RANK);
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
@@ -382,11 +381,8 @@ printf("%s:%u - rank = %d, before H5Dcreate_async calls\n", __func__, __LINE__, 
     dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
-printf("%s:%u - rank = %d, after H5Dcreate_async calls, ES_ID = %llx\n", __func__, __LINE__, MY_RANK, ES_ID);
 
-printf("%s:%u - rank = %d, data_in = {%p, %p, %p, %p, %p, %p, %p, %p}\n", __func__, __LINE__, MY_RANK, data_in->x, data_in->y, data_in->z, data_in->px, data_in->py, data_in->pz, data_in->id_1, data_in->id_2);
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ES_ID);
-#ifdef QAK
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ES_ID);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ES_ID);
     ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px, ES_ID);
@@ -394,8 +390,6 @@ printf("%s:%u - rank = %d, data_in = {%p, %p, %p, %p, %p, %p, %p, %p}\n", __func
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ES_ID);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ES_ID);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ES_ID);
-#endif /* QAK */
-printf("%s:%u - rank = %d, after H5Dwrite_async calls\n", __func__, __LINE__, MY_RANK);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -561,14 +555,11 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
 
     ES_ID = es_id_set(ASYNC_MODE);
 
-printf("%s:%u - rank = %d, before loop\n", __func__, __LINE__, MY_RANK);
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         MPI_Barrier (MPI_COMM_WORLD);
-printf("%s:%u - rank = %d, before H5Gcreate_async\n", __func__, __LINE__, MY_RANK);
         grp_ids[i] = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ES_ID);
 
-printf("%s:%u - rank = %d, after H5Gcreate_async\n", __func__, __LINE__, MY_RANK);
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
 
@@ -576,7 +567,6 @@ printf("%s:%u - rank = %d, after H5Gcreate_async\n", __func__, __LINE__, MY_RANK
 
         rt_start = get_time_usec();
         MPI_Barrier (MPI_COMM_WORLD);
-printf("%s:%u - rank = %d, before switch\n", __func__, __LINE__, MY_RANK);
         switch(mode){
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
@@ -602,7 +592,6 @@ printf("%s:%u - rank = %d, before switch\n", __func__, __LINE__, MY_RANK);
             default:
                 break;
         }
-printf("%s:%u - rank = %d, after switch\n", __func__, __LINE__, MY_RANK);
         rt_end = get_time_usec();
 
         *raw_write_time_out += (rt_end - rt_start);
