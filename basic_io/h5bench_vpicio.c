@@ -55,7 +55,7 @@ herr_t ierr;
 typedef struct compress_info{
     int USE_COMPRESS;
     hid_t dcpl_id;
-    unsigned long chunk_dims[DIM_MAX];
+    hsize_t chunk_dims[DIM_MAX];
 }compress_info;
 // Global Variables and dimensions
 async_mode ASYNC_MODE;
@@ -373,6 +373,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
             printf("compression not invoked.\n");
     }
 
+printf("%s:%u - rank = %d, before H5Dcreate_async calls\n", __func__, __LINE__, MY_RANK);
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
@@ -381,8 +382,11 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
+printf("%s:%u - rank = %d, after H5Dcreate_async calls, ES_ID = %llx\n", __func__, __LINE__, MY_RANK, ES_ID);
 
+printf("%s:%u - rank = %d, data_in = {%p, %p, %p, %p, %p, %p, %p, %p}\n", __func__, __LINE__, MY_RANK, data_in->x, data_in->y, data_in->z, data_in->px, data_in->py, data_in->pz, data_in->id_1, data_in->id_2);
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ES_ID);
+#ifdef QAK
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ES_ID);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ES_ID);
     ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px, ES_ID);
@@ -390,6 +394,8 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ES_ID);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ES_ID);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ES_ID);
+#endif /* QAK */
+printf("%s:%u - rank = %d, after H5Dwrite_async calls\n", __func__, __LINE__, MY_RANK);
 
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
@@ -555,11 +561,14 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
 
     ES_ID = es_id_set(ASYNC_MODE);
 
+printf("%s:%u - rank = %d, before loop\n", __func__, __LINE__, MY_RANK);
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         MPI_Barrier (MPI_COMM_WORLD);
+printf("%s:%u - rank = %d, before H5Gcreate_async\n", __func__, __LINE__, MY_RANK);
         grp_ids[i] = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ES_ID);
 
+printf("%s:%u - rank = %d, after H5Gcreate_async\n", __func__, __LINE__, MY_RANK);
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
 
@@ -567,6 +576,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
 
         rt_start = get_time_usec();
         MPI_Barrier (MPI_COMM_WORLD);
+printf("%s:%u - rank = %d, before switch\n", __func__, __LINE__, MY_RANK);
         switch(mode){
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
@@ -592,6 +602,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             default:
                 break;
         }
+printf("%s:%u - rank = %d, after switch\n", __func__, __LINE__, MY_RANK);
         rt_end = get_time_usec();
 
         *raw_write_time_out += (rt_end - rt_start);
@@ -632,17 +643,17 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     return 0;
 }
 
-void set_globals(bench_params params){
-    NUM_PARTICLES = params.cnt_particle_M * 1024 *1024;
-    NUM_TIMESTEPS = params.cnt_time_step;
+void set_globals(const bench_params *params){
+    NUM_PARTICLES = params->cnt_particle_M * 1024 *1024;
+    NUM_TIMESTEPS = params->cnt_time_step;
     //following variables only used to generate data
     X_DIM = X_RAND;
     Y_DIM = Y_RAND;
     Z_DIM = Z_RAND;
-    COMPRESS_INFO.USE_COMPRESS = params.useCompress;
-    COMPRESS_INFO.chunk_dims[0] = params.chunk_dim_1;
-    COMPRESS_INFO.chunk_dims[1] = params.chunk_dim_2;
-    COMPRESS_INFO.chunk_dims[2] = params.chunk_dim_3;
+    COMPRESS_INFO.USE_COMPRESS = params->useCompress;
+    COMPRESS_INFO.chunk_dims[0] = params->chunk_dim_1;
+    COMPRESS_INFO.chunk_dims[1] = params->chunk_dim_2;
+    COMPRESS_INFO.chunk_dims[2] = params->chunk_dim_3;
 
     if(COMPRESS_INFO.USE_COMPRESS) {//set DCPL
         herr_t ret;
@@ -652,13 +663,13 @@ void set_globals(bench_params params){
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
         assert(ret >= 0);
-        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params._dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
+        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->_dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
         assert(ret >= 0);
         ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
         assert(ret >= 0);
     }
 
-    ASYNC_MODE = params.asyncMode;
+    ASYNC_MODE = params->asyncMode;
 }
 
 hid_t set_fapl(){
@@ -751,12 +762,12 @@ int main(int argc, char* argv[]) {
     if(MY_RANK == 0)
         print_params(&params);
 
-    set_globals(params);
+    set_globals(&params);
 
     NUM_TIMESTEPS = params.cnt_time_step;
 
     if (MY_RANK == 0)
-        printf("Start benchmark: VPIC %s, Number of paritcles per rank: %lld M\n", params.pattern_name, NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n", params.pattern_name, NUM_PARTICLES/(1024*1024));
 
     unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
 

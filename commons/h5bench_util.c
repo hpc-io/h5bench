@@ -329,9 +329,12 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
 
 //only for vpic
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
+    char cfg_line[CFG_LINE_LEN_MAX] = "";
+
     if (!params_out)
         params_out = (bench_params*) calloc(1, sizeof(bench_params));
-    char cfg_line[CFG_LINE_LEN_MAX] = "";
+    else
+        memset(params_out, 0, sizeof(bench_params));
     (*params_out).data_file_path = strdup(file_path);
     (*params_out).pattern_name = NULL;
     (*params_out).meta_coll = 0;
