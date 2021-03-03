@@ -52,7 +52,7 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
 message("============== Build without USE_DEV_VL ==============")
 add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
-target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5_hl hdf5 z)
+target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5 hdf5_hl z)
 
 
 #set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})

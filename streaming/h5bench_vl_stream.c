@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <hdf5.h>
+#include <hdf5_hl.h>
 
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
