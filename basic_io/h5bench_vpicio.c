@@ -826,7 +826,7 @@ int main(int argc, char* argv[]) {
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
-        printf("\n =================  Performance results  =================\n");
+        printf("\n==================  Performance results  =================\n");
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
@@ -843,7 +843,7 @@ int main(int argc, char* argv[]) {
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
-        printf("\n ========================================================\n");
+	printf("===========================================================\n");
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
