@@ -830,7 +830,7 @@ int main(int argc, char* argv[]) {
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         %printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
-        printf("Total data written: %d MB, Total sleep time: %lu s\n", total_size_mb, total_sleep_time);
+        printf("Total data written: %lu MB, Total sleep time: %d s\n", total_size_mb, total_sleep_time);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
