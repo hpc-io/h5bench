@@ -768,7 +768,7 @@ int main(int argc, char* argv[]) {
     FILE_OFFSET -= NUM_PARTICLES;
 
     if (MY_RANK == 0)
-        printf("Total particle number = %lldM\n", TOTAL_PARTICLES / (M_VAL));
+        printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
 
@@ -829,7 +829,8 @@ int main(int argc, char* argv[]) {
         printf("\n =================  Performance results  =================\n");
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
+        %printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
+        printf("Total data written: %d MB, Total sleep time: %lu s\n", total_size_mb, total_sleep_time);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
@@ -843,6 +844,7 @@ int main(int argc, char* argv[]) {
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
+        printf("\n ========================================================\n");
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
