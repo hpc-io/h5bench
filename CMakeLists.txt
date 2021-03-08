@@ -4,6 +4,7 @@ project(h5bench)
 # Dependency: MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
+include_directories(${MPI_C_INCLUDE_PATH})
 
 # Dependecy: HDF5
 set(HDF5_HOME $ENV{HDF5_HOME})
@@ -15,10 +16,11 @@ link_directories(${HDF5_HOME}/lib)
 
 # Optional Dependency: CUDA
 set(USE_GPU OFF)
-find_package(CUDA)
-if(CUDA_FOUND)
+find_package(CUDAToolkit)
+if(CUDAToolkit_FOUND)
+  enable_language(CUDA)
   set(HDF5_USE_GPU ON)
-endif(CUDA_FOUND)
+endif(CUDAToolkit_FOUND)
 option(WITH_GPU "Compile Source Code with NVIDIA GPU" ${HDF5_USE_GPU})
 message(STATUS "WITH_GPU=" ${WITH_GPU})
 
@@ -31,16 +33,27 @@ add_library(h5bench_util ${h5bench_util_src})
 # =================================================================
 
 # ===========  Build basic_io: vpic and bdcats ===========
+if(WITH_GPU)
+  add_library(h5bench_gpu_kernels SHARED
+    basic_io/gpu_kernels/cuda_kernel.cu 
+    basic_io/gpu_kernels/cuda_kernel.h
+  )
+  set_target_properties(h5bench_gpu_kernels PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+endif(WITH_GPU)
+
 set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 if(WITH_GPU)
-  cuda_add_executable(h5bench_vpicio ${vpic_src})
-  set_target_properties(h5bench_vpicio PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
-else()
   add_executable(h5bench_vpicio ${vpic_src})
-endif()
-target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+  set_target_properties(h5bench_vpicio PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  target_link_libraries(h5bench_vpicio PRIVATE h5bench_gpu_kernels h5bench_util hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+  target_compile_options(h5bench_vpicio PRIVATE ${MPI_C_COMPILE_FLAGS})
+else(WITH_GPU)
+  add_executable(h5bench_vpicio ${vpic_src})
+  target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+endif(WITH_GPU)
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
 target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
