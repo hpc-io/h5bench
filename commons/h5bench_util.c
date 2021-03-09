@@ -329,9 +329,12 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
 
 //only for vpic
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
+    char cfg_line[CFG_LINE_LEN_MAX] = "";
+
     if (!params_out)
         params_out = (bench_params*) calloc(1, sizeof(bench_params));
-    char cfg_line[CFG_LINE_LEN_MAX] = "";
+    else
+        memset(params_out, 0, sizeof(bench_params));
     (*params_out).data_file_path = strdup(file_path);
     (*params_out).pattern_name = NULL;
     (*params_out).meta_coll = 0;
@@ -407,36 +410,36 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
 void print_params(const bench_params *p) {
     printf("=======================================\n");
-    printf("Benchmark parameter list: \nFile: %s\n", p->data_file_path);
-    printf("Benchmark pattern = %s\n", p->pattern_name);
-    printf("Per rank particles number(in M) = %d M\n", p->cnt_particle_M);
-    //printf("Per rank actual read number (in M) = %d M\n", p->cnt_actual_particles_M);
-    printf("Time step number = %d\n", p->cnt_time_step);
-    printf("Sleep time = %d\n", p->sleep_time);
+    printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
+    printf("Benchmark pattern: %s\n", p->pattern_name);
+    printf("Number of particles per rank (in M): %d M\n", p->cnt_particle_M);
+    //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
+    printf("Number of time steps: %d\n", p->cnt_time_step);
+    printf("Sleep time between time steps: %d\n", p->sleep_time);
 
     if (p->meta_coll == 1)
-        printf("Metadata collective ops: YES.\n");
+        printf("Collective metadata operations: YES.\n");
     else
-        printf("Metadata collective ops: NO.\n");
+        printf("Collective metadata operations: NO.\n");
     if (p->data_coll == 1)
-        printf("Data collective ops: YES.\n");
+        printf("Collective buffering for data operations: YES.\n");
     else
-        printf("Data collective ops: NO.\n");
+        printf("Collective buffering for data operations: NO.\n");
 
-    printf("Dimension cnt = %d\n", p->_dim_cnt);
-    printf("    Dim_1 = %lu\n", p->dim_1);
+    printf("Number of dimensions: %d\n", p->_dim_cnt);
+    printf("    Dim_1: %lu\n", p->dim_1);
     if (p->_dim_cnt >= 2) {
-        printf("    Dim_2 = %lu\n", p->dim_2);
+        printf("    Dim_2: %lu\n", p->dim_2);
     } else if (p->_dim_cnt >= 3) {
-        printf("    Dim_3 = %lu\n", p->dim_3);
+        printf("    Dim_3: %lu\n", p->dim_3);
     }
     if (p->useCompress) {
-        printf("useCompress = %d\n", p->useCompress);
-        printf("chunk_dim1 = %lu\n", p->chunk_dim_1);
+        printf("Use compression: %d\n", p->useCompress);
+        printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
         if (p->_dim_cnt >= 2) {
-            printf("chunk_dim2 = %lu\n", p->chunk_dim_2);
+            printf("    chunk_dim2: %lu\n", p->chunk_dim_2);
         } else if (p->_dim_cnt >= 3) {
-            printf("chunk_dim3 = %lu\n", p->chunk_dim_3);
+            printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
 

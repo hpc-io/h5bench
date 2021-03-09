@@ -55,7 +55,7 @@ herr_t ierr;
 typedef struct compress_info{
     int USE_COMPRESS;
     hid_t dcpl_id;
-    unsigned long chunk_dims[DIM_MAX];
+    hsize_t chunk_dims[DIM_MAX];
 }compress_info;
 // Global Variables and dimensions
 async_mode ASYNC_MODE;
@@ -639,17 +639,17 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     return 0;
 }
 
-void set_globals(bench_params params){
-    NUM_PARTICLES = params.cnt_particle_M * 1024 *1024;
-    NUM_TIMESTEPS = params.cnt_time_step;
+void set_globals(const bench_params *params){
+    NUM_PARTICLES = params->cnt_particle_M * 1024 *1024;
+    NUM_TIMESTEPS = params->cnt_time_step;
     //following variables only used to generate data
     X_DIM = X_RAND;
     Y_DIM = Y_RAND;
     Z_DIM = Z_RAND;
-    COMPRESS_INFO.USE_COMPRESS = params.useCompress;
-    COMPRESS_INFO.chunk_dims[0] = params.chunk_dim_1;
-    COMPRESS_INFO.chunk_dims[1] = params.chunk_dim_2;
-    COMPRESS_INFO.chunk_dims[2] = params.chunk_dim_3;
+    COMPRESS_INFO.USE_COMPRESS = params->useCompress;
+    COMPRESS_INFO.chunk_dims[0] = params->chunk_dim_1;
+    COMPRESS_INFO.chunk_dims[1] = params->chunk_dim_2;
+    COMPRESS_INFO.chunk_dims[2] = params->chunk_dim_3;
 
     if(COMPRESS_INFO.USE_COMPRESS) {//set DCPL
         herr_t ret;
@@ -659,13 +659,13 @@ void set_globals(bench_params params){
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
         assert(ret >= 0);
-        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params._dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
+        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->_dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
         assert(ret >= 0);
         ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
         assert(ret >= 0);
     }
 
-    ASYNC_MODE = params.asyncMode;
+    ASYNC_MODE = params->asyncMode;
 }
 
 hid_t set_fapl(){
@@ -758,12 +758,12 @@ int main(int argc, char* argv[]) {
     if(MY_RANK == 0)
         print_params(&params);
 
-    set_globals(params);
+    set_globals(&params);
 
     NUM_TIMESTEPS = params.cnt_time_step;
 
     if (MY_RANK == 0)
-        printf("Start benchmark: VPIC %s, Number of paritcles per rank: %lld M\n", params.pattern_name, NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n", params.pattern_name, NUM_PARTICLES/(1024*1024));
 
     unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
 
@@ -775,7 +775,7 @@ int main(int argc, char* argv[]) {
     FILE_OFFSET -= NUM_PARTICLES;
 
     if (MY_RANK == 0)
-        printf("Total particle number = %lldM\n", TOTAL_PARTICLES / (M_VAL));
+        printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
 
@@ -833,7 +833,7 @@ int main(int argc, char* argv[]) {
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
-        printf("\n =================  Performance results  =================\n");
+        printf("\n==================  Performance results  =================\n");
         int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
@@ -850,6 +850,7 @@ int main(int argc, char* argv[]) {
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
+	printf("===========================================================\n");
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
