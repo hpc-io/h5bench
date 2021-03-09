@@ -204,7 +204,6 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
     long idx = 0;
     for(long i1 = 0; i1 < dim_1; i1++){
         for(long i2 = 0; i2 < dim_2; i2++){
-            data_out->x[idx] = uniform_random_number() * X_DIM;
             data_out->id_1[idx] = i1;
             data_out->id_2[idx] = (float)(i1 * 2);
             data_out->x[idx] =  uniform_random_number() * X_DIM;
@@ -359,7 +358,7 @@ int set_select_space_multi_3D_array(hid_t* filespace_out, hid_t* memspace_out,
  *  write file: create m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
  */
 void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_contig_md* data_in){
+        data_contig_md* data_in, unsigned long *metadata_time, unsigned long* data_time){
     assert(data_in && data_in->x);
     hid_t dcpl;
     if(COMPRESS_INFO.USE_COMPRESS)
@@ -372,7 +371,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
         else
             printf("compression not invoked.\n");
     }
-
+    unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
@@ -381,7 +380,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
-
+    unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ES_ID);
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ES_ID);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ES_ID);
@@ -390,21 +389,23 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ES_ID);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ES_ID);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ES_ID);
-
+    unsigned t3 = get_time_usec();
+    *metadata_time = t2 - t1;
+    *data_time = t3 - t2;
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
 void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        data_contig_md* data_in){
+        data_contig_md* data_in, unsigned long *metadata_time, unsigned long* data_time){
     assert(data_in && data_in->x);
     hid_t dcpl;
     if(COMPRESS_INFO.USE_COMPRESS)
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
-
+    unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
-
+    unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x, ES_ID);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y, ES_ID);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z, ES_ID);
@@ -413,19 +414,21 @@ void data_write_contig_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespac
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id, data_in->pz, ES_ID);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id, data_in->id_1, ES_ID);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id, data_in->id_2, ES_ID);
-
+    unsigned t3 = get_time_usec();
+    *metadata_time = t2 - t1;
+    *data_time = t3 - t2;
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
 void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        particle* data_in) {
+        particle* data_in, unsigned long *metadata_time, unsigned long* data_time) {
     assert(data_in);
     hid_t dcpl;
     if(COMPRESS_INFO.USE_COMPRESS)
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
-
+    unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "x",   PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[1] = H5Dcreate_async(loc, "y",   PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[2] = H5Dcreate_async(loc, "z",   PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
@@ -434,7 +437,7 @@ void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespac
     dset_ids[5] = H5Dcreate_async(loc, "pz",  PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[6] = H5Dcreate_async(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
-
+    unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
     ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
     ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
@@ -443,26 +446,32 @@ void data_write_interleaved_to_contig(hid_t loc, hid_t *dset_ids, hid_t filespac
     ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
     ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
     ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);
-
+    unsigned t3 = get_time_usec();
+    *metadata_time = t2 - t1;
+    *data_time = t3 - t2;
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
 void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
-        particle* data_in) {
+        particle* data_in, unsigned long *metadata_time, unsigned long* data_time) {
     assert(data_in);
     hid_t dcpl;
     if(COMPRESS_INFO.USE_COMPRESS)
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
-
+    unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
+    unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ES_ID);//should write all things in data_in
-
+    unsigned t3 = get_time_usec();
+    *metadata_time = t2 - t1;
+    *data_time = t3 - t2;
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_data_size_out, unsigned long* raw_write_time_out) {
+int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_data_size_out,
+        unsigned long* data_preparation_time, unsigned long* raw_write_time, unsigned long* inner_metadata_time) {
     write_pattern mode = params.access_pattern.pattern_write;
     long particle_cnt = params.cnt_particle_M * M_VAL;
     int timestep_cnt = params.cnt_time_step;
@@ -471,9 +480,9 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     char grp_name[128];
     unsigned long  rt_start, rt_end;
     int grp_cnt = 0, dset_cnt = 0;
-    hid_t **dset_ids = (hid_t**)calloc(timestep_cnt, sizeof(hid_t*));
-    hid_t *grp_ids  = (hid_t*)calloc(timestep_cnt, sizeof(hid_t));
-    *raw_write_time_out = 0;
+
+    *raw_write_time = 0;
+    *inner_metadata_time = 0;
     void* data = NULL;
     unsigned long data_size;
     hid_t plist_id, filespace, memspace;
@@ -487,6 +496,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     make_compound_type_separates();
     make_compound_type();
 
+    unsigned long t_prep_start = get_time_usec();
     switch(mode){
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(&filespace, &memspace);
@@ -499,7 +509,6 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 8;
             break;
-
 
         case CONTIG_INTERLEAVED_1D:
             set_select_spaces_default(&filespace, &memspace);
@@ -546,6 +555,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             assert(0 && "this mode is not yet implemented");
             break;
     }
+    *data_preparation_time = get_time_usec() - t_prep_start;
 
     if(!data){
         if (MY_RANK == 0)
@@ -554,39 +564,39 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     }
 
     ES_ID = es_id_set(ASYNC_MODE);
-
+    unsigned long metadata_time, data_time;
     for (int i = 0; i < timestep_cnt; i++) {
         sprintf(grp_name, "Timestep_%d", i);
-        MPI_Barrier (MPI_COMM_WORLD);
-        grp_ids[i] = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ES_ID);
+
+        hid_t grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ES_ID);
 
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
 
-        dset_ids[i] = (hid_t*)calloc(8, sizeof(hid_t));
+        hid_t dset_ids[8];
 
+        //MPI_Barrier (MPI_COMM_WORLD);
         rt_start = get_time_usec();
-        MPI_Barrier (MPI_COMM_WORLD);
         switch(mode){
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
             case CONTIG_CONTIG_3D:
-                data_write_contig_contig_MD_array(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
+                data_write_contig_contig_MD_array(grp_id, dset_ids, filespace, memspace, plist_id, (data_contig_md*)data, &metadata_time, &data_time);
                 break;
 
             case CONTIG_INTERLEAVED_1D:
             case CONTIG_INTERLEAVED_2D:
-                data_write_contig_to_interleaved(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (data_contig_md*)data);
+                data_write_contig_to_interleaved(grp_id, dset_ids, filespace, memspace, plist_id, (data_contig_md*)data, &metadata_time, &data_time);
                 break;
 
             case INTERLEAVED_CONTIG_1D:
             case INTERLEAVED_CONTIG_2D:
-                data_write_interleaved_to_contig(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
+                data_write_interleaved_to_contig(grp_id, dset_ids, filespace, memspace, plist_id, (particle*)data, &metadata_time, &data_time);
                 break;
 
             case INTERLEAVED_INTERLEAVED_1D:
             case INTERLEAVED_INTERLEAVED_2D:
-                data_write_interleaved_to_interleaved(grp_ids[i], dset_ids[i], filespace, memspace, plist_id, (particle*)data);
+                data_write_interleaved_to_interleaved(grp_id, dset_ids, filespace, memspace, plist_id, (particle*)data, &metadata_time, &data_time);
                 break;
 
             default:
@@ -594,8 +604,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         }
         rt_end = get_time_usec();
 
-        *raw_write_time_out += (rt_end - rt_start);
-        MPI_Barrier (MPI_COMM_WORLD);
+        *raw_write_time += data_time;
+        *inner_metadata_time += metadata_time;
 
         if (i != timestep_cnt - 1) {
             if (sleep_time > 0) {
@@ -608,11 +618,8 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         }
 
         for (int j = 0; j < dset_cnt; j++)
-            H5Dclose_async(dset_ids[i][j], ES_ID);
-        H5Gclose_async(grp_ids[i], ES_ID);
-
-        MPI_Barrier (MPI_COMM_WORLD);
-        free(dset_ids[i]);
+            H5Dclose_async(dset_ids[j], ES_ID);
+        H5Gclose_async(grp_id, ES_ID);
     }
 
     es_id_close(ES_ID, ASYNC_MODE);
@@ -801,8 +808,8 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
-    unsigned long raw_write_time, local_data_size;
-    int stat = _run_time_steps(params, file_id, &local_data_size, &raw_write_time);
+    unsigned long data_preparation_time, raw_write_time, inner_metadata_time, local_data_size;
+    int stat = _run_time_steps(params, file_id, &local_data_size, &data_preparation_time, &raw_write_time, &inner_metadata_time);
 
     if(stat < 0){
         if (MY_RANK == 0)
@@ -835,8 +842,8 @@ int main(int argc, char* argv[]) {
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("RR: Raw write time = %.3f sec, RR = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
 
-        unsigned long meta_time_ms = (t3 - t2 - raw_write_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000) / 1000;
-        printf("Core metadata time = %lu ms\n", meta_time_ms);
+        float meta_time_ms = (float)inner_metadata_time / 1000;//((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
+        printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
         float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000)); //
         printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
@@ -852,7 +859,7 @@ int main(int argc, char* argv[]) {
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Core_metadata_time, %.3f, ms\n", meta_time_ms);
             fprintf(params.csv_fs, "Observed_write_rate, %.3f, MB/sec\n", or_mbs);
             fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose(params.csv_fs);

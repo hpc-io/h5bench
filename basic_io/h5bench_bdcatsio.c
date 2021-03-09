@@ -69,67 +69,45 @@ void print_data(int n) {
 }
 
 // Create HDF5 file and read data
-void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace, unsigned long* read_time) {
-    hid_t dset_id, dapl;
-    unsigned long core_read_time = 0, start_read, end;
-
+void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace,
+        unsigned long* read_time, unsigned long* metadata_time) {
+    hid_t dset_ids[8], dapl;
+    unsigned long t1, t2, t3, t4;
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
 
-    dset_id = H5Dopen_async(loc, "x", dapl, ES_ID);
-    start_read = get_time_usec();
+    t1 = get_time_usec();
+    dset_ids[0] = H5Dopen_async(loc, "x", dapl, ES_ID);
+    dset_ids[1] = H5Dopen_async(loc, "y", dapl, ES_ID);
+    dset_ids[2] = H5Dopen_async(loc, "z", dapl, ES_ID);
+    dset_ids[3] = H5Dopen_async(loc, "id_1", dapl, ES_ID);
+    dset_ids[4] = H5Dopen_async(loc, "id_2", dapl, ES_ID);
+    dset_ids[5] = H5Dopen_async(loc, "px", dapl, ES_ID);
+    dset_ids[6] = H5Dopen_async(loc, "py", dapl, ES_ID);
+    dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ES_ID);
 
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ES_ID);
+    t2 = get_time_usec();
+    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ES_ID);
+    ierr = H5Dread_async(dset_ids[1] , H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ES_ID);
+    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ES_ID);
+    ierr = H5Dread_async(dset_ids[3] , H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ES_ID);
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ES_ID);
+    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ES_ID);
+    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ES_ID);
+    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ES_ID);
 
-    core_read_time += (get_time_usec() - start_read);
+    t3 = get_time_usec();
 
-    H5Dclose_async(dset_id, ES_ID);
+    for(int i = 0; i < 8; i++)
+        H5Dclose_async(dset_ids[i], ES_ID);
 
-    dset_id = H5Dopen_async(loc, "y", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
+    t4 = get_time_usec();
 
-    dset_id = H5Dopen_async(loc, "z", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
-
-    dset_id = H5Dopen_async(loc, "id_1", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
-
-    dset_id = H5Dopen_async(loc, "id_2", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
-
-    dset_id = H5Dopen_async(loc, "px", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
-
-    dset_id = H5Dopen_async(loc, "py", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
-
-    dset_id = H5Dopen_async(loc, "pz", dapl, ES_ID);
-    start_read = get_time_usec();
-    ierr = H5Dread_async(dset_id, H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ES_ID);
-    core_read_time += (get_time_usec() - start_read);
-    H5Dclose_async(dset_id, ES_ID);
+    *read_time = t3 - t2;
+    *metadata_time = t4 - t1 - *read_time;
 
     if (rank == 0) printf ("  Read 8 variable completed\n");
 
-    *read_time = core_read_time;
     H5Pclose(dapl);
     //if(MY_RANK == 0) print_data(3); //print sample data
 }
@@ -247,8 +225,10 @@ unsigned long set_dataspace(bench_params params, unsigned long try_read_elem_cnt
     return actual_read_cnt;
 }
 
-int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params, unsigned long* raw_read_time_out, unsigned long* total_data_size_out){
+int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params, unsigned long* total_data_size_out,
+        unsigned long* raw_read_time_out, unsigned long* inner_metadata_time){
     *raw_read_time_out = 0;
+    *inner_metadata_time = 0;
     int nts = params.cnt_time_step;
     int sleep_time = params.sleep_time;
     unsigned long read_elem_cnt = params.cnt_try_particles_M * M_VAL;
@@ -264,13 +244,13 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         print_params(&params);
 
     ES_ID = es_id_set(ASYNC_MODE);
-
+    unsigned long read_time, metadata_time;
     for (int i = 0; i < nts; i++) {
         sprintf(grp_name, "Timestep_%d", i);
         grp = H5Gopen_async(file_id, grp_name, gapl, ES_ID);
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
-        read_h5_data(MY_RANK, grp, filespace, memspace, raw_read_time_out);
+        read_h5_data(MY_RANK, grp, filespace, memspace, &read_time, &metadata_time);
 
         if (i != 0) {
             if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
@@ -280,7 +260,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
             H5ESwait(ES_ID, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
         }
         H5Gclose_async(grp, ES_ID);
-        MPI_Barrier(MPI_COMM_WORLD);
+
+        *raw_read_time_out += read_time;
+        *inner_metadata_time += metadata_time;
     }
 
     es_id_close(ES_ID, ASYNC_MODE);
@@ -413,9 +395,9 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
-    unsigned long raw_read_time, local_data_size;
+    unsigned long raw_read_time, metadata_time, local_data_size;
     unsigned long t2 = get_time_usec();
-    _run_benchmark_read(file_id, fapl, gapl, filespace, params, &raw_read_time, &local_data_size);
+    _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time, &metadata_time);
     unsigned long t3 = get_time_usec();
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -439,8 +421,8 @@ int main (int argc, char* argv[]){
         float raw_rate_mbs = total_size_mb / rrt_s;
         printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n", rrt_s, raw_rate_mbs);
 
-        unsigned long meta_time_ms = (t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
-        printf("Core metadata time = %lu ms\n", meta_time_ms);
+        float meta_time_ms = (float)metadata_time/1000;//(t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
+        printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
         double or_mbs = (float)total_size_mb/((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));
         printf("OR (observed read rate) = %.3f MB/sec\n", or_mbs);
@@ -454,7 +436,7 @@ int main (int argc, char* argv[]){
             fprintf(params.csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Core_metadata_time, %lu, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Core_metadata_time, %.3f, ms\n", meta_time_ms);
             fprintf(params.csv_fs, "Observed_read_rate, %.3f, MB/sec\n", or_mbs);
             fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose (params.csv_fs);
