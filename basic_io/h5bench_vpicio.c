@@ -650,6 +650,9 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         return -1;
     }
 
+    volatile int *kernel_flag;
+    CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&kernel_flag, sizeof(int), cudaMemAttachGlobal));
+
     ES_ID = es_id_set(ASYNC_MODE);
     unsigned long metadata_time, data_time;
     for (int i = 0; i < timestep_cnt; i++) {
@@ -662,12 +665,10 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
 
         hid_t dset_ids[8];
 
-        volatile int *kernel_flag;
-        CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&kernel_flag, sizeof(int), cudaMemAttachGlobal));
-        *kernel_flag = 1;
+        *kernel_flag = 0;
         kernel_call((data_contig_md*)data, kernel_flag, (cudaStream_t)0);
-				// CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
-				cudaDeviceSynchronize();
+        *kernel_flag = 1;
+        CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
 
         //MPI_Barrier (MPI_COMM_WORLD);
         rt_start = get_time_usec();
