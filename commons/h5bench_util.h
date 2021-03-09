@@ -10,12 +10,12 @@
 
 #define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__); fflush(stdout);
 //Maximal line length of the config file
-#define  CFG_LINE_LEN_MAX 510
+#define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
 #define G_VAL 1024 * 1024 * 1024
-#define  M_VAL 1024 * 1024
-#define  K_VAL 1024
-
+#define M_VAL 1024 * 1024
+#define K_VAL 1024
+#define PARTICLE_SIZE 7 * sizeof(float) +  sizeof(int)
 typedef enum async_mode {
     ASYNC_NON,
     ASYNC_EXPLICIT,
@@ -60,6 +60,7 @@ typedef struct bench_params{
     int cnt_time_step;
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
+    int memory_bound_M;//memory usage bound
     int sleep_time;
     int _dim_cnt;
     unsigned long stride;

@@ -232,6 +232,14 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("PARTICLE_CNT_M must be at least 1.\n");
             return -1;
         }
+    } else if(strcmp(key, "MEM_BOUND_M") == 0) {
+        int bound = atoi(val);
+        if(bound >= 0) {
+            (*params_in_out).memory_bound_M = bound;
+        } else {
+            printf("MEM_BOUND_M must be at least 0.\n");
+            return -1;
+        }
     } else if (strcmp(key, "SLEEP_TIME") == 0) {
         int sleep_time = atoi(val);
         if (sleep_time >= 0)
@@ -327,7 +335,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     return 1;
 }
 
-//only for vpic
+
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
     char cfg_line[CFG_LINE_LEN_MAX] = "";
 
@@ -342,6 +350,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     (*params_out).cnt_time_step = 0;
     (*params_out).cnt_particle_M = 0; //total number per rank
+    (*params_out).memory_bound_M = 0;
     (*params_out).cnt_try_particles_M = 0; // to read
     (*params_out).sleep_time = 0;
     (*params_out)._dim_cnt = 1;
@@ -395,6 +404,14 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
 
+    if(params_out->memory_bound_M > 0) {
+        if(params_out->cnt_particle_M * PARTICLE_SIZE >= params_out->memory_bound_M) {
+            printf("Requested memory (%d MB) is larger than specified memory bound (%d MB), "
+                    "please check MEM_BOUND_M in your config file.\n",
+                    params_out->cnt_particle_M * PARTICLE_SIZE, params_out->memory_bound_M);
+            return -1;
+        }
+    }
     if (params_out->isWrite) {
 
     } else { //read
