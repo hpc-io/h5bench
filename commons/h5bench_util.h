@@ -27,6 +27,7 @@ typedef enum write_pattern {
     CONTIG_INTERLEAVED_1D,
     INTERLEAVED_CONTIG_1D,
     INTERLEAVED_INTERLEAVED_1D,
+    CONTIG_CONTIG_STRIDED_1D,
     CONTIG_CONTIG_2D,
     CONTIG_INTERLEAVED_2D,
     INTERLEAVED_CONTIG_2D,
@@ -65,6 +66,7 @@ typedef struct bench_params{
     int _dim_cnt;
     unsigned long stride;
     unsigned long block_size;
+    unsigned long block_cnt;
     unsigned long dim_1;
     unsigned long dim_2;
     unsigned long dim_3;

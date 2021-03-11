@@ -126,6 +126,10 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "CC_STRIDED") == 0) {
+            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_STRIDED_1D");
+            (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "CC2D") == 0) {
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
@@ -177,7 +181,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "STRIDED") == 0) {
             (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out).pattern_name = strdup("STRIDED_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "2D") == 0) {
             (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
@@ -304,9 +308,10 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         }
     } else if (strcmp(key, "STRIDE_SIZE") == 0) {
         (*params_in_out).stride = atoi(val);
-
     } else if (strcmp(key, "BLOCK_SIZE") == 0) {
         (*params_in_out).block_size = atoi(val);
+    } else if(strcmp(key, "BLOCK_CNT") == 0) {
+        (*params_in_out).block_cnt = atoi(val);
     } else if (strcmp(key, "CSV_FILE") == 0) {
         (*params_in_out).useCSV = 1;
         (*params_in_out).csv_path = strdup(val);
@@ -357,6 +362,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     (*params_out).stride = 0;
     (*params_out).block_size = 0;
+    (*params_out).block_cnt = 0;
     (*params_out).dim_1 = 1;
     (*params_out).dim_2 = 1;
     (*params_out).dim_3 = 1;
@@ -413,12 +419,29 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         }
     }
     if (params_out->isWrite) {
-
+        if(params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
+            if(params_out->stride < 1
+                    || params_out->block_size < 1
+                    || params_out->block_cnt < 1) {
+                printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
     } else { //read
         if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
             params_out->cnt_try_particles_M = params_out->cnt_particle_M;
         }
+        if(params_out->access_pattern.pattern_read == STRIDED_1D) {
+            if(params_out->stride < 1
+                    || params_out->block_size < 1
+                    || params_out->block_cnt < 1) {
+                printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
     }
+
+
     if (parsed < 0)
         return -1;
     else
@@ -450,6 +473,13 @@ void print_params(const bench_params *p) {
     } else if (p->_dim_cnt >= 3) {
         printf("    Dim_3: %lu\n", p->dim_3);
     }
+
+    if(p->access_pattern.pattern_read == STRIDED_1D || p->access_pattern.pattern_write ==  CONTIG_CONTIG_STRIDED_1D) {
+        printf("Strided access settings:\n");
+        printf("    Stride size = %ld\n", p->stride);
+        printf("    Block size = %ld\n", p->block_size);
+    }
+
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);

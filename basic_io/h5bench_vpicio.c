@@ -300,11 +300,38 @@ void set_dspace_plist(hid_t* plist_id_out, int data_collective){
         H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
 
+
+
 int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out){
     *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &NUM_PARTICLES, NULL);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL, (hsize_t *) &NUM_PARTICLES, NULL);
     return 0;
+}
+
+unsigned long set_select_spaces_strided(bench_params params, hid_t* filespace_out, hid_t* memspace_out){
+    if(MY_RANK == 0){
+        printf("Stride parameters: STRIDE_SIZE = %lu, BLOCK_SIZE = %lu, BLOCK_CNT = %lu\n",
+                params.stride, params.block_size, params.block_cnt);
+    }
+    if((params.stride + params.block_size) * params.block_cnt > params.dim_1){
+        printf("\n\nInvalid hyperslab setting: (STRIDE_SIZE + BLOCK_SIZE) * BLOCK_CNT"
+                "must be no greater than the number of available particles per rank(%lu).\n\n",
+                params.chunk_dim_1);
+        return 0;
+    }
+
+    unsigned long actual_elem_cnt = params.block_size * params.block_cnt;
+
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
+    *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);
+    H5Sselect_hyperslab(*filespace_out,
+            H5S_SELECT_SET,
+            (hsize_t *) &FILE_OFFSET, //start-offset
+            (hsize_t *) &params.stride, //stride
+            (hsize_t *) &params.block_cnt, //block cnt
+            (hsize_t*) &params.block_size); //block size
+    return actual_elem_cnt;
 }
 
 int set_select_space_2D_array(hid_t* filespace_out, hid_t* memspace_out,
@@ -371,6 +398,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
         else
             printf("compression not invoked.\n");
     }
+
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
@@ -381,6 +409,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ES_ID);
     unsigned t2 = get_time_usec();
+
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ES_ID);
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ES_ID);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ES_ID);
@@ -390,6 +419,7 @@ void data_write_contig_contig_MD_array(hid_t loc, hid_t *dset_ids, hid_t filespa
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ES_ID);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ES_ID);
     unsigned t3 = get_time_usec();
+
     *metadata_time = t2 - t1;
     *data_time = t3 - t2;
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
@@ -470,7 +500,7 @@ void data_write_interleaved_to_interleaved(hid_t loc, hid_t *dset_ids, hid_t fil
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_data_size_out,
+int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* total_data_size_out,
         unsigned long* data_preparation_time, unsigned long* raw_write_time, unsigned long* inner_metadata_time) {
     write_pattern mode = params.access_pattern.pattern_write;
     long particle_cnt = params.cnt_particle_M * M_VAL;
@@ -495,7 +525,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
 
     make_compound_type_separates();
     make_compound_type();
-
+    unsigned long actual_elem_cnt = 0;//only for set_select_spaces_strided()
     unsigned long t_prep_start = get_time_usec();
     switch(mode){
         case CONTIG_CONTIG_1D:
@@ -507,6 +537,16 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         case CONTIG_CONTIG_2D:
             set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
+            dset_cnt = 8;
+            break;
+
+        case CONTIG_CONTIG_STRIDED_1D:
+            actual_elem_cnt = set_select_spaces_strided(params, &filespace, &memspace);
+            if(actual_elem_cnt < 1){
+                printf("Strided write setting error.\n");
+                return -1;
+            }
+            data = (void*)prepare_data_contig_1D(actual_elem_cnt, &data_size);
             dset_cnt = 8;
             break;
 
@@ -581,6 +621,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
             case CONTIG_CONTIG_3D:
+            case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(grp_id, dset_ids, filespace, memspace, plist_id, (data_contig_md*)data, &metadata_time, &data_time);
                 break;
 
@@ -620,6 +661,7 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
         for (int j = 0; j < dset_cnt; j++)
             H5Dclose_async(dset_ids[j], ES_ID);
         H5Gclose_async(grp_id, ES_ID);
+
     }
 
     es_id_close(ES_ID, ASYNC_MODE);
@@ -633,7 +675,9 @@ int _run_time_steps(bench_params params, hid_t file_id, unsigned long* total_dat
     data_free(mode, data);
 
     H5Sclose(memspace);
+
     H5Sclose(filespace);
+
     H5Pclose(plist_id);
 
     return 0;
@@ -809,7 +853,7 @@ int main(int argc, char* argv[]) {
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long data_preparation_time, raw_write_time, inner_metadata_time, local_data_size;
-    int stat = _run_time_steps(params, file_id, &local_data_size, &data_preparation_time, &raw_write_time, &inner_metadata_time);
+    int stat = _run_benchmark_write(params, file_id, &local_data_size, &data_preparation_time, &raw_write_time, &inner_metadata_time);
 
     if(stat < 0){
         if (MY_RANK == 0)
