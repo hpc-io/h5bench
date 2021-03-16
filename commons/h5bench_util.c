@@ -29,6 +29,102 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
     return 0;
 }
 
+void timestep_es_id_close(time_step* ts, async_mode mode) {
+    es_id_close(ts->es_meta_create, mode);
+    es_id_close(ts->es_data, mode);
+    es_id_close(ts->es_meta_close, mode);
+}
+
+mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
+        unsigned long time_step_size, unsigned long mem_threshold){
+    if(time_step_cnt < 1 || mem_threshold < 1)
+        return NULL;
+    mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
+    monitor->time_step_cnt = time_step_cnt;
+    monitor->mem_used = 0;
+    monitor->mem_threshold = mem_threshold;
+    monitor->time_steps = calloc(time_step_cnt, sizeof(time_step));
+    monitor->mode = mode;
+    for(int i = 0; i < time_step_cnt; i++){
+        monitor->time_steps[i].es_meta_create = es_id_set(mode);
+        monitor->time_steps[i].es_meta_close = es_id_set(mode);
+        monitor->time_steps[i].es_data = es_id_set(mode);
+        monitor->time_steps[i].mem_size = time_step_size;
+        monitor->time_steps[i].status = TS_INIT;
+    }
+
+    return monitor;
+}
+
+int mem_monitor_free(mem_monitor* mon){
+    if(mon) {
+        free(mon->time_steps);
+        free(mon);
+    }
+    return 0;
+}
+
+int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+    if(mon->mem_used >= mon->mem_threshold) {//call ESWait and do ops
+        time_step* ts_run;
+        size_t num_in_progress;
+        H5ES_status_t op_failed;
+        unsigned long t1, t2, t3, t4;
+        for(int i = 0; i < mon->time_step_cnt; i++){
+            if(mon->time_steps[i].status == TS_READY){
+                printf("\n--------Phase 2 (when threshold is reached): run ts-%d\n\n", i);
+                ts_run = &(mon->time_steps[i]);
+                t1 = get_time_usec();
+                H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                t2 = get_time_usec();
+                H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                t3 = get_time_usec();
+                H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                timestep_es_id_close(ts_run, mon->mode);
+                t4 = get_time_usec();
+                *metadata_time_total += ((t2 - t1) + (t4 - t3));
+                *data_time_total += (t3 - t2);
+                ts_run->status = TS_DONE;
+                mon->mem_used -= ts_run->mem_size;
+                if(mon->mem_used >= mon->mem_threshold)
+                    continue;
+                else
+                    break;
+            }else if(mon->time_steps[i].status == TS_INIT)
+                break;
+        }
+    }
+    return 0;
+}
+
+int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+    size_t num_in_progress;
+    H5ES_status_t op_failed;
+    time_step* ts_run;
+    unsigned long t1, t2, t3, t4;
+    for(int i = 0; i < mon->time_step_cnt; i++) {
+        if(mon->time_steps[i].status == TS_READY){
+            printf("--------Phase 3: finishing left timesteps: run ts-%d\n", i);
+            ts_run = &(mon->time_steps[i]);
+            t1 = get_time_usec();
+            H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            t2 = get_time_usec();
+            H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            t3 = get_time_usec();
+            H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            timestep_es_id_close(ts_run, mon->mode);
+            t4 = get_time_usec();
+            *metadata_time_total += ((t2 - t1) + (t4 - t3));
+            *data_time_total += (t3 - t2);
+            ts_run->status = TS_DONE;
+        }
+    }
+    return 0;
+}
 hid_t es_id_set(async_mode mode) {
     hid_t es_id = 0;
     switch (mode) {

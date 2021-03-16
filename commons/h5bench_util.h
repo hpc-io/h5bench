@@ -93,6 +93,34 @@ typedef struct csv_hanle{
     FILE* fs;
 }csv_handle;
 
+typedef enum ts_status{
+    TS_INIT,
+    TS_READY,
+    TS_DONE
+}ts_status;
+typedef struct time_step time_step;
+struct time_step{
+    hid_t es_meta_create;
+    hid_t es_meta_close;
+    hid_t es_data;
+    ts_status status;
+    unsigned long mem_size;
+//    time_step* next;
+};
+
+typedef struct mem_monitor{
+    unsigned int time_step_cnt;
+    unsigned long mem_used;
+    unsigned long mem_threshold;
+    async_mode mode;
+    time_step* time_steps;
+}mem_monitor;
+
+void timestep_es_id_close(time_step* ts, async_mode mode);
+
+mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
+        unsigned long time_step_size, unsigned long mem_threshold);
+int mem_monitor_free(mem_monitor* mon);
 // Uniform random number
 float uniform_random_number();
 
