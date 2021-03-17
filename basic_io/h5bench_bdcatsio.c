@@ -121,21 +121,29 @@ int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hi
 }
 
 //returns actual rounded read element count.
-unsigned long _set_dataspace_strided_read(unsigned long read_elem_cnt, unsigned long stride, unsigned long block_size,
+unsigned long _set_dataspace_strided_read(unsigned long read_elem_cnt, bench_params params,
         hid_t* filespace_in, hid_t* memspace_out){
-    unsigned long block_cnt = read_elem_cnt/(block_size + stride);
-    unsigned long actual_elem_cnt = block_cnt * block_size;
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
+    if(MY_RANK == 0){
+        printf("Stride parameters: STRIDE_SIZE = %lu, BLOCK_SIZE = %lu, BLOCK_CNT = %lu\n",
+                params.stride, params.block_size, params.block_cnt);
+    }
 
-    if(MY_RANK == 0)
-        printf("Stride parameters: read_elem_cnt = %lu, actual_elem_cnt = %lu, block_size = %lu, block_cnt = %lu\n", read_elem_cnt, actual_elem_cnt, block_size, block_cnt);
+    if((params.stride + params.block_size) * params.block_cnt > params.dim_1){
+        printf("\n\nInvalid hyperslab setting: (STRIDE_SIZE + BLOCK_SIZE) * BLOCK_CNT"
+                "must be no greater than the number of available particles per rank(%lu).\n\n",
+                params.chunk_dim_1);
+        return 0;
+    }
+
+    unsigned long actual_elem_cnt = params.block_size * params.block_cnt;
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &actual_elem_cnt, NULL);
 
     H5Sselect_hyperslab(*filespace_in,
             H5S_SELECT_SET,
             (hsize_t *) &FILE_OFFSET, //start-offset
-            (hsize_t *) &stride, //stride
-            (hsize_t *) &block_cnt, //block cnt
-            (hsize_t*) &block_size); //block size
+            (hsize_t *) &params.stride, //stride
+            (hsize_t *) &params.block_cnt, //block cnt
+            (hsize_t*) &params.block_size); //block size
 
     return actual_elem_cnt;
 }
@@ -207,7 +215,7 @@ unsigned long set_dataspace(bench_params params, unsigned long try_read_elem_cnt
             break;
 
         case STRIDED_1D:
-            actual_read_cnt = _set_dataspace_strided_read(try_read_elem_cnt, params.stride, params.block_size, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_strided_read(try_read_elem_cnt, params, filespace_in_out, memspace_out);
             break;
 
         case CONTIG_2D:
@@ -235,11 +243,12 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     hid_t grp;
     char grp_name[128];
     unsigned long rt1 = 0, rt2 = 0;
-
     unsigned long actual_read_cnt = 0;
     hid_t memspace;
-
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
+    if(actual_read_cnt < 1)
+        return -1;
+
     if(MY_RANK == 0)
         print_params(&params);
 
@@ -285,7 +294,6 @@ void set_pl(hid_t* fapl, hid_t* gapl ){
 void print_usage(char *name){
     printf("Usage: %s /path/to/file #timestep sleep_sec [# mega particles]\n", name);
 }
-
 
 int main (int argc, char* argv[]){
     int mpi_thread_lvl_provided = -1;
@@ -396,10 +404,15 @@ int main (int argc, char* argv[]){
     if (MY_RANK == 0) printf ("Opened HDF5 file ... [%s]\n", file_name);
 
     unsigned long raw_read_time, metadata_time, local_data_size;
-    unsigned long t2 = get_time_usec();
-    _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time, &metadata_time);
-    unsigned long t3 = get_time_usec();
 
+    int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time, &metadata_time);
+
+    if(ret < 0){
+        if (MY_RANK == 0)
+            printf("_run_benchmark_read() failed.\n");
+
+        goto error;
+    }
     MPI_Barrier (MPI_COMM_WORLD);
 
     H5Pclose(fapl);
@@ -421,7 +434,7 @@ int main (int argc, char* argv[]){
         float raw_rate_mbs = total_size_mb / rrt_s;
         printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n", rrt_s, raw_rate_mbs);
 
-        float meta_time_ms = (float)metadata_time/1000;//(t3 - t2 - raw_read_time - sleep_time * (NUM_TIMESTEPS - 1) * 1000*1000) / 1000;
+        float meta_time_ms = (float)metadata_time/1000;
         printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
         double or_mbs = (float)total_size_mb/((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));

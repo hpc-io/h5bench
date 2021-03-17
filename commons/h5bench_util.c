@@ -29,6 +29,102 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
     return 0;
 }
 
+void timestep_es_id_close(time_step* ts, async_mode mode) {
+    es_id_close(ts->es_meta_create, mode);
+    es_id_close(ts->es_data, mode);
+    es_id_close(ts->es_meta_close, mode);
+}
+
+mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
+        unsigned long time_step_size, unsigned long mem_threshold){
+    if(time_step_cnt < 1 || mem_threshold < 1)
+        return NULL;
+    mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
+    monitor->time_step_cnt = time_step_cnt;
+    monitor->mem_used = 0;
+    monitor->mem_threshold = mem_threshold;
+    monitor->time_steps = calloc(time_step_cnt, sizeof(time_step));
+    monitor->mode = mode;
+    for(int i = 0; i < time_step_cnt; i++){
+        monitor->time_steps[i].es_meta_create = es_id_set(mode);
+        monitor->time_steps[i].es_meta_close = es_id_set(mode);
+        monitor->time_steps[i].es_data = es_id_set(mode);
+        monitor->time_steps[i].mem_size = time_step_size;
+        monitor->time_steps[i].status = TS_INIT;
+    }
+
+    return monitor;
+}
+
+int mem_monitor_free(mem_monitor* mon){
+    if(mon) {
+        free(mon->time_steps);
+        free(mon);
+    }
+    return 0;
+}
+
+int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+    if(mon->mem_used >= mon->mem_threshold) {//call ESWait and do ops
+        time_step* ts_run;
+        size_t num_in_progress;
+        H5ES_status_t op_failed;
+        unsigned long t1, t2, t3, t4;
+        for(int i = 0; i < mon->time_step_cnt; i++){
+            if(mon->time_steps[i].status == TS_READY){
+                printf("\n--------Phase 2 (when threshold is reached): run ts-%d\n\n", i);
+                ts_run = &(mon->time_steps[i]);
+                t1 = get_time_usec();
+                H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                t2 = get_time_usec();
+                H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                t3 = get_time_usec();
+                H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+                timestep_es_id_close(ts_run, mon->mode);
+                t4 = get_time_usec();
+                *metadata_time_total += ((t2 - t1) + (t4 - t3));
+                *data_time_total += (t3 - t2);
+                ts_run->status = TS_DONE;
+                mon->mem_used -= ts_run->mem_size;
+                if(mon->mem_used >= mon->mem_threshold)
+                    continue;
+                else
+                    break;
+            }else if(mon->time_steps[i].status == TS_INIT)
+                break;
+        }
+    }
+    return 0;
+}
+
+int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+    size_t num_in_progress;
+    H5ES_status_t op_failed;
+    time_step* ts_run;
+    unsigned long t1, t2, t3, t4;
+    for(int i = 0; i < mon->time_step_cnt; i++) {
+        if(mon->time_steps[i].status == TS_READY){
+            printf("--------Phase 3: finishing left timesteps: run ts-%d\n", i);
+            ts_run = &(mon->time_steps[i]);
+            t1 = get_time_usec();
+            H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            t2 = get_time_usec();
+            H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            t3 = get_time_usec();
+            H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+            timestep_es_id_close(ts_run, mon->mode);
+            t4 = get_time_usec();
+            *metadata_time_total += ((t2 - t1) + (t4 - t3));
+            *data_time_total += (t3 - t2);
+            ts_run->status = TS_DONE;
+        }
+    }
+    return 0;
+}
 hid_t es_id_set(async_mode mode) {
     hid_t es_id = 0;
     switch (mode) {
@@ -126,6 +222,10 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
             (*params_in_out)._dim_cnt = 1;
+        } else if(strcmp(val, "CC_STRIDED") == 0) {
+            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
+            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_STRIDED_1D");
+            (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "CC2D") == 0) {
             (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
             (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
@@ -177,7 +277,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "STRIDED") == 0) {
             (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+            (*params_in_out).pattern_name = strdup("STRIDED_1D");
             (*params_in_out)._dim_cnt = 1;
         } else if (strcmp(val, "2D") == 0) {
             (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
@@ -230,6 +330,14 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out).cnt_particle_M = ts_cnt;
         else {
             printf("PARTICLE_CNT_M must be at least 1.\n");
+            return -1;
+        }
+    } else if(strcmp(key, "MEM_BOUND_M") == 0) {
+        int bound = atoi(val);
+        if(bound >= 0) {
+            (*params_in_out).memory_bound_M = bound;
+        } else {
+            printf("MEM_BOUND_M must be at least 0.\n");
             return -1;
         }
     } else if (strcmp(key, "SLEEP_TIME") == 0) {
@@ -296,9 +404,10 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         }
     } else if (strcmp(key, "STRIDE_SIZE") == 0) {
         (*params_in_out).stride = atoi(val);
-
     } else if (strcmp(key, "BLOCK_SIZE") == 0) {
         (*params_in_out).block_size = atoi(val);
+    } else if(strcmp(key, "BLOCK_CNT") == 0) {
+        (*params_in_out).block_cnt = atoi(val);
     } else if (strcmp(key, "CSV_FILE") == 0) {
         (*params_in_out).useCSV = 1;
         (*params_in_out).csv_path = strdup(val);
@@ -327,7 +436,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     return 1;
 }
 
-//only for vpic
+
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
     char cfg_line[CFG_LINE_LEN_MAX] = "";
 
@@ -342,12 +451,14 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     (*params_out).cnt_time_step = 0;
     (*params_out).cnt_particle_M = 0; //total number per rank
+    (*params_out).memory_bound_M = 0;
     (*params_out).cnt_try_particles_M = 0; // to read
     (*params_out).sleep_time = 0;
     (*params_out)._dim_cnt = 1;
 
     (*params_out).stride = 0;
     (*params_out).block_size = 0;
+    (*params_out).block_cnt = 0;
     (*params_out).dim_1 = 1;
     (*params_out).dim_2 = 1;
     (*params_out).dim_3 = 1;
@@ -395,13 +506,38 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
 
+    if(params_out->memory_bound_M > 0) {
+        if(params_out->cnt_particle_M * PARTICLE_SIZE >= params_out->memory_bound_M) {
+            printf("Requested memory (%d MB) is larger than specified memory bound (%d MB), "
+                    "please check MEM_BOUND_M in your config file.\n",
+                    params_out->cnt_particle_M * PARTICLE_SIZE, params_out->memory_bound_M);
+            return -1;
+        }
+    }
     if (params_out->isWrite) {
-
+        if(params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
+            if(params_out->stride < 1
+                    || params_out->block_size < 1
+                    || params_out->block_cnt < 1) {
+                printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
     } else { //read
         if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
             params_out->cnt_try_particles_M = params_out->cnt_particle_M;
         }
+        if(params_out->access_pattern.pattern_read == STRIDED_1D) {
+            if(params_out->stride < 1
+                    || params_out->block_size < 1
+                    || params_out->block_cnt < 1) {
+                printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
     }
+
+
     if (parsed < 0)
         return -1;
     else
@@ -433,6 +569,13 @@ void print_params(const bench_params *p) {
     } else if (p->_dim_cnt >= 3) {
         printf("    Dim_3: %lu\n", p->dim_3);
     }
+
+    if(p->access_pattern.pattern_read == STRIDED_1D || p->access_pattern.pattern_write ==  CONTIG_CONTIG_STRIDED_1D) {
+        printf("Strided access settings:\n");
+        printf("    Stride size = %ld\n", p->stride);
+        printf("    Block size = %ld\n", p->block_size);
+    }
+
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);

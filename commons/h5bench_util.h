@@ -12,12 +12,12 @@
 
 #define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__); fflush(stdout);
 //Maximal line length of the config file
-#define  CFG_LINE_LEN_MAX 510
+#define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
 #define G_VAL 1024 * 1024 * 1024
-#define  M_VAL 1024 * 1024
-#define  K_VAL 1024
-
+#define M_VAL 1024 * 1024
+#define K_VAL 1024
+#define PARTICLE_SIZE 7 * sizeof(float) +  sizeof(int)
 typedef enum async_mode {
     ASYNC_NON,
     ASYNC_EXPLICIT,
@@ -29,6 +29,7 @@ typedef enum write_pattern {
     CONTIG_INTERLEAVED_1D,
     INTERLEAVED_CONTIG_1D,
     INTERLEAVED_INTERLEAVED_1D,
+    CONTIG_CONTIG_STRIDED_1D,
     CONTIG_CONTIG_2D,
     CONTIG_INTERLEAVED_2D,
     INTERLEAVED_CONTIG_2D,
@@ -62,10 +63,12 @@ typedef struct bench_params{
     int cnt_time_step;
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
+    int memory_bound_M;//memory usage bound
     int sleep_time;
     int _dim_cnt;
     unsigned long stride;
     unsigned long block_size;
+    unsigned long block_cnt;
     unsigned long dim_1;
     unsigned long dim_2;
     unsigned long dim_3;
@@ -100,6 +103,34 @@ typedef struct csv_hanle{
     FILE* fs;
 }csv_handle;
 
+typedef enum ts_status{
+    TS_INIT,
+    TS_READY,
+    TS_DONE
+}ts_status;
+typedef struct time_step time_step;
+struct time_step{
+    hid_t es_meta_create;
+    hid_t es_meta_close;
+    hid_t es_data;
+    ts_status status;
+    unsigned long mem_size;
+//    time_step* next;
+};
+
+typedef struct mem_monitor{
+    unsigned int time_step_cnt;
+    unsigned long mem_used;
+    unsigned long mem_threshold;
+    async_mode mode;
+    time_step* time_steps;
+}mem_monitor;
+
+void timestep_es_id_close(time_step* ts, async_mode mode);
+
+mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
+        unsigned long time_step_size, unsigned long mem_threshold);
+int mem_monitor_free(mem_monitor* mon);
 // Uniform random number
 float uniform_random_number();
 
