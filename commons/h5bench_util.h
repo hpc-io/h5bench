@@ -121,6 +121,7 @@ void timestep_es_id_close(time_step* ts, async_mode mode);
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long time_step_size, unsigned long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
+int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
 float uniform_random_number();
 

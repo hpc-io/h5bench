@@ -622,13 +622,13 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
 
     timestep_es_id_set();
 
-    unsigned long metadata_time, data_time, t0, t1, t2, t3, t4;
-
+    unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
+    unsigned long metadata_time_imp = 0, data_time_imp = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
-        printf("Start: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
-                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
+//        printf("Start: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
+//                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
         MEM_MONITOR->mem_used += ts->mem_size;
 
         assert(ts);
@@ -648,33 +648,30 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
             case CONTIG_CONTIG_3D:
             case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(ts, grp_id, dset_ids, filespace, memspace, plist_id,
-                        (data_contig_md*)data, &metadata_time, &data_time);
+                        (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case CONTIG_INTERLEAVED_1D:
             case CONTIG_INTERLEAVED_2D:
                 data_write_contig_to_interleaved(ts, grp_id, dset_ids, filespace, memspace, plist_id,
-                        (data_contig_md*)data, &metadata_time, &data_time);
+                        (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case INTERLEAVED_CONTIG_1D:
             case INTERLEAVED_CONTIG_2D:
                 data_write_interleaved_to_contig(ts, grp_id, dset_ids, filespace, memspace, plist_id,
-                        (particle*)data, &metadata_time, &data_time);
+                        (particle*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case INTERLEAVED_INTERLEAVED_1D:
             case INTERLEAVED_INTERLEAVED_2D:
                 data_write_interleaved_to_interleaved(ts, grp_id, dset_ids, filespace, memspace, plist_id,
-                        (particle*)data, &metadata_time, &data_time);
+                        (particle*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             default:
                 break;
         }
-
-        *metadata_time_total += metadata_time;
-        *data_time_total += data_time;
 
         t0 = get_time_usec();
         for (int j = 0; j < dset_cnt; j++)
@@ -685,23 +682,28 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
 
         size_t num_in_progress;
         H5ES_status_t op_failed;
-
         ts->status = TS_READY;
-        printf("Checking memory: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
-                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
-        mem_monitor_check_run(MEM_MONITOR, metadata_time_total, data_time_total);
+//        printf("Checking memory: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
+//                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
 
-        if (ts_index != timestep_cnt - 1) {
+        mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+
+        if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
             if (sleep_time >= 0) {
                 if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
                 sleep(sleep_time);
             }
         }
 
+        *metadata_time_total += (metadata_time_exp + metadata_time_imp);
+        *data_time_total += (data_time_exp + data_time_imp);
+
     }// end for timestep_cnt
 
     //all done, check if any timesteps undone
-    mem_monitor_final_run(MEM_MONITOR, metadata_time_total, data_time_total);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+    *metadata_time_total += metadata_time_imp;
+    *data_time_total += data_time_imp;
 
     H5Tclose(PARTICLE_COMPOUND_TYPE);
     for(int i = 0; i < 8; i++)
@@ -828,9 +830,8 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    if(params.useCompress){
+    if(params.useCompress)
         params.data_coll = 1;
-    }
 
     if(MY_RANK == 0)
         print_params(&params);
@@ -838,9 +839,10 @@ int main(int argc, char* argv[]) {
     set_globals(&params);
 
     NUM_TIMESTEPS = params.cnt_time_step;
-
+    sleep_time = params.sleep_time;
     if (MY_RANK == 0)
-        printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n", params.pattern_name, NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n",
+                params.pattern_name, NUM_PARTICLES/(1024*1024));
 
     unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
 
@@ -870,7 +872,8 @@ int main(int argc, char* argv[]) {
 
     if(params.file_per_proc) {
       char mpi_rank_output_file_path[4096];
-      sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(output_file), MY_RANK, get_file_name_from_path(output_file));
+      sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s",
+              get_dir_from_path(output_file), MY_RANK, get_file_name_from_path(output_file));
       file_id = H5Fcreate_async(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
     else {
@@ -886,7 +889,8 @@ int main(int argc, char* argv[]) {
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long data_preparation_time, raw_write_time, inner_metadata_time, local_data_size;
-    int stat = _run_benchmark_write(params, file_id, &local_data_size, &data_preparation_time, &raw_write_time, &inner_metadata_time);
+    int stat = _run_benchmark_write(params, file_id, &local_data_size,
+            &data_preparation_time, &raw_write_time, &inner_metadata_time);
 
     if(stat < 0){
         if (MY_RANK == 0)
@@ -911,18 +915,20 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n==================  Performance results  =================\n");
-        int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_s = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %ds, total write size = %lu MB\n", total_sleep_time, total_size_mb);
+        printf("Total sleep time %d sec, total write size = %lu MB\n", total_sleep_time_s, total_size_mb);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("RR: Raw write time = %.3f sec, RR = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
 
-        float meta_time_ms = (float)inner_metadata_time / 1000;//((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
+        float meta_time_ms = (float)inner_metadata_time / 1000;
+        //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
         printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
-        float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000)); //
+        float or_mbs = (float)total_size_mb /
+                ((float)(t4 - t0 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
         printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
@@ -933,7 +939,7 @@ int main(int argc, char* argv[]) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             if(params.meta_coll == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
+            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_s);
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
