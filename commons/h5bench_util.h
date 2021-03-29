@@ -103,13 +103,17 @@ struct time_step{
     hid_t es_meta_create;
     hid_t es_meta_close;
     hid_t es_data;
+    hid_t grp_id;
+    hid_t dset_ids[8];
     ts_status status;
     unsigned long mem_size;
+
 //    time_step* next;
 };
 
 typedef struct mem_monitor{
     unsigned int time_step_cnt;
+    unsigned int ts_open;//check opened ts and close them when reaches a limit.
     unsigned long mem_used;
     unsigned long mem_threshold;
     async_mode mode;

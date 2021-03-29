@@ -5,13 +5,24 @@ project(h5bench)
 find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
 
-# Dependecy: HDF5
+# Dependency: HDF5
 set(HDF5_HOME $ENV{HDF5_HOME})
 set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
 message("Detected hdf5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
+
+#Dependency: Async
+set(ASYNC_HOME $ENV{ASYNC_HOME})
+#set(async_static_src ${ASYNC_HOME}/h5_async_lib.c
+#		${ASYNC_HOME}/h5_async_lib.h)
+#add_library(asynchdf5 ${async_static_src})
+#set(async_vol_src ${ASYNC_HOME}/h5_vol_external_async_native.c
+#		 ${ASYNC_HOME}/h5_vol_external_async_native.h)
+#add_library(h5async ${async_vol_src})
+#include_directories(${ASYNC_HOME})
+#link_directories(${ASYNC_HOME})
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
@@ -26,7 +37,11 @@ set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 add_executable(h5bench_vpicio ${vpic_src})
-target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+#link_directories(${ASYNC_HOME})
+target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C) 
+# async libs: h5async asynchdf5
+
+#link_directories(${ASYNC_HOME}})
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
 target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
@@ -78,5 +93,5 @@ install(TARGETS
 	h5bench_bdcatsio 
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
-	h5bench_vl_stream_hl
+	#h5bench_vl_stream_hl
 	DESTINATION bin)

@@ -49,6 +49,11 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
+
+#ifdef USE_ASYNC_VOL
+#include <h5_async_lib.h>
+#endif
+
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -409,6 +414,7 @@ void data_write_contig_contig_MD_array(time_step* ts, hid_t loc, hid_t *dset_ids
     }
 
     unsigned t1 = get_time_usec();
+
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
@@ -510,7 +516,7 @@ void data_write_interleaved_to_interleaved(time_step* ts, hid_t loc, hid_t *dset
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
-int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* total_data_size_out,
+int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigned long* total_data_size_out,
         unsigned long* data_preparation_time, unsigned long* data_time_total, unsigned long* metadata_time_total) {
 
     write_pattern mode = params.access_pattern.pattern_write;
@@ -610,7 +616,8 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
 
     if(!data){
         if (MY_RANK == 0)
-            printf("Failed to generate data for writing, please check dimension settings in the config file.\n");
+            printf("Failed to generate data for writing, "
+                    "please check dimension settings in the config file.\n");
         return -1;
     }
 
@@ -625,72 +632,85 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
     unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
-        sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
-//        printf("Start: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
-//                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
         MEM_MONITOR->mem_used += ts->mem_size;
+        sprintf(grp_name, "Timestep_%d", ts_index);
 
         assert(ts);
+
+        //--------------------------------------------------
+        if (ts_index > 0) {
+            //delayed close on all ids of the previous ts
+
+
+            time_step* ts_prev = &(MEM_MONITOR->time_steps[ts_index - 1]);
+            t0 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts_prev->dset_ids[j], ts_prev->es_meta_close);
+
+            H5Gclose_async(ts_prev->grp_id, ts_prev->es_meta_close);
+            t1 = get_time_usec();
+            *metadata_time_total += (t1 - t0);
+
+            ts_prev->status = TS_READY;
+            mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+        }
+        //--------------------------------------------------
+
         t0 = get_time_usec();
-        hid_t grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
+        ts->grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
         t1 = get_time_usec();
         *metadata_time_total += (t1 - t0);
 
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
 
-        hid_t dset_ids[8];
-
         switch(mode){
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
             case CONTIG_CONTIG_3D:
             case CONTIG_CONTIG_STRIDED_1D:
-                data_write_contig_contig_MD_array(ts, grp_id, dset_ids, filespace, memspace, plist_id,
+                data_write_contig_contig_MD_array(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case CONTIG_INTERLEAVED_1D:
             case CONTIG_INTERLEAVED_2D:
-                data_write_contig_to_interleaved(ts, grp_id, dset_ids, filespace, memspace, plist_id,
+                data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case INTERLEAVED_CONTIG_1D:
             case INTERLEAVED_CONTIG_2D:
-                data_write_interleaved_to_contig(ts, grp_id, dset_ids, filespace, memspace, plist_id,
+                data_write_interleaved_to_contig(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             case INTERLEAVED_INTERLEAVED_1D:
             case INTERLEAVED_INTERLEAVED_2D:
-                data_write_interleaved_to_interleaved(ts, grp_id, dset_ids, filespace, memspace, plist_id,
+                data_write_interleaved_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*)data, &metadata_time_exp, &data_time_exp);
                 break;
 
             default:
                 break;
         }
-
-        t0 = get_time_usec();
-        for (int j = 0; j < dset_cnt; j++)
-            H5Dclose_async(dset_ids[j], ts->es_meta_close);
-        H5Gclose_async(grp_id, ts->es_meta_close);
-        t1 = get_time_usec();
-        *metadata_time_total += (t1 - t0);
-
-        size_t num_in_progress;
-        H5ES_status_t op_failed;
-        ts->status = TS_READY;
-//        printf("Checking memory: mem_used = %lu, mem_threshold = %lu, ts_index = %d\n",
-//                MEM_MONITOR->mem_used, MEM_MONITOR->mem_threshold, ts_index);
-
-        mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+//
+//        size_t num_in_progress;
+//        H5ES_status_t op_failed;
+//
+//        //mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
             if (sleep_time >= 0) {
                 if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
+#ifdef USE_ASYNC_VOL
+                unsigned cap = 0;
+                H5Pget_vol_cap_flags(fapl, &cap);
+
+                if(H5VL_CAP_FLAG_ASYNC & cap)
+                    H5Fstart(file_id, fapl);
+#endif
                 sleep(sleep_time);
             }
         }
@@ -698,6 +718,16 @@ int _run_benchmark_write(bench_params params, hid_t file_id, unsigned long* tota
         *metadata_time_total += (metadata_time_exp + metadata_time_imp);
         *data_time_total += (data_time_exp + data_time_imp);
 
+        // delayed close ids for the last ts
+        if(ts_index == timestep_cnt - 1){
+            t0 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            H5Gclose_async(ts->grp_id, ts->es_meta_close);
+            t1 = get_time_usec();
+            *metadata_time_total += (t1 - t0);
+            ts->status = TS_READY;
+        }
     }// end for timestep_cnt
 
     //all done, check if any timesteps undone
@@ -870,6 +900,7 @@ int main(int argc, char* argv[]) {
 
     hid_t file_id;
 
+    unsigned long tfopen_start = get_time_usec();
     if(params.file_per_proc) {
       char mpi_rank_output_file_path[4096];
       sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s",
@@ -879,8 +910,8 @@ int main(int argc, char* argv[]) {
     else {
       file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
+    unsigned long tfopen_end = get_time_usec();
 
-    H5Pclose(fapl);
 
     if (MY_RANK == 0)
         printf("Opened HDF5 file... \n");
@@ -889,7 +920,7 @@ int main(int argc, char* argv[]) {
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long data_preparation_time, raw_write_time, inner_metadata_time, local_data_size;
-    int stat = _run_benchmark_write(params, file_id, &local_data_size,
+    int stat = _run_benchmark_write(params, file_id, fapl, &local_data_size,
             &data_preparation_time, &raw_write_time, &inner_metadata_time);
 
     if(stat < 0){
@@ -907,9 +938,15 @@ int main(int argc, char* argv[]) {
         else
             printf("CollectiveWrite: NO\n");
     }
+    H5Pclose(fapl);
+    unsigned long tflush_start = get_time_usec();
+    H5Fflush(file_id, H5F_SCOPE_LOCAL);
+    unsigned long tflush_end = get_time_usec();
 
-    H5Fclose_async(file_id, 0);
-
+    unsigned long tfclose_start = get_time_usec();
+    H5Fclose(file_id);
+//    H5Fclose_async(file_id, 0);
+    unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
 
@@ -927,12 +964,23 @@ int main(int argc, char* argv[]) {
         //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
         printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
+        float fcreate_time_ms = (float) (tfopen_end -tfopen_start)/1000;
+        printf("H5Fcreate() takes %.3f ms\n", fcreate_time_ms);
+
+        float flush_time_ms = (float) (tflush_end - tflush_start)/1000;
+        printf("H5Fflush() takes %.3f ms\n", flush_time_ms);
+
+        float fclose_time_ms = (float) (tfclose_end - tfclose_start)/1000;
+        printf("H5Fclose() takes %.3f ms\n", flush_time_ms);
+
         float or_mbs = (float)total_size_mb /
-                ((float)(t4 - t0 - (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
+                ((float)(t4 - t0 - sleep_time*(NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
         printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
+
+
 	printf("===========================================================\n");
 
         if(params.useCSV){

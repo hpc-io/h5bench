@@ -41,19 +41,19 @@ mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
     monitor->mode = mode;
     monitor->time_step_cnt = time_step_cnt;
 
-    if(time_step_cnt < 1 || mem_threshold < 1)
-        return NULL;
-
     monitor->mem_used = 0;
     monitor->mem_threshold = mem_threshold;
     monitor->time_steps = calloc(time_step_cnt, sizeof(time_step));
 
     for(int i = 0; i < time_step_cnt; i++){
         monitor->time_steps[i].es_meta_create = es_id_set(mode);
-        monitor->time_steps[i].es_meta_close = es_id_set(mode);
         monitor->time_steps[i].es_data = es_id_set(mode);
+        monitor->time_steps[i].es_meta_close = es_id_set(mode);
+
         monitor->time_steps[i].mem_size = time_step_size;
         monitor->time_steps[i].status = TS_INIT;
+        for(int j = 0; j < 8; j++)
+            monitor->time_steps[i].dset_ids[j] = 0;
     }
     return monitor;
 }
@@ -112,6 +112,7 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
 }
 
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
 
