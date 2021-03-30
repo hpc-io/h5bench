@@ -58,17 +58,16 @@ set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 if(WITH_GPU)
-  add_executable(h5bench_vpicio ${vpic_src})
-  set_target_properties(h5bench_vpicio PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
-  target_link_libraries(h5bench_vpicio PRIVATE h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
-  target_compile_options(h5bench_vpicio PRIVATE ${MPI_C_COMPILE_FLAGS})
-else(WITH_GPU)
-  add_executable(h5bench_vpicio ${vpic_src})
-  target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
+  add_executable(h5bench_vpicio_cuda ${vpic_src})
+  set_target_properties(h5bench_vpicio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  target_link_libraries(h5bench_vpicio_cuda PRIVATE h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+  target_compile_options(h5bench_vpicio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
 endif(WITH_GPU)
 
 #link_directories(${ASYNC_HOME})
 # async libs: h5async asynchdf5
+add_executable(h5bench_vpicio ${vpic_src})
+target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
 
 #link_directories(${ASYNC_HOME}})
 
@@ -124,3 +123,9 @@ install(TARGETS
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl
 	DESTINATION bin)
+
+# TODO: add *_gpu to install bin
+# if(WITH_GPU)
+	# h5bench_vpicio_gpu
+# endif(WITH_GPU)
+
