@@ -82,9 +82,22 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         H5ES_status_t op_failed;
         unsigned long t1, t2, t3, t4;
         unsigned long meta_time = 0, data_time = 0;
+        int dset_cnt = 8;
         for(int i = 0; i < mon->time_step_cnt; i++){
+            ts_run = &(mon->time_steps[i]);
+
+            if(mon->time_steps[i].status == TS_DELAY){
+                t1 = get_time_usec();
+                for (int j = 0; j < dset_cnt; j++)
+                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+                t2 = get_time_usec();
+                meta_time += (t2 - t1);
+                ts_run->status = TS_READY;
+            }
+
             if(mon->time_steps[i].status == TS_READY){
-                ts_run = &(mon->time_steps[i]);
+
                 t1 = get_time_usec();
                 H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
                 t2 = get_time_usec();
@@ -112,7 +125,6 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
 }
 
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
-
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
 
@@ -127,9 +139,21 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     time_step* ts_run;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
+    int dset_cnt = 8;
     for(int i = 0; i < mon->time_step_cnt; i++) {
+        ts_run = &(mon->time_steps[i]);
+
+        if(mon->time_steps[i].status == TS_DELAY){
+            t1 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+            H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+            t2 = get_time_usec();
+            ts_run->status = TS_READY;
+            meta_time += (t2 - t1);
+        }
+
         if(mon->time_steps[i].status == TS_READY){
-            ts_run = &(mon->time_steps[i]);
             t1 = get_time_usec();
             H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t2 = get_time_usec();
@@ -347,6 +371,12 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("TIME_STEPS_CNT must be at least 1.\n");
             return -1;
         }
+    } else if(strcmp(key, "DELAYED_TIME_STEPS_CNT") == 0) {
+        int delay_ts_cnt = atoi(val);
+        if(delay_ts_cnt < 0)
+            delay_ts_cnt = 0;
+        (*params_in_out).cnt_time_step_delay = delay_ts_cnt;
+
     } else if (strcmp(key, "PARTICLE_CNT_M") == 0) {
         int ts_cnt = atoi(val);
         if (ts_cnt >= 1)
@@ -458,7 +488,6 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     return 1;
 }
 
-
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
     char cfg_line[CFG_LINE_LEN_MAX] = "";
 
@@ -474,6 +503,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
     (*params_out).asyncMode = ASYNC_NON;
 
     (*params_out).cnt_time_step = 0;
+    (*params_out).cnt_time_step_delay = 0;
     (*params_out).cnt_particle_M = 0; //total number per rank
     (*params_out).memory_bound_M = 0;
     (*params_out).cnt_try_particles_M = 0; // to read
@@ -560,7 +590,6 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
             }
         }
     }
-
 
     if (parsed < 0)
         return -1;

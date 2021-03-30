@@ -635,24 +635,10 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
         sprintf(grp_name, "Timestep_%d", ts_index);
-
         assert(ts);
 
         //--------------------------------------------------
-        if (ts_index > 0) {
-            //delayed close on all ids of the previous ts
-
-
-            time_step* ts_prev = &(MEM_MONITOR->time_steps[ts_index - 1]);
-            t0 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts_prev->dset_ids[j], ts_prev->es_meta_close);
-
-            H5Gclose_async(ts_prev->grp_id, ts_prev->es_meta_close);
-            t1 = get_time_usec();
-            *metadata_time_total += (t1 - t0);
-
-            ts_prev->status = TS_READY;
+        if (ts_index > 0 && ts_index > params.cnt_time_step_delay - 1) {//delayed close on all ids of the previous ts
             mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
         }
         //--------------------------------------------------
@@ -695,11 +681,6 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
             default:
                 break;
         }
-//
-//        size_t num_in_progress;
-//        H5ES_status_t op_failed;
-//
-//        //mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
             if (sleep_time >= 0) {
@@ -714,20 +695,11 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
                 sleep(sleep_time);
             }
         }
-
+        ts->status = TS_DELAY;
         *metadata_time_total += (metadata_time_exp + metadata_time_imp);
         *data_time_total += (data_time_exp + data_time_imp);
 
         // delayed close ids for the last ts
-        if(ts_index == timestep_cnt - 1){
-            t0 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
-            H5Gclose_async(ts->grp_id, ts->es_meta_close);
-            t1 = get_time_usec();
-            *metadata_time_total += (t1 - t0);
-            ts->status = TS_READY;
-        }
     }// end for timestep_cnt
 
     //all done, check if any timesteps undone
@@ -971,7 +943,7 @@ int main(int argc, char* argv[]) {
         printf("H5Fflush() takes %.3f ms\n", flush_time_ms);
 
         float fclose_time_ms = (float) (tfclose_end - tfclose_start)/1000;
-        printf("H5Fclose() takes %.3f ms\n", flush_time_ms);
+        printf("H5Fclose() takes %.3f ms\n", fclose_time_ms);
 
         float or_mbs = (float)total_size_mb /
                 ((float)(t4 - t0 - sleep_time*(NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));

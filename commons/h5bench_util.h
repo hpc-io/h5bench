@@ -59,6 +59,7 @@ typedef struct bench_params{
     int meta_coll;//for write only, metadata collective
     int data_coll;//data collective
     int cnt_time_step;
+    int cnt_time_step_delay;
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
     int memory_bound_M;//memory usage bound
@@ -95,6 +96,7 @@ typedef struct csv_hanle{
 
 typedef enum ts_status{
     TS_INIT,
+    TS_DELAY,
     TS_READY,
     TS_DONE
 }ts_status;
@@ -107,12 +109,11 @@ struct time_step{
     hid_t dset_ids[8];
     ts_status status;
     unsigned long mem_size;
-
-//    time_step* next;
 };
 
 typedef struct mem_monitor{
     unsigned int time_step_cnt;
+    unsigned int delay_ts_cnt;
     unsigned int ts_open;//check opened ts and close them when reaches a limit.
     unsigned long mem_used;
     unsigned long mem_threshold;
