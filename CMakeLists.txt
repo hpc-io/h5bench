@@ -13,6 +13,7 @@ find_package(HDF5 REQUIRED)
 message("Detected hdf5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
+link_directories(${HDF5_HOME}/lib/plugin)
 
 # Optional Dependency: CUDA
 set(USE_GPU OFF)
