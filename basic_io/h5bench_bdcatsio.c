@@ -51,13 +51,12 @@ long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
 async_mode ASYNC_MODE;
 int NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
-hid_t ES_ID;
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
 herr_t ierr;
-
 data_contig_md* BUF_STRUCT;
+mem_monitor* MEM_MONITOR;
 
 void print_data(int n) {
     int i;
@@ -69,7 +68,7 @@ void print_data(int n) {
 }
 
 // Create HDF5 file and read data
-void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace,
+void read_h5_data(time_step* ts, hid_t loc, hid_t filespace, hid_t memspace,
         unsigned long* read_time, unsigned long* metadata_time) {
     hid_t dset_ids[8], dapl;
     unsigned long t1, t2, t3, t4;
@@ -77,39 +76,37 @@ void read_h5_data(int rank, hid_t loc, hid_t filespace, hid_t memspace,
     H5Pset_all_coll_metadata_ops(dapl, true);
 
     t1 = get_time_usec();
-    dset_ids[0] = H5Dopen_async(loc, "x", dapl, ES_ID);
-    dset_ids[1] = H5Dopen_async(loc, "y", dapl, ES_ID);
-    dset_ids[2] = H5Dopen_async(loc, "z", dapl, ES_ID);
-    dset_ids[3] = H5Dopen_async(loc, "id_1", dapl, ES_ID);
-    dset_ids[4] = H5Dopen_async(loc, "id_2", dapl, ES_ID);
-    dset_ids[5] = H5Dopen_async(loc, "px", dapl, ES_ID);
-    dset_ids[6] = H5Dopen_async(loc, "py", dapl, ES_ID);
-    dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ES_ID);
+    dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
+    dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
+    dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
+    dset_ids[3] = H5Dopen_async(loc, "id_1", dapl, ts->es_meta_create);
+    dset_ids[4] = H5Dopen_async(loc, "id_2", dapl, ts->es_meta_create);
+    dset_ids[5] = H5Dopen_async(loc, "px", dapl, ts->es_meta_create);
+    dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
+    dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
 
     t2 = get_time_usec();
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ES_ID);
-    ierr = H5Dread_async(dset_ids[1] , H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ES_ID);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ES_ID);
-    ierr = H5Dread_async(dset_ids[3] , H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ES_ID);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ES_ID);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ES_ID);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ES_ID);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ES_ID);
+    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ts->es_data);
+    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ts->es_data);
+    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ts->es_data);
+    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT,   memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ts->es_data);
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT,   memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ts->es_data);
+    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ts->es_data);
+    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ts->es_data);
+    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ts->es_data);
 
     t3 = get_time_usec();
 
     for(int i = 0; i < 8; i++)
-        H5Dclose_async(dset_ids[i], ES_ID);
+        H5Dclose_async(dset_ids[i], ts->es_meta_close);
 
     t4 = get_time_usec();
 
     *read_time = t3 - t2;
     *metadata_time = t4 - t1 - *read_time;
 
-    if (rank == 0) printf ("  Read 8 variable completed\n");
-
+    if (MY_RANK == 0) printf ("  Read 8 variable completed\n");
     H5Pclose(dapl);
-    //if(MY_RANK == 0) print_data(3); //print sample data
 }
 
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
@@ -188,7 +185,6 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
     file_range[1] = dim_2;
     file_range[2] = dim_3;
 
-
     *memspace_out =  H5Screate_simple(3, mem_dims, NULL);
 
     H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
@@ -198,11 +194,11 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
 hid_t get_filespace(hid_t file_id){
     char* grp_name = "/Timestep_0";
     char* ds_name = "px";
-    hid_t gid = H5Gopen_async(file_id, grp_name, H5P_DEFAULT, 0);
+    hid_t gid = H5Gopen2(file_id, grp_name, H5P_DEFAULT);//H5Gopen_async(file_id, grp_name, H5P_DEFAULT, 0);
     hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
     hid_t filespace = H5Dget_space(dsid);
-    H5Dclose_async(dsid, 0);
-    H5Gclose_async(gid, 0);
+    H5Dclose(dsid);//H5Dclose_async(dsid, 0);
+    H5Gclose(gid);//H5Gclose_async(gid, 0);
     return filespace;
 }
 
@@ -233,8 +229,8 @@ unsigned long set_dataspace(bench_params params, unsigned long try_read_elem_cnt
     return actual_read_cnt;
 }
 
-int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params, unsigned long* total_data_size_out,
-        unsigned long* raw_read_time_out, unsigned long* inner_metadata_time){
+int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
+        unsigned long* total_data_size_out, unsigned long* raw_read_time_out, unsigned long* inner_metadata_time){
     *raw_read_time_out = 0;
     *inner_metadata_time = 0;
     int nts = params.cnt_time_step;
@@ -252,31 +248,44 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     if(MY_RANK == 0)
         print_params(&params);
 
-    ES_ID = es_id_set(ASYNC_MODE);
-    unsigned long read_time, metadata_time;
-    for (int i = 0; i < nts; i++) {
-        sprintf(grp_name, "Timestep_%d", i);
-        grp = H5Gopen_async(file_id, grp_name, gapl, ES_ID);
+    MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.memory_bound_M * M_VAL);
+    unsigned long t1, t2, t3, t4;
+    unsigned long read_time_exp = 0, metadata_time_exp = 0;
+    unsigned long read_time_imp = 0, metadata_time_imp = 0;
+    for (int ts_index = 0; ts_index < nts; ts_index++) {
+        sprintf(grp_name, "Timestep_%d", ts_index);
+        time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
+        assert(ts);
+
+        t1 = get_time_usec();
+        grp = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+        t2 = get_time_usec();
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
-        read_h5_data(MY_RANK, grp, filespace, memspace, &read_time, &metadata_time);
+        read_h5_data(ts, grp, filespace, memspace, &read_time_exp, &metadata_time_exp);
+        t3 = get_time_usec();
 
-        if (i != 0) {
-            if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
-            sleep(sleep_time);
-            size_t num_in_progress;
-            H5ES_status_t op_failed;
-            H5ESwait(ES_ID, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
+        H5Gclose_async(grp, ts->es_meta_close);
+        t4 = get_time_usec();
+        ts->status = TS_READY;
+        mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+
+        if (ts_index != nts - 1) {//no sleep after the last ts
+            if (sleep_time >= 0) {
+                if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
+                sleep(sleep_time);
+            }
         }
-        H5Gclose_async(grp, ES_ID);
 
-        *raw_read_time_out += read_time;
-        *inner_metadata_time += metadata_time;
+        *raw_read_time_out += (read_time_exp + read_time_imp);
+        *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
     }
 
-    es_id_close(ES_ID, ASYNC_MODE);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+    *raw_read_time_out += (read_time_exp + read_time_imp);
+    *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
 
-    *total_data_size_out = NUM_TIMESTEPS * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
+    *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
     return 0;
@@ -302,13 +311,12 @@ int main (int argc, char* argv[]){
     MPI_Comm_rank (MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size (MPI_COMM_WORLD, &NUM_RANKS);
 
-    int sleep_time;
+    int sleep_time = 0;
 
     bench_params params;
 
     char* cfg_file_path = argv[1];
     char *file_name = argv[2]; //data file to read
-
 
     if (MY_RANK == 0)
         printf("config file: %s, read data file: %s\n", argv[1], argv[2]);
@@ -318,17 +326,12 @@ int main (int argc, char* argv[]){
             printf("Config file read failed. check path: %s\n", cfg_file_path);
         return 0;
     }
-
+    ASYNC_MODE = params.asyncMode;
     NUM_TIMESTEPS = params.cnt_time_step;
+    sleep_time = params.sleep_time;
 
     if (NUM_TIMESTEPS <= 0) {
         if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
-        return 0;
-    }
-
-    sleep_time = params.sleep_time;
-    if (sleep_time < 0) {
-        print_usage(argv[0]);
         return 0;
     }
 
@@ -336,7 +339,8 @@ int main (int argc, char* argv[]){
     set_pl(&fapl, &gapl);
 
     hsize_t dims[64] = {0};
-    hid_t file_id = H5Fopen_async(file_name, H5F_ACC_RDONLY, fapl, 0);
+
+    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     hid_t filespace = get_filespace(file_id);
     int dims_cnt = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;
@@ -352,7 +356,8 @@ int main (int argc, char* argv[]){
 
     if(dims_cnt > 0){//1D
         if(params.dim_1 > dims[0]/NUM_RANKS){
-            if(MY_RANK == 0) printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n",
+            if(MY_RANK == 0)
+                printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank (%llu).\n",
                     params.dim_1, dims[0]/NUM_RANKS);
             goto error;
         }
@@ -405,7 +410,8 @@ int main (int argc, char* argv[]){
 
     unsigned long raw_read_time, metadata_time, local_data_size;
 
-    int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time, &metadata_time);
+    int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params,
+            &local_data_size, &raw_read_time, &metadata_time);
 
     if(ret < 0){
         if (MY_RANK == 0)
@@ -426,18 +432,21 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        int total_sleep_time = sleep_time * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_s = sleep_time * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %ds, total read size = %lu MB\n", total_sleep_time, total_size_mb);
+        printf("Total sleep time %d sec, total read size = %lu MB\n",
+                total_sleep_time_s, total_size_mb);
 
         float rrt_s = (float)raw_read_time / (1000*1000);
         float raw_rate_mbs = total_size_mb / rrt_s;
-        printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n", rrt_s, raw_rate_mbs);
+        printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n",
+                rrt_s, raw_rate_mbs);
 
         float meta_time_ms = (float)metadata_time/1000;
         printf("Core metadata time = %.3f ms\n", meta_time_ms);
 
-        double or_mbs = (float)total_size_mb/((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));
+        double or_mbs = (float)total_size_mb /
+                ((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));
         printf("OR (observed read rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
@@ -445,7 +454,7 @@ int main (int argc, char* argv[]){
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time);
+            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_s);
             fprintf(params.csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
@@ -458,7 +467,7 @@ int main (int argc, char* argv[]){
 
 error:
     H5E_BEGIN_TRY {
-        H5Fclose_async(file_id, 0);
+        H5Fclose(file_id);
         H5Pclose(fapl);
     } H5E_END_TRY;
 

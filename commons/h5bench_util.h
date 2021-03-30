@@ -61,6 +61,7 @@ typedef struct bench_params{
     int meta_coll;//for write only, metadata collective
     int data_coll;//data collective
     int cnt_time_step;
+    int cnt_time_step_delay;
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
     int memory_bound_M;//memory usage bound
@@ -105,6 +106,7 @@ typedef struct csv_hanle{
 
 typedef enum ts_status{
     TS_INIT,
+    TS_DELAY,
     TS_READY,
     TS_DONE
 }ts_status;
@@ -113,13 +115,16 @@ struct time_step{
     hid_t es_meta_create;
     hid_t es_meta_close;
     hid_t es_data;
+    hid_t grp_id;
+    hid_t dset_ids[8];
     ts_status status;
     unsigned long mem_size;
-//    time_step* next;
 };
 
 typedef struct mem_monitor{
     unsigned int time_step_cnt;
+    unsigned int delay_ts_cnt;
+    unsigned int ts_open;//check opened ts and close them when reaches a limit.
     unsigned long mem_used;
     unsigned long mem_threshold;
     async_mode mode;
@@ -131,6 +136,7 @@ void timestep_es_id_close(time_step* ts, async_mode mode);
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long time_step_size, unsigned long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
+int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
 float uniform_random_number();
 

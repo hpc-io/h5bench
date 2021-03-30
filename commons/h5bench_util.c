@@ -37,22 +37,24 @@ void timestep_es_id_close(time_step* ts, async_mode mode) {
 
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long time_step_size, unsigned long mem_threshold){
-    if(time_step_cnt < 1 || mem_threshold < 1)
-        return NULL;
     mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
+    monitor->mode = mode;
     monitor->time_step_cnt = time_step_cnt;
+
     monitor->mem_used = 0;
     monitor->mem_threshold = mem_threshold;
     monitor->time_steps = calloc(time_step_cnt, sizeof(time_step));
-    monitor->mode = mode;
+
     for(int i = 0; i < time_step_cnt; i++){
         monitor->time_steps[i].es_meta_create = es_id_set(mode);
-        monitor->time_steps[i].es_meta_close = es_id_set(mode);
         monitor->time_steps[i].es_data = es_id_set(mode);
+        monitor->time_steps[i].es_meta_close = es_id_set(mode);
+
         monitor->time_steps[i].mem_size = time_step_size;
         monitor->time_steps[i].status = TS_INIT;
+        for(int j = 0; j < 8; j++)
+            monitor->time_steps[i].dset_ids[j] = 0;
     }
-
     return monitor;
 }
 
@@ -67,15 +69,35 @@ int mem_monitor_free(mem_monitor* mon){
 int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
+
+    if(mon->mode == ASYNC_NON){
+        *metadata_time_total = 0;
+        *data_time_total = 0;
+        return 0;
+    }
+
     if(mon->mem_used >= mon->mem_threshold) {//call ESWait and do ops
         time_step* ts_run;
         size_t num_in_progress;
         H5ES_status_t op_failed;
         unsigned long t1, t2, t3, t4;
+        unsigned long meta_time = 0, data_time = 0;
+        int dset_cnt = 8;
         for(int i = 0; i < mon->time_step_cnt; i++){
+            ts_run = &(mon->time_steps[i]);
+
+            if(mon->time_steps[i].status == TS_DELAY){
+                t1 = get_time_usec();
+                for (int j = 0; j < dset_cnt; j++)
+                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+                t2 = get_time_usec();
+                meta_time += (t2 - t1);
+                ts_run->status = TS_READY;
+            }
+
             if(mon->time_steps[i].status == TS_READY){
-                printf("\n--------Phase 2 (when threshold is reached): run ts-%d\n\n", i);
-                ts_run = &(mon->time_steps[i]);
+
                 t1 = get_time_usec();
                 H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
                 t2 = get_time_usec();
@@ -84,8 +106,8 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
                 H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
                 timestep_es_id_close(ts_run, mon->mode);
                 t4 = get_time_usec();
-                *metadata_time_total += ((t2 - t1) + (t4 - t3));
-                *data_time_total += (t3 - t2);
+                meta_time += ((t2 - t1) + (t4 - t3));
+                data_time += (t3 - t2);
                 ts_run->status = TS_DONE;
                 mon->mem_used -= ts_run->mem_size;
                 if(mon->mem_used >= mon->mem_threshold)
@@ -95,34 +117,59 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
             }else if(mon->time_steps[i].status == TS_INIT)
                 break;
         }
+        *metadata_time_total = meta_time;
+        *data_time_total = data_time;
     }
+
     return 0;
 }
 
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
+
+    if(mon->mode == ASYNC_NON){
+        *metadata_time_total = 0;
+        *data_time_total = 0;
+        return 0;
+    }
+
     size_t num_in_progress;
     H5ES_status_t op_failed;
     time_step* ts_run;
     unsigned long t1, t2, t3, t4;
+    unsigned long meta_time = 0, data_time = 0;
+    int dset_cnt = 8;
     for(int i = 0; i < mon->time_step_cnt; i++) {
+        ts_run = &(mon->time_steps[i]);
+
+        if(mon->time_steps[i].status == TS_DELAY){
+            t1 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+            H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+            t2 = get_time_usec();
+            ts_run->status = TS_READY;
+            meta_time += (t2 - t1);
+        }
+
         if(mon->time_steps[i].status == TS_READY){
-            printf("--------Phase 3: finishing left timesteps: run ts-%d\n", i);
-            ts_run = &(mon->time_steps[i]);
             t1 = get_time_usec();
             H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t2 = get_time_usec();
             H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t3 = get_time_usec();
             H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
-            timestep_es_id_close(ts_run, mon->mode);
             t4 = get_time_usec();
-            *metadata_time_total += ((t2 - t1) + (t4 - t3));
-            *data_time_total += (t3 - t2);
+
+            timestep_es_id_close(ts_run, mon->mode);
+            meta_time += ((t2 - t1) + (t4 - t3));
+            data_time += (t3 - t2);
             ts_run->status = TS_DONE;
         }
     }
+    *metadata_time_total = meta_time;
+    *data_time_total = data_time;
     return 0;
 }
 hid_t es_id_set(async_mode mode) {
@@ -324,6 +371,12 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("TIME_STEPS_CNT must be at least 1.\n");
             return -1;
         }
+    } else if(strcmp(key, "DELAYED_TIME_STEPS_CNT") == 0) {
+        int delay_ts_cnt = atoi(val);
+        if(delay_ts_cnt < 0)
+            delay_ts_cnt = 0;
+        (*params_in_out).cnt_time_step_delay = delay_ts_cnt;
+
     } else if (strcmp(key, "PARTICLE_CNT_M") == 0) {
         int ts_cnt = atoi(val);
         if (ts_cnt >= 1)
@@ -414,13 +467,12 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     } else if (strcmp(key, "META_LIST_FILE") == 0) {
         (*params_in_out).meta_list_path = strdup(val);
     } else if (strcmp(key, "ASYNC_MODE") == 0) {
-        if (strcmp(val, "ASYNC_NON") == 0) {
-            (*params_in_out).asyncMode = ASYNC_NON;
-        } else if (strcmp(val, "ASYNC_EXP") == 0 || strcmp(val, "ASYNC_EXPLICIT") == 0) {
+        if (strcmp(val, "ASYNC_EXP") == 0 || strcmp(val, "ASYNC_EXPLICIT") == 0)
             (*params_in_out).asyncMode = ASYNC_EXPLICIT;
-        } else if (strcmp(val, "ASYNC_IMP") == 0 || strcmp(val, "ASYNC_IMPLICIT") == 0) {
+         else if (strcmp(val, "ASYNC_IMP") == 0 || strcmp(val, "ASYNC_IMPLICIT") == 0)
             (*params_in_out).asyncMode = ASYNC_IMPLICIT;
-        }
+         else
+            (*params_in_out).asyncMode = ASYNC_NON;
     } else if (strcmp(key, "FILE_PER_PROC") == 0) {
         if (strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
             (*params_in_out).file_per_proc = 1;
@@ -436,7 +488,6 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     return 1;
 }
 
-
 int read_config(const char *file_path, bench_params *params_out, int do_write) {
     char cfg_line[CFG_LINE_LEN_MAX] = "";
 
@@ -444,12 +495,15 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         params_out = (bench_params*) calloc(1, sizeof(bench_params));
     else
         memset(params_out, 0, sizeof(bench_params));
+    //Default settings
     (*params_out).data_file_path = strdup(file_path);
     (*params_out).pattern_name = NULL;
     (*params_out).meta_coll = 0;
     (*params_out).data_coll = 0;
+    (*params_out).asyncMode = ASYNC_NON;
 
     (*params_out).cnt_time_step = 0;
+    (*params_out).cnt_time_step_delay = 0;
     (*params_out).cnt_particle_M = 0; //total number per rank
     (*params_out).memory_bound_M = 0;
     (*params_out).cnt_try_particles_M = 0; // to read
@@ -537,7 +591,6 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         }
     }
 
-
     if (parsed < 0)
         return -1;
     else
@@ -552,7 +605,7 @@ void print_params(const bench_params *p) {
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Sleep time between time steps: %d\n", p->sleep_time);
-
+    printf("Async mode = %d (0: AYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", p->asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
     else

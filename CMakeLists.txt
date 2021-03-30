@@ -6,7 +6,7 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
 include_directories(${MPI_C_INCLUDE_PATH})
 
-# Dependecy: HDF5
+# Dependency: HDF5
 set(HDF5_HOME $ENV{HDF5_HOME})
 set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
@@ -23,6 +23,17 @@ if(CUDAToolkit_FOUND)
 endif(CUDAToolkit_FOUND)
 option(WITH_GPU "Compile Source Code with NVIDIA GPU" ${HDF5_USE_GPU})
 message(STATUS "WITH_GPU=" ${WITH_GPU})
+
+#Dependency: Async
+set(ASYNC_HOME $ENV{ASYNC_HOME})
+#set(async_static_src ${ASYNC_HOME}/h5_async_lib.c
+#		${ASYNC_HOME}/h5_async_lib.h)
+#add_library(asynchdf5 ${async_static_src})
+#set(async_vol_src ${ASYNC_HOME}/h5_vol_external_async_native.c
+#		 ${ASYNC_HOME}/h5_vol_external_async_native.h)
+#add_library(h5async ${async_vol_src})
+#include_directories(${ASYNC_HOME})
+#link_directories(${ASYNC_HOME})
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
@@ -48,12 +59,17 @@ set(bdcats_src basic_io/h5bench_bdcatsio.c)
 if(WITH_GPU)
   add_executable(h5bench_vpicio ${vpic_src})
   set_target_properties(h5bench_vpicio PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
-  target_link_libraries(h5bench_vpicio PRIVATE h5bench_gpu_kernels h5bench_util hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+  target_link_libraries(h5bench_vpicio PRIVATE h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   target_compile_options(h5bench_vpicio PRIVATE ${MPI_C_COMPILE_FLAGS})
 else(WITH_GPU)
   add_executable(h5bench_vpicio ${vpic_src})
-  target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C)
+  target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
 endif(WITH_GPU)
+
+#link_directories(${ASYNC_HOME})
+# async libs: h5async asynchdf5
+
+#link_directories(${ASYNC_HOME}})
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
 target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
@@ -105,5 +121,5 @@ install(TARGETS
 	h5bench_bdcatsio 
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
-	h5bench_vl_stream_hl
+	#h5bench_vl_stream_hl
 	DESTINATION bin)
