@@ -15,14 +15,10 @@ link_directories(${HDF5_HOME}/lib)
 
 #Dependency: Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
-#set(async_static_src ${ASYNC_HOME}/h5_async_lib.c
-#		${ASYNC_HOME}/h5_async_lib.h)
-#add_library(asynchdf5 ${async_static_src})
-#set(async_vol_src ${ASYNC_HOME}/h5_vol_external_async_native.c
-#		 ${ASYNC_HOME}/h5_vol_external_async_native.h)
-#add_library(h5async ${async_vol_src})
-#include_directories(${ASYNC_HOME})
-#link_directories(${ASYNC_HOME})
+option(WITH_ASYNC_VOL "" ON)
+if(WITH_ASYNC_VOL)
+	add_definitions(-DUSE_ASYNC_VOL)
+endif()
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
@@ -37,14 +33,10 @@ set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 add_executable(h5bench_vpicio ${vpic_src})
-#link_directories(${ASYNC_HOME})
 target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C) 
-# async libs: h5async asynchdf5
-
-#link_directories(${ASYNC_HOME}})
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
-target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
+target_link_libraries(h5bench_bdcatsio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)

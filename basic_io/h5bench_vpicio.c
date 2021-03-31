@@ -51,6 +51,7 @@
 #include "../commons/async_adaptor.h"
 
 #ifdef USE_ASYNC_VOL
+#include <H5VLconnector.h>
 #include <h5_async_lib.h>
 #endif
 
@@ -688,9 +689,10 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 #ifdef USE_ASYNC_VOL
                 unsigned cap = 0;
                 H5Pget_vol_cap_flags(fapl, &cap);
-
-                if(H5VL_CAP_FLAG_ASYNC & cap)
+                if(H5VL_CAP_FLAG_ASYNC & cap){
+                    if(MY_RANK == 0)printf("H5Fstart starting...\n");
                     H5Fstart(file_id, fapl);
+                }
 #endif
                 sleep(sleep_time);
             }
