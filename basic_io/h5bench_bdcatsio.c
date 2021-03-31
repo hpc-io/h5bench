@@ -47,11 +47,6 @@
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 
-#ifdef USE_ASYNC_VOL
-#include <H5VLconnector.h>
-#include <h5_async_lib.h>
-#endif
-
 // Global Variables and dimensions
 long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
@@ -77,7 +72,7 @@ void print_data(int n) {
 void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
         unsigned long* read_time, unsigned long* metadata_time) {
     hid_t dapl;
-    unsigned long t1, t2, t3, t4;
+    unsigned long t1, t2, t3;
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
 
@@ -103,13 +98,8 @@ void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hi
 
     t3 = get_time_usec();
 
-//    for(int i = 0; i < 8; i++)
-//        H5Dclose_async(dset_ids[i], ts->es_meta_close);
-
-    t4 = get_time_usec();
-
     *read_time = t3 - t2;
-    *metadata_time = t4 - t1 - *read_time;
+    *metadata_time = t2 - t1;
 
     if (MY_RANK == 0) printf ("  Read 8 variable completed\n");
     H5Pclose(dapl);
@@ -200,11 +190,11 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
 hid_t get_filespace(hid_t file_id){
     char* grp_name = "/Timestep_0";
     char* ds_name = "px";
-    hid_t gid = H5Gopen2(file_id, grp_name, H5P_DEFAULT);//H5Gopen_async(file_id, grp_name, H5P_DEFAULT, 0);
+    hid_t gid = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
     hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
     hid_t filespace = H5Dget_space(dsid);
-    H5Dclose(dsid);//H5Dclose_async(dsid, 0);
-    H5Gclose(gid);//H5Gclose_async(gid, 0);
+    H5Dclose(dsid);
+    H5Gclose(gid);
     return filespace;
 }
 
@@ -255,7 +245,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         print_params(&params);
 
     MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.memory_bound_M * M_VAL);
-    unsigned long t1, t2, t3, t4;
+    unsigned long t1, t2;
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
@@ -274,27 +264,14 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
         read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &metadata_time_exp);
-        t3 = get_time_usec();
-
-        //H5Gclose_async(grp, ts->es_meta_close);
-        t4 = get_time_usec();
-
-        //mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
 
         if (ts_index != nts - 1) {//no sleep after the last ts
-            if (sleep_time >= 0) {
-                if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
-#ifdef USE_ASYNC_VOL
-                unsigned cap = 0;
-                H5Pget_vol_cap_flags(fapl, &cap);
-                if(H5VL_CAP_FLAG_ASYNC & cap){
-                    if(MY_RANK == 0)printf("H5Fstart starting...\n");
-                    H5Fstart(file_id, fapl);
-                }
-#endif
-                sleep(sleep_time);
+            if (sleep_time >= 0){
+                if(MY_RANK == 0) printf("sleeping for %d sec\n", sleep_time);
+                async_sleep(file_id, fapl, sleep_time);
             }
         }
+
         ts->status = TS_DELAY;
         *raw_read_time_out += (read_time_exp + read_time_imp);
         *inner_metadata_time += (metadata_time_exp + metadata_time_imp);

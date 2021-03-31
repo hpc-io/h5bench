@@ -16,6 +16,11 @@
 #include <sys/time.h>
 #include <hdf5.h>
 
+#ifdef USE_ASYNC_VOL
+#include <H5VLconnector.h>
+#include <h5_async_lib.h>
+#endif
+
 #include "h5bench_util.h"
 
 unsigned long get_time_usec() {
@@ -27,6 +32,16 @@ unsigned long get_time_usec() {
 int metric_msg_print(unsigned long number, char *msg, char *unit) {
     printf("%s %lu %s\n", msg, number, unit);
     return 0;
+}
+
+void async_sleep(hid_t file_id, hid_t fapl, int sleep_time_s){
+#ifdef USE_ASYNC_VOL
+    unsigned cap = 0;
+    H5Pget_vol_cap_flags(fapl, &cap);
+    if(H5VL_CAP_FLAG_ASYNC & cap)
+        H5Fstart(file_id, fapl);
+#endif
+    sleep(sleep_time_s);
 }
 
 void timestep_es_id_close(time_step* ts, async_mode mode) {

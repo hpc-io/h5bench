@@ -50,10 +50,10 @@
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 
-#ifdef USE_ASYNC_VOL
-#include <H5VLconnector.h>
-#include <h5_async_lib.h>
-#endif
+//#ifdef USE_ASYNC_VOL
+//#include <H5VLconnector.h>
+//#include <h5_async_lib.h>
+//#endif
 
 #define DIM_MAX 3
 
@@ -517,6 +517,8 @@ void data_write_interleaved_to_interleaved(time_step* ts, hid_t loc, hid_t *dset
     if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
 }
 
+
+
 int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigned long* total_data_size_out,
         unsigned long* data_preparation_time, unsigned long* data_time_total, unsigned long* metadata_time_total) {
 
@@ -684,17 +686,9 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         }
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
-            if (sleep_time >= 0) {
-                if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
-#ifdef USE_ASYNC_VOL
-                unsigned cap = 0;
-                H5Pget_vol_cap_flags(fapl, &cap);
-                if(H5VL_CAP_FLAG_ASYNC & cap){
-                    if(MY_RANK == 0)printf("H5Fstart starting...\n");
-                    H5Fstart(file_id, fapl);
-                }
-#endif
-                sleep(sleep_time);
+            if (sleep_time >= 0){
+                if(MY_RANK == 0) printf("sleeping for %d sec\n", sleep_time);
+                async_sleep(file_id, fapl, sleep_time);
             }
         }
         ts->status = TS_DELAY;

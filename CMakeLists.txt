@@ -26,6 +26,7 @@ set(h5bench_util_src
     commons/h5bench_util.h
     )
 add_library(h5bench_util ${h5bench_util_src})
+target_link_libraries(h5bench_util asynchdf5 h5async)
 # =================================================================
 
 # ===========  Build basic_io: vpic and bdcats ===========
@@ -33,10 +34,10 @@ set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 add_executable(h5bench_vpicio ${vpic_src})
-target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C) 
+target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C) 
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
-target_link_libraries(h5bench_bdcatsio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
+target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)

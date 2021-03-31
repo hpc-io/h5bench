@@ -121,6 +121,8 @@ typedef struct mem_monitor{
     time_step* time_steps;
 }mem_monitor;
 
+void async_sleep(hid_t file_id, hid_t fapl, int sleep_time_s);
+
 void timestep_es_id_close(time_step* ts, async_mode mode);
 
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
@@ -154,7 +156,7 @@ int record_env_metadata(FILE* fs, const char* metadata_list_file);//set metadata
 
 int argv_print(int argc, char* argv[]);
 
-char* get_file_name_from_path( char* path );
-char* get_dir_from_path( char* path );
+char* get_file_name_from_path( char* path);
+char* get_dir_from_path( char* path);
 
 #endif /* COMMONS_H5BENCH_UTIL_H_ */
