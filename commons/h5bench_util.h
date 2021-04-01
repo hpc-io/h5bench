@@ -12,10 +12,10 @@
 //Maximal line length of the config file
 #define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
-#define G_VAL 1024 * 1024 * 1024
-#define M_VAL 1024 * 1024
-#define K_VAL 1024
-#define PARTICLE_SIZE 7 * sizeof(float) +  sizeof(int)
+#define G_VAL ((unsigned long long) 1024 * 1024 * 1024)
+#define M_VAL ((unsigned long long) 1024 * 1024)
+#define K_VAL ((unsigned long long) 1024)
+#define PARTICLE_SIZE (7 * sizeof(float) +  sizeof(int))
 typedef enum async_mode {
     ASYNC_NON,
     ASYNC_EXPLICIT,
@@ -108,15 +108,14 @@ struct time_step{
     hid_t grp_id;
     hid_t dset_ids[8];
     ts_status status;
-    unsigned long mem_size;
+    unsigned long long mem_size;
 };
 
 typedef struct mem_monitor{
     unsigned int time_step_cnt;
-    unsigned int delay_ts_cnt;
-    unsigned int ts_open;//check opened ts and close them when reaches a limit.
-    unsigned long mem_used;
-    unsigned long mem_threshold;
+    unsigned int delay_ts_cnt;//check opened ts and close them when reaches a limit.
+    unsigned long long mem_used;
+    unsigned long long mem_threshold;
     async_mode mode;
     time_step* time_steps;
 }mem_monitor;
@@ -124,10 +123,11 @@ typedef struct mem_monitor{
 void async_sleep(hid_t file_id, hid_t fapl, int sleep_time_s);
 
 void timestep_es_id_close(time_step* ts, async_mode mode);
-
+void print_mem_bound(mem_monitor* mon);
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
-        unsigned long time_step_size, unsigned long mem_threshold);
+        unsigned long long time_step_size, unsigned long long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
+int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total);
 int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
 float uniform_random_number();

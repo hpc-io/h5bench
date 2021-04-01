@@ -438,7 +438,7 @@ void data_write_contig_contig_MD_array(time_step* ts, hid_t loc, hid_t *dset_ids
 
     *metadata_time = t2 - t1;
     *data_time = t3 - t2;
-    if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
+    if (MY_RANK == 0); //printf ("    %s: Finished writing time step \n", __func__);
 }
 
 void data_write_contig_to_interleaved(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
@@ -625,6 +625,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
     }
 
     MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.memory_bound_M * M_VAL);
+
     if(!MEM_MONITOR) {
         printf("Invalid MEM_MONITOR returned: NULL\n");
         return -1;
@@ -634,22 +635,23 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 
     unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
+//        print_mem_bound(MEM_MONITOR);
         sprintf(grp_name, "Timestep_%d", ts_index);
         assert(ts);
 
-        //--------------------------------------------------
-        if (ts_index > 0 && ts_index > params.cnt_time_step_delay - 1) {//delayed close on all ids of the previous ts
-            mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
-        }
-        //--------------------------------------------------
+        if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
+            ts_delayed_close(MEM_MONITOR, &meta_time1);
+
+        mem_monitor_check_run(MEM_MONITOR, &meta_time2, &data_time_imp);
 
         t0 = get_time_usec();
         ts->grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
         t1 = get_time_usec();
-        *metadata_time_total += (t1 - t0);
+        meta_time3= (t1 - t0);
 
         if (MY_RANK == 0)
             printf ("Writing %s ... \n", grp_name);
@@ -660,25 +662,25 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
             case CONTIG_CONTIG_3D:
             case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                        (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
+                        (data_contig_md*)data, &meta_time4, &data_time_exp);
                 break;
 
             case CONTIG_INTERLEAVED_1D:
             case CONTIG_INTERLEAVED_2D:
                 data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                        (data_contig_md*)data, &metadata_time_exp, &data_time_exp);
+                        (data_contig_md*)data, &meta_time4, &data_time_exp);
                 break;
 
             case INTERLEAVED_CONTIG_1D:
             case INTERLEAVED_CONTIG_2D:
                 data_write_interleaved_to_contig(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                        (particle*)data, &metadata_time_exp, &data_time_exp);
+                        (particle*)data, &meta_time4, &data_time_exp);
                 break;
 
             case INTERLEAVED_INTERLEAVED_1D:
             case INTERLEAVED_INTERLEAVED_2D:
                 data_write_interleaved_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                        (particle*)data, &metadata_time_exp, &data_time_exp);
+                        (particle*)data, &meta_time4, &data_time_exp);
                 break;
 
             default:
@@ -687,12 +689,12 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
             if (sleep_time >= 0){
-                if(MY_RANK == 0) printf("sleeping for %d sec\n", sleep_time);
+                if(MY_RANK == 0);// printf("sleeping for %d sec\n", sleep_time);
                 async_sleep(file_id, fapl, sleep_time);
             }
         }
         ts->status = TS_DELAY;
-        *metadata_time_total += (metadata_time_exp + metadata_time_imp);
+        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
         *data_time_total += (data_time_exp + data_time_imp);
 
         // delayed close ids for the last ts

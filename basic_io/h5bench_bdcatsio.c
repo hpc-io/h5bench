@@ -245,36 +245,41 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         print_params(&params);
 
     MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.memory_bound_M * M_VAL);
-    unsigned long t1, t2;
+    unsigned long t1 = 0, t2 = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
+        MEM_MONITOR->mem_used += ts->mem_size;
+//        print_mem_bound(MEM_MONITOR);
         assert(ts);
 
-        if (ts_index > 0 && ts_index > params.cnt_time_step_delay - 1) {//delayed close on all ids of the previous ts
-            mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
-        }
+        if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
+            ts_delayed_close(MEM_MONITOR, &meta_time1);
+
+        mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
         t1 = get_time_usec();
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
         t2 = get_time_usec();
-        *inner_metadata_time += (t2 - t1);
+        meta_time3 = (t2 - t1);
+
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
-        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &metadata_time_exp);
+        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
 
         if (ts_index != nts - 1) {//no sleep after the last ts
             if (sleep_time >= 0){
-                if(MY_RANK == 0) printf("sleeping for %d sec\n", sleep_time);
+                if(MY_RANK == 0); //printf("sleeping for %d sec\n", sleep_time);
                 async_sleep(file_id, fapl, sleep_time);
             }
         }
 
         ts->status = TS_DELAY;
         *raw_read_time_out += (read_time_exp + read_time_imp);
-        *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
+        *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
     }
 
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);

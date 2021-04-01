@@ -51,7 +51,7 @@ void timestep_es_id_close(time_step* ts, async_mode mode) {
 }
 
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
-        unsigned long time_step_size, unsigned long mem_threshold){
+        unsigned long long time_step_size, unsigned long long mem_threshold){
     mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
     monitor->mode = mode;
     monitor->time_step_cnt = time_step_cnt;
@@ -73,6 +73,11 @@ mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
     return monitor;
 }
 
+void print_mem_bound(mem_monitor* mon){
+    printf("mem_used = %llu M, threshold = %llu M\n",
+            mon->mem_used/M_VAL, mon->mem_threshold/M_VAL);
+}
+
 int mem_monitor_free(mem_monitor* mon){
     if(mon) {
         free(mon->time_steps);
@@ -81,36 +86,50 @@ int mem_monitor_free(mem_monitor* mon){
     return 0;
 }
 
-int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
-    if(!mon || !metadata_time_total || !data_time_total)
+int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total) {
+    *metadata_time_total = 0;
+    if(!mon || !metadata_time_total)
         return -1;
 
-    if(mon->mode == ASYNC_NON){
-        *metadata_time_total = 0;
-        *data_time_total = 0;
-        return 0;
-    }
+    time_step* ts_run;
+    size_t num_in_progress;
+    H5ES_status_t op_failed;
+    unsigned long t1, t2;
+    unsigned long meta_time = 0;
+    int dset_cnt = 8;
 
+    for(int i = 0; i < mon->time_step_cnt; i++){
+        ts_run = &(mon->time_steps[i]);
+        if(mon->time_steps[i].status == TS_DELAY){
+            t1 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+            H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+            t2 = get_time_usec();
+            meta_time += (t2 - t1);
+            ts_run->status = TS_READY;
+        }
+    }
+    *metadata_time_total = meta_time;
+    return 0;
+}
+
+int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    *metadata_time_total = 0;
+    *data_time_total = 0;
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+    if(mon->mode == ASYNC_NON)
+        return 0;
+    time_step* ts_run;
+    size_t num_in_progress;
+    H5ES_status_t op_failed;
+    unsigned long t1, t2, t3, t4;
+    unsigned long meta_time = 0, data_time = 0;
+    int dset_cnt = 8;
     if(mon->mem_used >= mon->mem_threshold) {//call ESWait and do ops
-        time_step* ts_run;
-        size_t num_in_progress;
-        H5ES_status_t op_failed;
-        unsigned long t1, t2, t3, t4;
-        unsigned long meta_time = 0, data_time = 0;
-        int dset_cnt = 8;
         for(int i = 0; i < mon->time_step_cnt; i++){
             ts_run = &(mon->time_steps[i]);
-
-            if(mon->time_steps[i].status == TS_DELAY){
-                t1 = get_time_usec();
-                for (int j = 0; j < dset_cnt; j++)
-                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
-                H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
-                t2 = get_time_usec();
-                meta_time += (t2 - t1);
-                ts_run->status = TS_READY;
-            }
-
             if(mon->time_steps[i].status == TS_READY){
 
                 t1 = get_time_usec();
@@ -140,14 +159,13 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
 }
 
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+    *metadata_time_total = 0;
+    *data_time_total = 0;
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
-
-    if(mon->mode == ASYNC_NON){
-        *metadata_time_total = 0;
-        *data_time_total = 0;
+    if(mon->mode == ASYNC_NON)
         return 0;
-    }
+
 
     size_t num_in_progress;
     H5ES_status_t op_failed;
