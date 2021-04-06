@@ -23,6 +23,10 @@
 
 #include "h5bench_util.h"
 
+int str_to_ull(char* str_in, unsigned long long* num_out);
+int parse_time(char* str_in, duration* time);
+int parse_unit(char* str_in, unsigned long long* num, char** unit_str);
+
 unsigned long get_time_usec() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -34,14 +38,27 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
     return 0;
 }
 
-void async_sleep(hid_t file_id, hid_t fapl, int sleep_time_s){
+void h5bench_sleep(duration sleep_time) {
+    if(sleep_time.unit == TIME_SEC)
+        sleep(sleep_time.time_num);
+    else {
+        if(sleep_time.unit == TIME_MS)
+            usleep(1000 * sleep_time.time_num);
+        else if(sleep_time.unit == TIME_US)
+            usleep(sleep_time.time_num);
+        else
+            printf("Invalid sleep time unit.\n");
+    }
+}
+
+void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time){
 #ifdef USE_ASYNC_VOL
     unsigned cap = 0;
     H5Pget_vol_cap_flags(fapl, &cap);
     if(H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
 #endif
-    sleep(sleep_time_s);
+    h5bench_sleep(sleep_time);;
 }
 
 void timestep_es_id_close(time_step* ts, async_mode mode) {
@@ -131,7 +148,6 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         for(int i = 0; i < mon->time_step_cnt; i++){
             ts_run = &(mon->time_steps[i]);
             if(mon->time_steps[i].status == TS_READY){
-
                 t1 = get_time_usec();
                 H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
                 t2 = get_time_usec();
@@ -154,28 +170,24 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         *metadata_time_total = meta_time;
         *data_time_total = data_time;
     }
-
     return 0;
 }
 
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
     *metadata_time_total = 0;
     *data_time_total = 0;
-    if(!mon || !metadata_time_total || !data_time_total)
-        return -1;
-    if(mon->mode == ASYNC_NON)
-        return 0;
-
-
     size_t num_in_progress;
     H5ES_status_t op_failed;
     time_step* ts_run;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
     int dset_cnt = 8;
-    for(int i = 0; i < mon->time_step_cnt; i++) {
-        ts_run = &(mon->time_steps[i]);
 
+    if(!mon || !metadata_time_total || !data_time_total)
+        return -1;
+
+    for(int i = 0; i < mon->time_step_cnt; i++){
+        ts_run = &(mon->time_steps[i]);
         if(mon->time_steps[i].status == TS_DELAY){
             t1 = get_time_usec();
             for (int j = 0; j < dset_cnt; j++)
@@ -185,7 +197,13 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
             ts_run->status = TS_READY;
             meta_time += (t2 - t1);
         }
+    }
 
+    if(mon->mode == ASYNC_NON)
+        return 0;
+
+    for(int i = 0; i < mon->time_step_cnt; i++) {
+        ts_run = &(mon->time_steps[i]);
         if(mon->time_steps[i].status == TS_READY){
             t1 = get_time_usec();
             H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
@@ -205,6 +223,7 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     *data_time_total = data_time;
     return 0;
 }
+
 hid_t es_id_set(async_mode mode) {
     hid_t es_id = 0;
     switch (mode) {
@@ -286,6 +305,75 @@ void free_contig_memory(data_contig_md *data) {
     free(data->id_1);
     free(data->id_2);
     free(data);
+}
+
+int parse_unit(char* str_in, unsigned long long* num, char** unit_str){
+    char* str = strdup(str_in);
+    char* ptr = NULL;
+    ptr = strtok(str, " ");
+    char* num_str = strdup(ptr);
+    if(!num_str){
+        printf("Number parsing failed: \"%s\" is not recognized.\n", str_in);
+        return -1;
+    }
+    char* endptr;
+    *num = strtoul(num_str, &endptr, 10);
+    ptr = strtok(NULL, " ");
+    if(ptr)
+        *unit_str= strdup(ptr);
+    else
+        *unit_str = NULL;
+    return 0;
+}
+
+int parse_time(char* str_in, duration* time){
+    if(!time)
+        time = calloc(1, sizeof(duration));
+    unsigned long long num = 0;
+    char* unit_str;
+    parse_unit(str_in, &num, &unit_str);
+    printf("unit_str = %p\n", unit_str);
+    if(!unit_str)
+        time->unit = TIME_SEC;
+    else if(unit_str[0] == 'S' || unit_str[0] == 's')
+        time->unit = TIME_SEC;
+    else if(unit_str[0] == 'M' || unit_str[0] == 'm')
+        time->unit = TIME_MS;
+    else if(unit_str[0] == 'U' || unit_str[0] == 'u')
+        time->unit = TIME_US;
+    else {
+        printf("time parsing failed\n");
+        return -1;
+    }
+    time->time_num = num;
+    return 0;
+}
+
+int str_to_ull(char* str_in, unsigned long long* num_out){
+    if(!str_in){
+        printf("Number parsing failed: \"%s\" is not recognized.\n", str_in);
+        return -1;
+    }
+    unsigned long long num = 0;
+    char* unit_str;
+    int ret = parse_unit(str_in, &num, &unit_str);
+    if(ret < 0)
+        return -1;
+    if(!unit_str)
+        num = num * 1;
+    else if(unit_str[0] == 'K' || unit_str[0] == 'k')
+        num = num * K_VAL;
+    else if (unit_str[0] == 'M' || unit_str[0] == 'm')
+        num = num * M_VAL;
+    else if (unit_str[0] == 'G' || unit_str[0] == 'g')
+        num = num * G_VAL;
+    else  if (unit_str[0] == 'T' || unit_str[0] == 't')
+        num = num * T_VAL;
+
+    if(!unit_str)
+        free(unit_str);
+    *num_out = num;
+    return 0;
 }
 
 int _set_params(char *key, char *val, bench_params *params_in_out, int do_write) {
@@ -378,25 +466,26 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             return -1;
         }
         (*params_in_out).cnt_try_particles_M = atoi(val);
-    } else if (strcmp(key, "META_COLL") == 0) {
-        if (strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
+
+    } else if (strcmp(key, "COLLECTIVE_METADATA") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).meta_coll = 1;
         else
             (*params_in_out).meta_coll = 0;
 
-    } else if (strcmp(key, "DATA_COLL") == 0) {
-        if (strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
+    } else if (strcmp(key, "COLLECTIVE_DATA") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).data_coll = 1;
         else
             (*params_in_out).data_coll = 0;
 
     } else if (strcmp(key, "COMPRESS") == 0) {
-        if (strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
+        if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).useCompress = 1;
         else
             (*params_in_out).useCompress = 0;
 
-    } else if (strcmp(key, "TIME_STEPS_CNT") == 0) {
+    } else if (strcmp(key, "TIMESTEPS") == 0) {
         int ts_cnt = atoi(val);
         if (ts_cnt >= 1)
             (*params_in_out).cnt_time_step = ts_cnt;
@@ -404,13 +493,13 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("TIME_STEPS_CNT must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "DELAYED_TIME_STEPS_CNT") == 0) {
+    } else if(strcmp(key, "DELAYED_CLOSE_TIMESTEPS") == 0) {
         int delay_ts_cnt = atoi(val);
         if(delay_ts_cnt < 0)
             delay_ts_cnt = 0;
         (*params_in_out).cnt_time_step_delay = delay_ts_cnt;
 
-    } else if (strcmp(key, "PARTICLE_CNT_M") == 0) {
+    } else if (strcmp(key, "NUM_PARTICLES") == 0) {// 16M, 8K
         int ts_cnt = atoi(val);
         if (ts_cnt >= 1)
             (*params_in_out).cnt_particle_M = ts_cnt;
@@ -426,27 +515,33 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("MEM_BOUND_M must be at least 0.\n");
             return -1;
         }
-    } else if (strcmp(key, "SLEEP_TIME") == 0) {
-        int sleep_time = atoi(val);
-        if (sleep_time >= 0)
-            (*params_in_out).sleep_time = sleep_time;
+    } else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
+        duration time;
+        if(parse_time(val, &time) < 0)
+            return -1;
+        if (time.time_num >= 0)
+            (*params_in_out).compute_time = time;
         else {
-            printf("SLEEP_TIME must be at least 0.\n");
+            printf("EMULATED_COMPUTE_TIME_PER_TIMESTEP must be at least 0.\n");
             return -1;
         }
     } else if (strcmp(key, "DIM_1") == 0) {
-        int dim = atoi(val);
-        if (dim > 0)
-            (*params_in_out).dim_1 = dim;
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        if (num > 0)
+            (*params_in_out).dim_1 = num;
         else {
             printf("DIM_1 must be at least 1\n");
         }
     } else if (strcmp(key, "DIM_2") == 0) {
         if ((*params_in_out)._dim_cnt == 1)
             return 1;
-        int dim = atoi(val);
-        if (dim >= 1)
-            (*params_in_out).dim_2 = dim;
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        if (num >= 1)
+            (*params_in_out).dim_2 = num;
         else {
             printf("DIM_2 must be at least 1\n");
             return -1;
@@ -454,9 +549,11 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     } else if (strcmp(key, "DIM_3") == 0) {
         if ((*params_in_out)._dim_cnt == 1 || (*params_in_out)._dim_cnt == 2)
             return 1;
-        int dim = atoi(val);
-        if (dim >= 1)
-            (*params_in_out).dim_3 = dim;
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        if (num >= 1)
+            (*params_in_out).dim_3 = num;
         else {
             printf("DIM_3 must be at least 1\n");
             return -1;
@@ -507,7 +604,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
          else
             (*params_in_out).asyncMode = ASYNC_NON;
     } else if (strcmp(key, "FILE_PER_PROC") == 0) {
-        if (strcmp(val, "YES") == 0 || strcmp(val, "Y") == 0)
+        if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).file_per_proc = 1;
         else
             (*params_in_out).file_per_proc = 0;
@@ -540,7 +637,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
     (*params_out).cnt_particle_M = 0; //total number per rank
     (*params_out).memory_bound_M = 0;
     (*params_out).cnt_try_particles_M = 0; // to read
-    (*params_out).sleep_time = 0;
+    (*params_out).compute_time.time_num = 0;
     (*params_out)._dim_cnt = 1;
 
     (*params_out).stride = 0;
@@ -630,6 +727,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         return 0;
 }
 
+//print all fields of params
 void print_params(const bench_params *p) {
     printf("=======================================\n");
     printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
@@ -637,7 +735,7 @@ void print_params(const bench_params *p) {
     printf("Number of particles per rank (in M): %d M\n", p->cnt_particle_M);
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
-    printf("Sleep time between time steps: %d\n", p->sleep_time);
+    printf("Sleep time between time steps: %d\n", p->compute_time.time_num);
     printf("Async mode = %d (0: AYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", p->asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
@@ -700,7 +798,7 @@ void test_read_config(const char *file_path, int do_write) {
         printf("param->pattern_name = %s\n", param.pattern_name);
         printf("param->cnt_time_step = %d\n", param.cnt_time_step);
         printf("param->cnt_particle_M = %d\n", param.cnt_particle_M);
-        printf("param->sleep_time = %d\n", param.sleep_time);
+        printf("param->sleep_time = %d\n", param.compute_time.time_num);
         printf("param->DIM_1 = %lu\n", param.dim_1);
         printf("param->DIM_2 = %lu\n", param.dim_2);
         printf("param->DIM_3 = %lu\n", param.dim_3);

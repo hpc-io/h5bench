@@ -230,7 +230,6 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     *raw_read_time_out = 0;
     *inner_metadata_time = 0;
     int nts = params.cnt_time_step;
-    int sleep_time = params.sleep_time;
     unsigned long read_elem_cnt = params.cnt_try_particles_M * M_VAL;
     hid_t grp;
     char grp_name[128];
@@ -271,9 +270,9 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
 
         if (ts_index != nts - 1) {//no sleep after the last ts
-            if (sleep_time >= 0){
-                if(MY_RANK == 0); //printf("sleeping for %d sec\n", sleep_time);
-                async_sleep(file_id, fapl, sleep_time);
+            if (params.compute_time.time_num >= 0){
+                if(MY_RANK == 0) printf("sleeping for %d sec\n", params.compute_time);
+                async_sleep(file_id, fapl, params.compute_time);
             }
         }
 
@@ -329,7 +328,6 @@ int main (int argc, char* argv[]){
     }
     ASYNC_MODE = params.asyncMode;
     NUM_TIMESTEPS = params.cnt_time_step;
-    sleep_time = params.sleep_time;
 
     if (NUM_TIMESTEPS <= 0) {
         if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
@@ -433,7 +431,7 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        int total_sleep_time_s = sleep_time * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_s = params.compute_time.time_num * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %d sec, total read size = %lu MB\n",
                 total_sleep_time_s, total_size_mb);

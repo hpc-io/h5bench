@@ -12,6 +12,7 @@
 //Maximal line length of the config file
 #define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
+#define T_VAL ((unsigned long long) 1024 * 1024 * 1024 * 1024)
 #define G_VAL ((unsigned long long) 1024 * 1024 * 1024)
 #define M_VAL ((unsigned long long) 1024 * 1024)
 #define K_VAL ((unsigned long long) 1024)
@@ -21,6 +22,26 @@ typedef enum async_mode {
     ASYNC_EXPLICIT,
     ASYNC_IMPLICIT
 } async_mode;
+
+typedef enum num_unit {
+    UNIT_K,
+    UNIT_M,
+    UNIT_G,
+    UNIT_T,
+    UNIT_INVALID
+} num_unit;
+
+typedef enum time_unit {
+    TIME_SEC,
+    TIME_MS,
+    TIME_US,
+    TIME_INVALID
+} time_unit;
+
+typedef struct duration {
+    unsigned long time_num;
+    time_unit unit;
+} duration;
 
 typedef enum write_pattern {
     CONTIG_CONTIG_1D,
@@ -63,7 +84,8 @@ typedef struct bench_params{
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
     int memory_bound_M;//memory usage bound
-    int sleep_time;
+//    int sleep_time;
+    duration compute_time;
     int _dim_cnt;
     unsigned long stride;
     unsigned long block_size;
@@ -100,6 +122,7 @@ typedef enum ts_status{
     TS_READY,
     TS_DONE
 }ts_status;
+
 typedef struct time_step time_step;
 struct time_step{
     hid_t es_meta_create;
@@ -120,7 +143,8 @@ typedef struct mem_monitor{
     time_step* time_steps;
 }mem_monitor;
 
-void async_sleep(hid_t file_id, hid_t fapl, int sleep_time_s);
+void h5bench_sleep(duration sleep_time);
+void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time);
 
 void timestep_es_id_close(time_step* ts, async_mode mode);
 void print_mem_bound(mem_monitor* mon);
@@ -139,7 +163,6 @@ data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2,
 data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3);
 
 void free_contig_memory(data_contig_md* data);
-
 unsigned long get_time_usec();
 
 int read_config(const char* file_path, bench_params* params_out, int do_write);

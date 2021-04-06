@@ -525,7 +525,6 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
     write_pattern mode = params.access_pattern.pattern_write;
     long particle_cnt = params.cnt_particle_M * M_VAL;
     int timestep_cnt = params.cnt_time_step;
-    int sleep_time = params.sleep_time;
     *data_preparation_time = 0;
     *metadata_time_total = 0;
     *data_time_total = 0;
@@ -688,9 +687,9 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         }
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
-            if (sleep_time >= 0){
-                if(MY_RANK == 0);// printf("sleeping for %d sec\n", sleep_time);
-                async_sleep(file_id, fapl, sleep_time);
+            if (params.compute_time.time_num >= 0){
+                if(MY_RANK == 0) printf("sleeping for %d sec\n", params.compute_time);
+                async_sleep(file_id, fapl, params.compute_time);
             }
         }
         ts->status = TS_DELAY;
@@ -800,6 +799,16 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Info info = MPI_INFO_NULL;
+    char* num_str = "1024 Ks";
+    unsigned long long num = 0;
+    char* unit_str;
+//    parse_unit(num_str, &num, &unit_str);
+
+    int ret = str_to_ull(num_str, &num);
+    if(ret >= 0)
+        printf("str_in = %s, unit = %s, num = %llu, \n", num_str, unit_str, num);
+    else
+        printf("parsing failed\n");
 
     int rand_seed_value = time(NULL);
     srand(rand_seed_value);
@@ -808,7 +817,6 @@ int main(int argc, char* argv[]) {
       printf("rand_seed_value: %d\n", rand_seed_value);
     }
 
-    int sleep_time = 0;
     if(MY_RANK == 0){
         if(argc != 3){
             print_usage(argv[0]);
@@ -839,7 +847,7 @@ int main(int argc, char* argv[]) {
     set_globals(&params);
 
     NUM_TIMESTEPS = params.cnt_time_step;
-    sleep_time = params.sleep_time;
+
     if (MY_RANK == 0)
         printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n",
                 params.pattern_name, NUM_PARTICLES/(1024*1024));
@@ -922,7 +930,7 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n==================  Performance results  =================\n");
-        int total_sleep_time_s = sleep_time * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_s = params.compute_time.time_num * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %d sec, total write size = %lu MB\n", total_sleep_time_s, total_size_mb);
 
@@ -932,7 +940,7 @@ int main(int argc, char* argv[]) {
 
         float meta_time_ms = (float)inner_metadata_time / 1000;
         //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
-        printf("Core metadata time = %.3f ms\n", meta_time_ms);
+        printf("Metadata time = %.3f ms\n", meta_time_ms);
 
         float fcreate_time_ms = (float) (tfopen_end -tfopen_start)/1000;
         printf("H5Fcreate() takes %.3f ms\n", fcreate_time_ms);
@@ -944,11 +952,11 @@ int main(int argc, char* argv[]) {
         printf("H5Fclose() takes %.3f ms\n", fclose_time_ms);
 
         float or_mbs = (float)total_size_mb /
-                ((float)(t4 - t0 - sleep_time*(NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
+                ((float)(t4 - t0 - params.compute_time.time_num * (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
         printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
-        printf("OCT (observed write completion time) = %.3f sec\n", oct_s);
+        printf("OCT (observed completion time) = %.3f sec\n", oct_s);
 
 
 	printf("===========================================================\n");
