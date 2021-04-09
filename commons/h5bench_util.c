@@ -41,6 +41,9 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
 void h5bench_sleep(duration sleep_time) {
     if(sleep_time.unit == TIME_SEC)
         sleep(sleep_time.time_num);
+    else if(sleep_time.unit == TIME_MIN){
+        sleep(60 * sleep_time.time_num);
+    }
     else {
         if(sleep_time.unit == TIME_MS)
             usleep(1000 * sleep_time.time_num);
@@ -66,7 +69,54 @@ void timestep_es_id_close(time_step* ts, async_mode mode) {
     es_id_close(ts->es_data, mode);
     es_id_close(ts->es_meta_close, mode);
 }
+unsigned long long read_time_val(duration time, time_unit unit) {
+    unsigned long long t_us = 1;
+    unsigned long long factor = 1;
+    unsigned long long t_output = 1;
+    switch(time.unit) {
+        case TIME_MIN:
+            factor = 60 * 1000 * 1000 * 1000;
+            break;
+        case TIME_SEC:
+            factor = 1000 * 1000;
+            break;
+        case TIME_MS:
+            factor = 1000;
+            break;
+        case TIME_US:
+            factor = 1;
+            break;
+        default:
+            factor = 0;
+            printf("Invalid time unit: %s\n", __func__);
+            break;
+    }
+    t_us *= factor;
 
+    switch(unit) {
+        case TIME_MIN:
+            t_output = t_us / (60 * 1000 * 1000 * 1000);
+            break;
+        case TIME_SEC:
+            t_output = t_us / (1000 * 1000);
+            break;
+        case TIME_MS:
+            t_output = t_us / 1000;
+            break;
+        case TIME_US:
+            t_output = t_us;
+            break;
+        default:
+            t_output = 0;
+            printf("Invalid time unit: %s\n", __func__);
+            break;
+    }
+    return t_output;
+}
+
+unsigned long long get_msec(duration time) {
+
+}
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long long time_step_size, unsigned long long mem_threshold){
     mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
@@ -90,14 +140,10 @@ mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
     return monitor;
 }
 
-void print_mem_bound(mem_monitor* mon){
-    printf("mem_used = %llu M, threshold = %llu M\n",
-            mon->mem_used/M_VAL, mon->mem_threshold/M_VAL);
-}
-
 int mem_monitor_free(mem_monitor* mon){
     if(mon) {
-        free(mon->time_steps);
+        if(mon->time_steps)
+            free(mon->time_steps);
         free(mon);
     }
     return 0;
@@ -276,12 +322,12 @@ data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2,
     return buf_struct;
 }
 
-data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3) {
+data_contig_md* prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3) {
     data_contig_md *buf_struct = (data_contig_md*) malloc(sizeof(data_contig_md));
     buf_struct->dim_1 = dim_1;
     buf_struct->dim_2 = dim_2;
     buf_struct->dim_3 = dim_3;
-    long num_particles = dim_1 * dim_2 * dim_3;
+    unsigned long long num_particles = dim_1 * dim_2 * dim_3;
 
     buf_struct->particle_cnt = num_particles;
     buf_struct->x = (float*) malloc(num_particles * sizeof(float));
@@ -296,15 +342,17 @@ data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim
 }
 
 void free_contig_memory(data_contig_md *data) {
-    free(data->x);
-    free(data->y);
-    free(data->z);
-    free(data->px);
-    free(data->py);
-    free(data->pz);
-    free(data->id_1);
-    free(data->id_2);
-    free(data);
+    if(data){
+        free(data->x);
+        free(data->y);
+        free(data->z);
+        free(data->px);
+        free(data->py);
+        free(data->pz);
+        free(data->id_1);
+        free(data->id_2);
+        free(data);
+    }
 }
 
 int parse_unit(char* str_in, unsigned long long* num, char** unit_str){
@@ -337,8 +385,12 @@ int parse_time(char* str_in, duration* time){
         time->unit = TIME_SEC;
     else if(unit_str[0] == 'S' || unit_str[0] == 's')
         time->unit = TIME_SEC;
-    else if(unit_str[0] == 'M' || unit_str[0] == 'm')
-        time->unit = TIME_MS;
+    else if(unit_str[0] == 'M' || unit_str[0] == 'm'){
+        if(strcmp(unit_str, "ms") == 0 ||strcmp(unit_str, "MS") == 0)
+            time->unit = TIME_MS;
+        else
+            time->unit = TIME_MIN ;
+    }
     else if(unit_str[0] == 'U' || unit_str[0] == 'u')
         time->unit = TIME_US;
     else {
@@ -370,103 +422,254 @@ int str_to_ull(char* str_in, unsigned long long* num_out){
     else  if (unit_str[0] == 'T' || unit_str[0] == 't')
         num = num * T_VAL;
 
-    if(!unit_str)
+    if(unit_str)
         free(unit_str);
     *num_out = num;
     return 0;
 }
 
+int _set_io_pattern(bench_params *params_in_out) {
+    if(!params_in_out)
+        return -1;
+    int ret = 0;
+    if(params_in_out->io_op == IO_WRITE) {//mem --> file
+        if(params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if(params_in_out->file_pattern == PATTERN_CONTIG) {//CC
+                switch(params_in_out->num_dims){
+                    case 1:
+                        (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
+                        ret = 0;
+                        break;
+                    case 2:
+                        (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
+                        ret = 0;
+                        break;
+                    case 3:
+                        (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
+                        ret = 0;
+                        break;
+                    default:
+                        ret = -1;
+                        printf("%s() failed on line %d\n", __func__, __LINE__);
+                        break;
+                }
+            } else if(params_in_out->file_pattern == PATTERN_INTERLEAVED) {//CI
+                if(params_in_out->num_dims == 1){
+                    (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_1D;
+                    ret = 0;
+                } else if(params_in_out->num_dims == 2) {
+                    (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_2D;
+                    ret = 0;
+                } else{
+                    ret = -1;
+                    printf("%s() failed on line %d\n", __func__, __LINE__);
+                }
+            }
+            else if(params_in_out->file_pattern == PATTERN_STRIDED) {//Strided write 1d
+                if(params_in_out->num_dims == 1) {
+                    (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
+                    ret = 0;
+                } else{
+                    ret = -1;
+                    printf("%s() failed on line %d\n", __func__, __LINE__);
+                }
+            } else{
+                ret = -1;
+                printf("%s() failed on line %d\n", __func__, __LINE__);
+            }
+        } else if(params_in_out->mem_pattern == PATTERN_INTERLEAVED) {
+            if(params_in_out->file_pattern == PATTERN_CONTIG) {  //IC
+                if(params_in_out->num_dims == 1){
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_1D;
+                    ret = 0;
+                } else if(params_in_out->num_dims == 2) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_2D;
+                    ret = 0;
+                } else{
+                    ret = -1;
+                    printf("%s() failed on line %d\n", __func__, __LINE__);
+                }
+            } else if (params_in_out->file_pattern == PATTERN_INTERLEAVED) {  //II
+                if (params_in_out->num_dims == 1) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_1D;
+                    ret = 0;
+                } else if (params_in_out->num_dims == 2) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_2D;
+                    ret = 0;
+                } else{
+                    ret = -1;
+                    printf("%s() failed on line %d\n", __func__, __LINE__);
+                }
+            }
+        } else{
+            ret = -1;
+            printf("%s() failed on line %d\n", __func__, __LINE__);
+        }
+    } else if(params_in_out->io_op == IO_READ) {//file --> mem
+        if(params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if(params_in_out->file_pattern == PATTERN_CONTIG) {
+                switch(params_in_out->num_dims) {
+                    case 1:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+                        ret = 0;
+                        break;
+                    case 2:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
+                        ret = 0;
+                        break;
+                    case 3:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
+                        ret = 0;
+                        break;
+                    default:
+                        ret = -1;
+                        printf("%s() failed on line %d\n", __func__, __LINE__);
+                        break;
+                }
+            } else if(params_in_out->file_pattern == PATTERN_STRIDED) {
+                (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
+                ret = 0;
+            }
+        } else{
+            ret = -1;
+            printf("%s() failed on line %d\n", __func__, __LINE__);
+        }
+    } else {
+        ret = -1;
+        printf("%s() failed on line %d\n", __func__, __LINE__);
+    }
+    if(ret < 0)
+        printf("%s() failed, unsupported value/patterns.\n", __func__);
+    return ret;
+}
+
 int _set_params(char *key, char *val, bench_params *params_in_out, int do_write) {
     if (!params_in_out)
         return 0;
+    if (strcmp(key, "IO_OPERATION") == 0){
+        if (strcmp(val, "READ") == 0){
+            params_in_out->io_op = IO_READ;
 
-    if (strcmp(key, "WRITE_PATTERN") == 0) {
-        if (do_write < 1) {
-            printf("This is NOT a write benchmark, but try to set a WRITE_PATTERN\n");
-            return -1;
-        }
+        } else if(strcmp(val, "WRITE") == 0) {
+            params_in_out->io_op = IO_WRITE;
 
-        if (strcmp(val, "CC") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if(strcmp(val, "CC_STRIDED") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_STRIDED_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "CC2D") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
-            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
-            (*params_in_out)._dim_cnt = 2;
-        } else if (strcmp(val, "CI") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_INTERLEAVED_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_INTERLEAVED_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "CI2D") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_INTERLEAVED_2D;
-            (*params_in_out).pattern_name = strdup("CONTIG_INTERLEAVED_2D");
-            (*params_in_out)._dim_cnt = 2;
-        } else if (strcmp(val, "II") == 0) {
-            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_INTERLEAVED_1D;
-            (*params_in_out).pattern_name = strdup("INTERLEAVED_INTERLEAVED_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "II2D") == 0) {
-            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_INTERLEAVED_2D;
-            (*params_in_out).pattern_name = strdup("INTERLEAVED_INTERLEAVED_2D");
-            (*params_in_out)._dim_cnt = 2;
-        } else if (strcmp(val, "IC") == 0) {
-            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("INTERLEAVED_CONTIG_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "IC2D") == 0) {
-            (*params_in_out).access_pattern.pattern_write = INTERLEAVED_CONTIG_2D;
-            (*params_in_out).pattern_name = strdup("INTERLEAVED_CONTIG_2D");
-            (*params_in_out)._dim_cnt = 2;
-        } else if (strcmp(val, "CC3D") == 0) {
-            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
-            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
-            (*params_in_out)._dim_cnt = 3;
         } else {
-            printf("Unknown WRITE_PATTERN: %s\n", val);
+            printf("Unknown value for \"IO_OPERATION\": %s\n", val);
             return -1;
         }
-    } else if (strcmp(key, "READ_PATTERN") == 0) {
-        if (do_write > 0) {
-            printf("This is a write benchmark, but try to set a READ_PATTERN\n");
-            return -1;
-        }
-        if (strcmp(val, "SEQ") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "PART") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_1D_PART;
-            (*params_in_out).pattern_name = strdup("CONTIG_1D_PART");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "STRIDED") == 0) {
-            (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
-            (*params_in_out).pattern_name = strdup("STRIDED_1D");
-            (*params_in_out)._dim_cnt = 1;
-        } else if (strcmp(val, "2D") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
-            (*params_in_out).pattern_name = strdup("CONTIG_2D");
-            (*params_in_out)._dim_cnt = 2;
-        } else if (strcmp(val, "3D") == 0) {
-            (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
-            (*params_in_out).pattern_name = strdup("CONTIG_3D");
-            (*params_in_out)._dim_cnt = 3;
+    } else if(strcmp(key, "MEM_PATTERN") == 0) {
+        if (strcmp(val, "CONTIG") == 0){
+            params_in_out->mem_pattern = PATTERN_CONTIG;
+        } else if(strcmp(val, "INTERLEAVED") == 0) {
+            params_in_out->mem_pattern = PATTERN_INTERLEAVED;
+        }else if(strcmp(val, "STRIDED") == 0) {
+            params_in_out->mem_pattern = PATTERN_STRIDED;
         } else {
-            printf("Unknown READ_PATTERN: %s\n", val);
-            return -1;
+            params_in_out->mem_pattern = PATTERN_INVALID;
         }
+    } else if(strcmp(key, "FILE_PATTERN") == 0) {
+        if (strcmp(val, "CONTIG") == 0){
+            params_in_out->file_pattern = PATTERN_CONTIG;
+        } else if(strcmp(val, "INTERLEAVED") == 0) {
+            params_in_out->file_pattern = PATTERN_INTERLEAVED;
+        }else if(strcmp(val, "STRIDED") == 0) {
+            params_in_out->file_pattern = PATTERN_STRIDED;
+        } else {
+            params_in_out->file_pattern = PATTERN_INVALID;
+        }
+    }
 
-    } else if (strcmp(key, "TO_READ_CNT_M") == 0) {
-        if ((*params_in_out).isWrite) {
+//    else if (strcmp(key, "WRITE_PATTERN") == 0) {
+//        if (do_write < 1) {
+//            printf("This is NOT a write benchmark, but try to set a WRITE_PATTERN\n");
+//            return -1;
+//        }
+//        if (strcmp(val, "CC") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if(strcmp(val, "CC_STRIDED") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_STRIDED_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "CC2D") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
+//            (*params_in_out).num_dims = 2;
+//        } else if (strcmp(val, "CI") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_1D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_COMPOUND_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "CI2D") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_2D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_COMPOUND_2D");
+//            (*params_in_out).num_dims = 2;
+//        } else if (strcmp(val, "II") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_1D;
+//            (*params_in_out).pattern_name = strdup("COMPOUND_COMPOUND_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "II2D") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_2D;
+//            (*params_in_out).pattern_name = strdup("COMPOUND_COMPOUND_2D");
+//            (*params_in_out).num_dims = 2;
+//        } else if (strcmp(val, "IC") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_1D;
+//            (*params_in_out).pattern_name = strdup("COMPOUND_CONTIG_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "IC2D") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_2D;
+//            (*params_in_out).pattern_name = strdup("COMPOUND_CONTIG_2D");
+//            (*params_in_out).num_dims = 2;
+//        } else if (strcmp(val, "CC3D") == 0) {
+//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
+//            (*params_in_out).num_dims = 3;
+//        } else {
+//            printf("Unknown WRITE_PATTERN: %s\n", val);
+//            return -1;
+//        }
+//    }
+
+//    else if (strcmp(key, "READ_PATTERN") == 0) {
+//        if (do_write > 0) {
+//            printf("This is a write benchmark, but try to set a READ_PATTERN\n");
+//            return -1;
+//        }
+//        if (strcmp(val, "SEQ") == 0) {
+//            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "PART") == 0) {
+//            (*params_in_out).access_pattern.pattern_read = CONTIG_1D_PART;
+//            (*params_in_out).pattern_name = strdup("CONTIG_1D_PART");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "STRIDED") == 0) {
+//            (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
+//            (*params_in_out).pattern_name = strdup("STRIDED_1D");
+//            (*params_in_out).num_dims = 1;
+//        } else if (strcmp(val, "2D") == 0) {
+//            (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_2D");
+//            (*params_in_out).num_dims = 2;
+//        } else if (strcmp(val, "3D") == 0) {
+//            (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
+//            (*params_in_out).pattern_name = strdup("CONTIG_3D");
+//            (*params_in_out).num_dims = 3;
+//        } else {
+//            printf("Unknown READ_PATTERN: %s\n", val);
+//            return -1;
+//        }
+//    }
+
+    else if (strcmp(key, "TO_READ_NUM_PARTICLES") == 0) {
+        if ((*params_in_out).io_op != IO_READ) {
             printf("TO_READ_CNT_M parameter is only used with READ_PATTERNs, please check config file.\n");
             return -1;
         }
-        (*params_in_out).cnt_try_particles_M = atoi(val);
-
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).try_num_particles = num;
     } else if (strcmp(key, "COLLECTIVE_METADATA") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).meta_coll = 1;
@@ -490,7 +693,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         if (ts_cnt >= 1)
             (*params_in_out).cnt_time_step = ts_cnt;
         else {
-            printf("TIME_STEPS_CNT must be at least 1.\n");
+            printf("TIMESTEPS must be at least 1.\n");
             return -1;
         }
     } else if(strcmp(key, "DELAYED_CLOSE_TIMESTEPS") == 0) {
@@ -500,19 +703,24 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         (*params_in_out).cnt_time_step_delay = delay_ts_cnt;
 
     } else if (strcmp(key, "NUM_PARTICLES") == 0) {// 16M, 8K
-        int ts_cnt = atoi(val);
-        if (ts_cnt >= 1)
-            (*params_in_out).cnt_particle_M = ts_cnt;
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+
+        if (num >= 1)
+            (*params_in_out).num_particles = num;
         else {
-            printf("PARTICLE_CNT_M must be at least 1.\n");
+            printf("NUM_PARTICLES must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "MEM_BOUND_M") == 0) {
-        int bound = atoi(val);
-        if(bound >= 0) {
-            (*params_in_out).memory_bound_M = bound;
+    } else if(strcmp(key, "IO_MEM_LIMIT") == 0) {
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        if(num >= 0) {
+            (*params_in_out).io_mem_limit = num;
         } else {
-            printf("MEM_BOUND_M must be at least 0.\n");
+            printf("IO_MEM_LIMIT must be at least 0.\n");
             return -1;
         }
     } else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
@@ -525,7 +733,27 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             printf("EMULATED_COMPUTE_TIME_PER_TIMESTEP must be at least 0.\n");
             return -1;
         }
-    } else if (strcmp(key, "DIM_1") == 0) {
+    }
+    else if(strcmp(key, "READ_OPTION") == 0) {
+        if(strcmp(val, "READ_FULL") == 0) {
+            (*params_in_out).read_option = READ_FULL;
+        } else if(strcmp(val, "READ_PARTIAL")) {
+            (*params_in_out).read_option = READ_PARTIAL;
+        } else if(strcmp(val, "READ_STRIDED")) {
+            (*params_in_out).read_option = READ_STRIDED;
+        } else
+            (*params_in_out).read_option = READ_OPTION_INVALID;
+    }
+    else if(strcmp(key, "NUM_DIMS") == 0){
+        int num = atoi(val);
+        if (num > 0)
+            (*params_in_out).num_dims = num;
+        else {
+            printf("NUM_DIMS must be at least 1\n");
+            return -1;
+        }
+    }
+    else if (strcmp(key, "DIM_1") == 0) {
         unsigned long long num = 0;
         if(str_to_ull(val, &num) < 0)
             return -1;
@@ -533,9 +761,10 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             (*params_in_out).dim_1 = num;
         else {
             printf("DIM_1 must be at least 1\n");
+            return -1;
         }
     } else if (strcmp(key, "DIM_2") == 0) {
-        if ((*params_in_out)._dim_cnt == 1)
+        if ((*params_in_out).num_dims == 1)
             return 1;
         unsigned long long num = 0;
         if(str_to_ull(val, &num) < 0)
@@ -547,7 +776,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             return -1;
         }
     } else if (strcmp(key, "DIM_3") == 0) {
-        if ((*params_in_out)._dim_cnt == 1 || (*params_in_out)._dim_cnt == 2)
+        if ((*params_in_out).num_dims == 1 || (*params_in_out).num_dims == 2)
             return 1;
         unsigned long long num = 0;
         if(str_to_ull(val, &num) < 0)
@@ -559,16 +788,21 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             return -1;
         }
     } else if (strcmp(key, "CHUNK_DIM_1") == 0) {
-        int dim = atoi(val);
+        unsigned long long dim = 0;
+        if(str_to_ull(val, &dim) < 0)
+            return -1;
         if (dim > 0)
             (*params_in_out).chunk_dim_1 = dim;
         else {
             printf("CHUNK_DIM_1 must be at least 1\n");
+            return -1;
         }
     } else if (strcmp(key, "CHUNK_DIM_2") == 0) {
-        if ((*params_in_out)._dim_cnt == 1)
+        if ((*params_in_out).num_dims == 1)
             return 1;
-        int dim = atoi(val);
+        unsigned long long dim = 0;
+        if(str_to_ull(val, &dim) < 0)
+            return -1;
         if (dim >= 1)
             (*params_in_out).chunk_dim_2 = dim;
         else {
@@ -576,9 +810,11 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             return -1;
         }
     } else if (strcmp(key, "CHUNK_DIM_3") == 0) {
-        if ((*params_in_out)._dim_cnt == 1 || (*params_in_out)._dim_cnt == 2)
+        if ((*params_in_out).num_dims == 1 || (*params_in_out).num_dims == 2)
             return 1;
-        int dim = atoi(val);
+        unsigned long long dim = 0;
+        if(str_to_ull(val, &dim) < 0)
+            return -1;
         if (dim >= 1)
             (*params_in_out).chunk_dim_3 = dim;
         else {
@@ -586,16 +822,25 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
             return -1;
         }
     } else if (strcmp(key, "STRIDE_SIZE") == 0) {
-        (*params_in_out).stride = atoi(val);
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).stride = num;
     } else if (strcmp(key, "BLOCK_SIZE") == 0) {
-        (*params_in_out).block_size = atoi(val);
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).block_size = num;
     } else if(strcmp(key, "BLOCK_CNT") == 0) {
-        (*params_in_out).block_cnt = atoi(val);
+        unsigned long long num = 0;
+        if(str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).block_cnt = num;
     } else if (strcmp(key, "CSV_FILE") == 0) {
         (*params_in_out).useCSV = 1;
         (*params_in_out).csv_path = strdup(val);
-    } else if (strcmp(key, "META_LIST_FILE") == 0) {
-        (*params_in_out).meta_list_path = strdup(val);
+    } else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
+        (*params_in_out).env_meta_path = strdup(val);
     } else if (strcmp(key, "ASYNC_MODE") == 0) {
         if (strcmp(val, "ASYNC_EXP") == 0 || strcmp(val, "ASYNC_EXPLICIT") == 0)
             (*params_in_out).asyncMode = ASYNC_EXPLICIT;
@@ -613,20 +858,13 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         return -1;
     }
     if ((*params_in_out).useCSV)
-        (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->meta_list_path);
+        (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
 
     return 1;
 }
-
-int read_config(const char *file_path, bench_params *params_out, int do_write) {
-    char cfg_line[CFG_LINE_LEN_MAX] = "";
-
-    if (!params_out)
+void bench_params_init(bench_params* params_out){
+    if(!params_out)
         params_out = (bench_params*) calloc(1, sizeof(bench_params));
-    else
-        memset(params_out, 0, sizeof(bench_params));
-    //Default settings
-    (*params_out).data_file_path = strdup(file_path);
     (*params_out).pattern_name = NULL;
     (*params_out).meta_coll = 0;
     (*params_out).data_coll = 0;
@@ -634,11 +872,11 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     (*params_out).cnt_time_step = 0;
     (*params_out).cnt_time_step_delay = 0;
-    (*params_out).cnt_particle_M = 0; //total number per rank
-    (*params_out).memory_bound_M = 0;
-    (*params_out).cnt_try_particles_M = 0; // to read
+    (*params_out).num_particles = 0; //total number per rank
+    (*params_out).io_mem_limit = 0;
+    (*params_out).try_num_particles = 0; // to read
     (*params_out).compute_time.time_num = 0;
-    (*params_out)._dim_cnt = 1;
+    (*params_out).num_dims = 1;
 
     (*params_out).stride = 0;
     (*params_out).block_size = 0;
@@ -650,26 +888,34 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
     (*params_out).chunk_dim_2 = 1;
     (*params_out).chunk_dim_3 = 1;
     (*params_out).csv_path = NULL;
-    (*params_out).meta_list_path = NULL;
+    (*params_out).env_meta_path = NULL;
 
     (*params_out).csv_path = NULL;
     (*params_out).csv_fs = NULL;
-    (*params_out).meta_list_path = NULL;
+    (*params_out).env_meta_path = NULL;
     (*params_out).file_per_proc = 0;
+}
+int read_config(const char *file_path, bench_params *params_out, int do_write) {
+    char cfg_line[CFG_LINE_LEN_MAX] = "";
 
-    FILE *csv_fs;
+    if (!params_out)
+        params_out = (bench_params*) calloc(1, sizeof(bench_params));
+    else
+        memset(params_out, 0, sizeof(bench_params));
+    //Default settings
+    bench_params_init(params_out);
+    (*params_out).data_file_path = strdup(file_path);
 
     FILE *file = fopen(file_path, "r");
-    char *key, val;
+
     int parsed = 1;
 
     //default values
     (*params_out).useCSV = 0;
     if (do_write)
-        (*params_out).isWrite = 1;
+        (*params_out).io_op = IO_WRITE;
     else
-        (*params_out).isWrite = 0;
-
+        (*params_out).io_op = IO_READ;
 
     while (fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)) {
         if (cfg_line[0] == '#') { //skip comment lines
@@ -689,16 +935,22 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         //printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
+    if (parsed < 0)
+        return -1;
 
-    if(params_out->memory_bound_M > 0) {
-        if(params_out->cnt_particle_M * PARTICLE_SIZE >= params_out->memory_bound_M) {
+    int ret = _set_io_pattern(params_out);
+    if(ret < 0)
+        return ret;
+
+    if(params_out->io_mem_limit > 0) {
+        if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
             printf("Requested memory (%d MB) is larger than specified memory bound (%d MB), "
                     "please check MEM_BOUND_M in your config file.\n",
-                    params_out->cnt_particle_M * PARTICLE_SIZE, params_out->memory_bound_M);
+                    params_out->num_particles * PARTICLE_SIZE, params_out->io_mem_limit);
             return -1;
         }
     }
-    if (params_out->isWrite) {
+    if (params_out->io_op == IO_WRITE) {
         if(params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
             if(params_out->stride < 1
                     || params_out->block_size < 1
@@ -707,9 +959,12 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
                 return -1;
             }
         }
-    } else { //read
+    } else if (params_out->io_op == IO_READ) { //read
         if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
-            params_out->cnt_try_particles_M = params_out->cnt_particle_M;
+            if(params_out->num_particles > 1)
+                params_out->try_num_particles = params_out->num_particles;
+            else
+                params_out->num_particles = params_out->try_num_particles;
         }
         if(params_out->access_pattern.pattern_read == STRIDED_1D) {
             if(params_out->stride < 1
@@ -720,19 +975,14 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
             }
         }
     }
-
-    if (parsed < 0)
-        return -1;
-    else
-        return 0;
+    return 0;
 }
 
 //print all fields of params
 void print_params(const bench_params *p) {
     printf("=======================================\n");
     printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
-    printf("Benchmark pattern: %s\n", p->pattern_name);
-    printf("Number of particles per rank (in M): %d M\n", p->cnt_particle_M);
+    printf("Number of particles per rank: %llu\n", p->num_particles);
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Sleep time between time steps: %d\n", p->compute_time.time_num);
@@ -746,11 +996,11 @@ void print_params(const bench_params *p) {
     else
         printf("Collective buffering for data operations: NO.\n");
 
-    printf("Number of dimensions: %d\n", p->_dim_cnt);
+    printf("Number of dimensions: %d\n", p->num_dims);
     printf("    Dim_1: %lu\n", p->dim_1);
-    if (p->_dim_cnt >= 2) {
+    if (p->num_dims >= 2) {
         printf("    Dim_2: %lu\n", p->dim_2);
-    } else if (p->_dim_cnt >= 3) {
+    } if (p->num_dims >= 3) {
         printf("    Dim_3: %lu\n", p->dim_3);
     }
 
@@ -763,9 +1013,9 @@ void print_params(const bench_params *p) {
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
-        if (p->_dim_cnt >= 2) {
+        if (p->num_dims >= 2) {
             printf("    chunk_dim2: %lu\n", p->chunk_dim_2);
-        } else if (p->_dim_cnt >= 3) {
+        } else if (p->num_dims >= 3) {
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
@@ -776,33 +1026,10 @@ void print_params(const bench_params *p) {
 void bench_params_free(bench_params *p) {
     if (!p)
         return;
-    free(p->data_file_path);
-    free(p->pattern_name);
-}
-
-void test_read_config(const char *file_path, int do_write) {
-    bench_params param;
-
-    int ret = read_config(file_path, &param, do_write);
-
-    if (ret != 0) {
-        printf("read_config() failed, ret = %d\n", ret);
-    } else {
-        printf("param->isWrite = %d\n", param.isWrite);
-        if (param.isWrite) {
-            printf("param->access_pattern = pattern_write, val = %d\n", param.access_pattern.pattern_write);
-        } else {
-            printf("param->access_pattern = pattern_read, val = %d\n", param.access_pattern.pattern_read);
-        }
-
-        printf("param->pattern_name = %s\n", param.pattern_name);
-        printf("param->cnt_time_step = %d\n", param.cnt_time_step);
-        printf("param->cnt_particle_M = %d\n", param.cnt_particle_M);
-        printf("param->sleep_time = %d\n", param.compute_time.time_num);
-        printf("param->DIM_1 = %lu\n", param.dim_1);
-        printf("param->DIM_2 = %lu\n", param.dim_2);
-        printf("param->DIM_3 = %lu\n", param.dim_3);
-    }
+    if(p->data_file_path)
+        free(p->data_file_path);
+    if(p->pattern_name)
+        free(p->pattern_name);
 }
 
 int file_create_try(const char *path) {

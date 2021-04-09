@@ -282,8 +282,8 @@ void data_free(write_pattern mode, void* data){
     assert(data);
     switch(mode){
         case CONTIG_CONTIG_1D:
-        case CONTIG_INTERLEAVED_1D:
-        case CONTIG_INTERLEAVED_2D:
+        case CONTIG_COMPOUND_1D:
+        case CONTIG_COMPOUND_2D:
         case CONTIG_CONTIG_2D:
         case CONTIG_CONTIG_3D:
             free(((data_contig_md*)data)->x);
@@ -296,10 +296,10 @@ void data_free(write_pattern mode, void* data){
             free(((data_contig_md*)data)->id_2);
             free(((data_contig_md*)data));
             break;
-        case INTERLEAVED_CONTIG_1D:
-        case INTERLEAVED_CONTIG_2D:
-        case INTERLEAVED_INTERLEAVED_1D:
-        case INTERLEAVED_INTERLEAVED_2D:
+        case COMPOUND_CONTIG_1D:
+        case COMPOUND_CONTIG_2D:
+        case COMPOUND_COMPOUND_1D:
+        case COMPOUND_COMPOUND_2D:
             free(data);
             break;
         default:
@@ -523,7 +523,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         unsigned long* data_preparation_time, unsigned long* data_time_total, unsigned long* metadata_time_total) {
 
     write_pattern mode = params.access_pattern.pattern_write;
-    long particle_cnt = params.cnt_particle_M * M_VAL;
+    long particle_cnt = params.num_particles * M_VAL;
     int timestep_cnt = params.cnt_time_step;
     *data_preparation_time = 0;
     *metadata_time_total = 0;
@@ -568,37 +568,37 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
             dset_cnt = 8;
             break;
 
-        case CONTIG_INTERLEAVED_1D:
+        case CONTIG_COMPOUND_1D:
             set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_contig_1D(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
-        case CONTIG_INTERLEAVED_2D:
+        case CONTIG_COMPOUND_2D:
             set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, &data_size);
             dset_cnt = 1;
             break;
 
-        case INTERLEAVED_CONTIG_1D:
+        case COMPOUND_CONTIG_1D:
             set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
-        case INTERLEAVED_CONTIG_2D:
+        case COMPOUND_CONTIG_2D:
             set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 8;
             break;
 
-        case INTERLEAVED_INTERLEAVED_1D:
+        case COMPOUND_COMPOUND_1D:
             set_select_spaces_default(&filespace, &memspace);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
             break;
 
-        case INTERLEAVED_INTERLEAVED_2D:
+        case COMPOUND_COMPOUND_2D:
             set_select_space_2D_array(&filespace, &memspace, params.dim_1, params.dim_2);
             data = (void*)prepare_data_interleaved(particle_cnt, &data_size);
             dset_cnt = 1;
@@ -623,7 +623,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         return -1;
     }
 
-    MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.memory_bound_M * M_VAL);
+    MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.io_mem_limit * M_VAL);
 
     if(!MEM_MONITOR) {
         printf("Invalid MEM_MONITOR returned: NULL\n");
@@ -664,20 +664,20 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
                         (data_contig_md*)data, &meta_time4, &data_time_exp);
                 break;
 
-            case CONTIG_INTERLEAVED_1D:
-            case CONTIG_INTERLEAVED_2D:
+            case CONTIG_COMPOUND_1D:
+            case CONTIG_COMPOUND_2D:
                 data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*)data, &meta_time4, &data_time_exp);
                 break;
 
-            case INTERLEAVED_CONTIG_1D:
-            case INTERLEAVED_CONTIG_2D:
+            case COMPOUND_CONTIG_1D:
+            case COMPOUND_CONTIG_2D:
                 data_write_interleaved_to_contig(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*)data, &meta_time4, &data_time_exp);
                 break;
 
-            case INTERLEAVED_INTERLEAVED_1D:
-            case INTERLEAVED_INTERLEAVED_2D:
+            case COMPOUND_COMPOUND_1D:
+            case COMPOUND_COMPOUND_2D:
                 data_write_interleaved_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*)data, &meta_time4, &data_time_exp);
                 break;
@@ -718,7 +718,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 }
 
 void set_globals(const bench_params *params){
-    NUM_PARTICLES = params->cnt_particle_M * 1024 *1024;
+    NUM_PARTICLES = params->num_particles * 1024 *1024;
     NUM_TIMESTEPS = params->cnt_time_step;
     //following variables only used to generate data
     X_DIM = X_RAND;
@@ -737,7 +737,7 @@ void set_globals(const bench_params *params){
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
         assert(ret >= 0);
-        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->_dim_cnt, (const hsize_t*) COMPRESS_INFO.chunk_dims);
+        ret = H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->num_dims, (const hsize_t*) COMPRESS_INFO.chunk_dims);
         assert(ret >= 0);
         ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
         assert(ret >= 0);
@@ -785,7 +785,7 @@ void print_usage(char *name) {
     if(MY_RANK == 0){
         printf("=============== Usage: %s /path_to_config_file /path_to_output_data_file [CSV csv_file_path]=============== \n", name);
         printf("- CSV is optional.\n");
-        printf("- Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_INTERLEAVED_1D, INTERLEAVED_CONTIG_1D, INTERLEAVED_INTERLEAVED_1D, 2D Array and 3D Array\n");
+        printf("- Only CC/CI/IC/II/CC2D/CC3D is used to set benchmark mode in the config file, stands for CONTIG_CONTIG_1D, CONTIG_COMPOUND_1D, COMPOUND_CONTIG_1D, COMPOUND_COMPOUND_1D, 2D Array and 3D Array\n");
         printf("- For 2D/3D benchmarks, make sure the dimensions are set correctly and matches the per rank particle number.\n");
         printf("- For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, setting DIM_1~3 to 64, 64, and 256 is valid, because 64*64*256 = 1,048,576 (1M); and 10*20*30 is invalid. \n");
     }
@@ -930,13 +930,15 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n==================  Performance results  =================\n");
-        int total_sleep_time_s = params.compute_time.time_num * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %d sec, total write size = %lu MB\n", total_sleep_time_s, total_size_mb);
+        printf("Total sleep time %d sec\n"
+                "Total write size = %lu MB\n", total_sleep_time_us/(1000*1000), total_size_mb);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
-        printf("RR: Raw write time = %.3f sec, RR = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
+        printf("Raw write time = %.3f sec\n"
+                "Raw write rate = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
 
         float meta_time_ms = (float)inner_metadata_time / 1000;
         //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
@@ -952,11 +954,11 @@ int main(int argc, char* argv[]) {
         printf("H5Fclose() takes %.3f ms\n", fclose_time_ms);
 
         float or_mbs = (float)total_size_mb /
-                ((float)(t4 - t0 - params.compute_time.time_num * (NUM_TIMESTEPS - 1)*1000*1000)/(1000 * 1000));
-        printf("OR (observed write rate) = %.3f MB/sec\n", or_mbs);
+                ((float)(t4 - t0 - total_sleep_time_us)/(1000 * 1000));
+        printf("Observed write rate = %.3f MB/sec\n", or_mbs);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
-        printf("OCT (observed completion time) = %.3f sec\n", oct_s);
+        printf("Observed completion time = %.3f sec\n", oct_s);
 
 
 	printf("===========================================================\n");
@@ -965,7 +967,7 @@ int main(int argc, char* argv[]) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             if(params.meta_coll == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_s);
+            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_us/(1000*1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);

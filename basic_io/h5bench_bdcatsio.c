@@ -108,8 +108,10 @@ void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hi
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
 
+    printf("%d: read_elem_cnt = %llu\n", __LINE__, read_elem_cnt);
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
             (hsize_t *) &read_elem_cnt, NULL);
+    printf("%d: read_elem_cnt = %llu\n", __LINE__, read_elem_cnt);
     return read_elem_cnt;
 }
 
@@ -198,10 +200,11 @@ hid_t get_filespace(hid_t file_id){
     return filespace;
 }
 
-unsigned long set_dataspace(bench_params params, unsigned long try_read_elem_cnt, hid_t* filespace_in_out, hid_t* memspace_out){
+unsigned long set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t* filespace_in_out, hid_t* memspace_out){
     unsigned long actual_read_cnt = 0;
     switch(params.access_pattern.pattern_read){
         case CONTIG_1D:
+
             _set_dataspace_seq_read(try_read_elem_cnt, filespace_in_out, memspace_out);
             actual_read_cnt = try_read_elem_cnt;
             break;
@@ -230,20 +233,21 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     *raw_read_time_out = 0;
     *inner_metadata_time = 0;
     int nts = params.cnt_time_step;
-    unsigned long read_elem_cnt = params.cnt_try_particles_M * M_VAL;
+    unsigned long long read_elem_cnt = params.try_num_particles;
     hid_t grp;
     char grp_name[128];
     unsigned long rt1 = 0, rt2 = 0;
     unsigned long actual_read_cnt = 0;
     hid_t memspace;
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
+
     if(actual_read_cnt < 1)
         return -1;
 
     if(MY_RANK == 0)
         print_params(&params);
 
-    MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.memory_bound_M * M_VAL);
+    MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.io_mem_limit);
     unsigned long t1 = 0, t2 = 0;
     unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
@@ -252,7 +256,6 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
-//        print_mem_bound(MEM_MONITOR);
         assert(ts);
 
         if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
@@ -378,7 +381,7 @@ int main (int argc, char* argv[]){
 
     NUM_PARTICLES = total_particles / NUM_RANKS;
 
-    unsigned long  read_elem_cnt = params.cnt_try_particles_M * M_VAL;
+    unsigned long long  read_elem_cnt = params.try_num_particles;
 
     if(read_elem_cnt  > NUM_PARTICLES){
         if(MY_RANK == 0) printf("read_elem_cnt_m <= num_particles must hold.\n");
@@ -388,7 +391,7 @@ int main (int argc, char* argv[]){
     MPI_Info info  = MPI_INFO_NULL;
     if (MY_RANK == 0) {
         printf("Total particles in the file: %lu\n", total_particles);
-        printf ("Number of particles available per rank: %lld \n", NUM_PARTICLES);
+        printf ("Number of particles available per rank: %llu \n", NUM_PARTICLES);
     }
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -431,29 +434,31 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        int total_sleep_time_s = params.compute_time.time_num * (NUM_TIMESTEPS - 1);
+        unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %d sec, total read size = %lu MB\n",
-                total_sleep_time_s, total_size_mb);
-
-        float rrt_s = (float)raw_read_time / (1000*1000);
-        float raw_rate_mbs = total_size_mb / rrt_s;
-        printf("RR: Raw read time = %.3f sec, RR = %.3f MB/sec \n",
-                rrt_s, raw_rate_mbs);
+        printf("Total emulated compute time = %d sec\n"
+                "Total read size = %llu MB\n",
+                total_sleep_time_us/(1000*1000), total_size_mb);
 
         float meta_time_ms = (float)metadata_time/1000;
-        printf("Core metadata time = %.3f ms\n", meta_time_ms);
-
-        double or_mbs = (float)total_size_mb /
-                ((float)(t4 - t1 - (NUM_TIMESTEPS - 1) * 1000*1000)/(1000 * 1000));
-        printf("OR (observed read rate) = %.3f MB/sec\n", or_mbs);
+        printf("Metadata time = %.3f ms\n", meta_time_ms);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
         printf("OCT (observed read completion time) = %.3f sec\n", oct_s);
 
+        float rrt_s = (float)raw_read_time / (1000*1000);
+        float raw_rate_mbs = total_size_mb / rrt_s;
+        printf("Raw read time = %.3f sec \n"
+                "Raw read rate = %.3f MB/sec \n",
+                rrt_s, raw_rate_mbs);
+
+        double or_mbs = (float)total_size_mb /
+                ((float)(t4 - t1 - total_sleep_time_us)/(1000 * 1000));
+        printf("OR (observed read rate) = %.6f MB/sec\n", or_mbs);
+
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_s);
+            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_us/(1000*1000));
             fprintf(params.csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);

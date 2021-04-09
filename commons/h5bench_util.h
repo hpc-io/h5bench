@@ -24,18 +24,19 @@ typedef enum async_mode {
 } async_mode;
 
 typedef enum num_unit {
+    UNIT_INVALID,
     UNIT_K,
     UNIT_M,
     UNIT_G,
     UNIT_T,
-    UNIT_INVALID
 } num_unit;
 
 typedef enum time_unit {
+    TIME_INVALID,
+    TIME_MIN,
     TIME_SEC,
     TIME_MS,
     TIME_US,
-    TIME_INVALID
 } time_unit;
 
 typedef struct duration {
@@ -44,32 +45,57 @@ typedef struct duration {
 } duration;
 
 typedef enum write_pattern {
+    WRITE_PATTERN_INVALID,
     CONTIG_CONTIG_1D,
-    CONTIG_INTERLEAVED_1D,
-    INTERLEAVED_CONTIG_1D,
-    INTERLEAVED_INTERLEAVED_1D,
+    CONTIG_COMPOUND_1D,
+    COMPOUND_CONTIG_1D,
+    COMPOUND_COMPOUND_1D,
     CONTIG_CONTIG_STRIDED_1D,
     CONTIG_CONTIG_2D,
-    CONTIG_INTERLEAVED_2D,
-    INTERLEAVED_CONTIG_2D,
-    INTERLEAVED_INTERLEAVED_2D,
-    CONTIG_CONTIG_3D
+    CONTIG_COMPOUND_2D,
+    COMPOUND_CONTIG_2D,
+    COMPOUND_COMPOUND_2D,
+    CONTIG_CONTIG_3D,
 } write_pattern;
 
-typedef enum read_pattern{
+typedef enum read_pattern {
+    READ_PATTERN_INVALID,
     CONTIG_1D,
     CONTIG_1D_PART,
     STRIDED_1D,
     CONTIG_2D,
-    CONTIG_3D
+    CONTIG_3D,
 }read_pattern;
 
-typedef struct bench_params{
-    int isWrite;
+typedef enum pattern {
+    PATTERN_INVALID,
+    PATTERN_CONTIG,
+    PATTERN_INTERLEAVED,
+    PATTERN_STRIDED,
+}pattern;
+
+typedef enum io_operation {
+    IO_INVALID,
+    IO_READ,
+    IO_WRITE,
+}io_operation;
+
+typedef enum read_option {
+    READ_OPTION_INVALID,
+    READ_FULL,
+    READ_PARTIAL,
+    READ_STRIDED
+}read_option;
+
+typedef struct bench_params {
+    io_operation io_op;
+    pattern mem_pattern;
+    pattern file_pattern;
+    read_option read_option;
     int useCompress;
     int useCSV;
     async_mode asyncMode;
-    union access_pattern{
+    union access_pattern {
         read_pattern pattern_read;
         write_pattern pattern_write;
     }access_pattern;
@@ -81,12 +107,12 @@ typedef struct bench_params{
     int data_coll;//data collective
     int cnt_time_step;
     int cnt_time_step_delay;
-    int cnt_particle_M;//total number per rank
-    int cnt_try_particles_M;// to read
-    int memory_bound_M;//memory usage bound
+    unsigned long long num_particles;//total number per rank
+    unsigned long long try_num_particles;// to read
+    unsigned long long io_mem_limit;//memory usage bound
 //    int sleep_time;
     duration compute_time;
-    int _dim_cnt;
+    int num_dims;
     unsigned long stride;
     unsigned long block_size;
     unsigned long block_cnt;
@@ -97,26 +123,26 @@ typedef struct bench_params{
     unsigned long chunk_dim_2;
     unsigned long chunk_dim_3;
     char* csv_path;
-    char* meta_list_path;
+    char* env_meta_path;
     FILE* csv_fs;
     int file_per_proc;
 } bench_params;
 
-typedef struct data_md{
-    long particle_cnt;
-    long dim_1, dim_2, dim_3;
+typedef struct data_md {
+    unsigned long long particle_cnt;
+    unsigned long long dim_1, dim_2, dim_3;
     float *x, *y, *z;
     float *px, *py, *pz;
     int *id_1;
     float *id_2;
 }data_contig_md;
 
-typedef struct csv_hanle{
+typedef struct csv_hanle {
     int use_csv;
     FILE* fs;
 }csv_handle;
 
-typedef enum ts_status{
+typedef enum ts_status {
     TS_INIT,
     TS_DELAY,
     TS_READY,
@@ -124,7 +150,7 @@ typedef enum ts_status{
 }ts_status;
 
 typedef struct time_step time_step;
-struct time_step{
+struct time_step {
     hid_t es_meta_create;
     hid_t es_meta_close;
     hid_t es_data;
@@ -134,7 +160,7 @@ struct time_step{
     unsigned long long mem_size;
 };
 
-typedef struct mem_monitor{
+typedef struct mem_monitor {
     unsigned int time_step_cnt;
     unsigned int delay_ts_cnt;//check opened ts and close them when reaches a limit.
     unsigned long long mem_used;
@@ -143,11 +169,13 @@ typedef struct mem_monitor{
     time_step* time_steps;
 }mem_monitor;
 
+unsigned long long read_time_val(duration time, time_unit unit);
+
 void h5bench_sleep(duration sleep_time);
 void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time);
 
 void timestep_es_id_close(time_step* ts, async_mode mode);
-void print_mem_bound(mem_monitor* mon);
+
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long long time_step_size, unsigned long long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
@@ -160,7 +188,7 @@ hid_t es_id_set(async_mode mode);
 void es_id_close(hid_t es_id, async_mode mode);
 
 data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3);
-data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3);
+data_contig_md* prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3);
 
 void free_contig_memory(data_contig_md* data);
 unsigned long get_time_usec();
@@ -169,7 +197,6 @@ int read_config(const char* file_path, bench_params* params_out, int do_write);
 
 void print_params(const bench_params* p);
 void bench_params_free(bench_params* p);
-void test_read_config(const char* file_path, int do_write);
 
 int file_create_try(const char* path);
 int file_exist(const char* path);
