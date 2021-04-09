@@ -14,15 +14,36 @@
 //Maximal line length of the config file
 #define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS "=\n \t"
-#define G_VAL 1024 * 1024 * 1024
-#define M_VAL 1024 * 1024
-#define K_VAL 1024
-#define PARTICLE_SIZE 7 * sizeof(float) +  sizeof(int)
+#define T_VAL ((unsigned long long) 1024 * 1024 * 1024 * 1024)
+#define G_VAL ((unsigned long long) 1024 * 1024 * 1024)
+#define M_VAL ((unsigned long long) 1024 * 1024)
+#define K_VAL ((unsigned long long) 1024)
+#define PARTICLE_SIZE (7 * sizeof(float) +  sizeof(int))
 typedef enum async_mode {
     ASYNC_NON,
     ASYNC_EXPLICIT,
     ASYNC_IMPLICIT
 } async_mode;
+
+typedef enum num_unit {
+    UNIT_K,
+    UNIT_M,
+    UNIT_G,
+    UNIT_T,
+    UNIT_INVALID
+} num_unit;
+
+typedef enum time_unit {
+    TIME_SEC,
+    TIME_MS,
+    TIME_US,
+    TIME_INVALID
+} time_unit;
+
+typedef struct duration {
+    unsigned long time_num;
+    time_unit unit;
+} duration;
 
 typedef enum write_pattern {
     CONTIG_CONTIG_1D,
@@ -65,7 +86,8 @@ typedef struct bench_params{
     int cnt_particle_M;//total number per rank
     int cnt_try_particles_M;// to read
     int memory_bound_M;//memory usage bound
-    int sleep_time;
+//    int sleep_time;
+    duration compute_time;
     int _dim_cnt;
     unsigned long stride;
     unsigned long block_size;
@@ -110,6 +132,7 @@ typedef enum ts_status{
     TS_READY,
     TS_DONE
 }ts_status;
+
 typedef struct time_step time_step;
 struct time_step{
     hid_t es_meta_create;
@@ -118,24 +141,27 @@ struct time_step{
     hid_t grp_id;
     hid_t dset_ids[8];
     ts_status status;
-    unsigned long mem_size;
+    unsigned long long mem_size;
 };
 
 typedef struct mem_monitor{
     unsigned int time_step_cnt;
-    unsigned int delay_ts_cnt;
-    unsigned int ts_open;//check opened ts and close them when reaches a limit.
-    unsigned long mem_used;
-    unsigned long mem_threshold;
+    unsigned int delay_ts_cnt;//check opened ts and close them when reaches a limit.
+    unsigned long long mem_used;
+    unsigned long long mem_threshold;
     async_mode mode;
     time_step* time_steps;
 }mem_monitor;
 
-void timestep_es_id_close(time_step* ts, async_mode mode);
+void h5bench_sleep(duration sleep_time);
+void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time);
 
+void timestep_es_id_close(time_step* ts, async_mode mode);
+void print_mem_bound(mem_monitor* mon);
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
-        unsigned long time_step_size, unsigned long mem_threshold);
+        unsigned long long time_step_size, unsigned long long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
+int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total);
 int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
 float uniform_random_number();
@@ -147,7 +173,6 @@ data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2,
 data_contig_md* prepare_contig_memory_multi_dim(long dim_1, long dim_2, long dim_3);
 
 void free_contig_memory(data_contig_md* data);
-
 unsigned long get_time_usec();
 
 int read_config(const char* file_path, bench_params* params_out, int do_write);
@@ -164,7 +189,7 @@ int record_env_metadata(FILE* fs, const char* metadata_list_file);//set metadata
 
 int argv_print(int argc, char* argv[]);
 
-char* get_file_name_from_path( char* path );
-char* get_dir_from_path( char* path );
+char* get_file_name_from_path( char* path);
+char* get_dir_from_path( char* path);
 
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

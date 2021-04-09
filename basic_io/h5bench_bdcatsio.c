@@ -46,6 +46,7 @@
 #include <assert.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
+
 // Global Variables and dimensions
 long long NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long TOTAL_PARTICLES = 0;
@@ -68,10 +69,10 @@ void print_data(int n) {
 }
 
 // Create HDF5 file and read data
-void read_h5_data(time_step* ts, hid_t loc, hid_t filespace, hid_t memspace,
+void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
         unsigned long* read_time, unsigned long* metadata_time) {
-    hid_t dset_ids[8], dapl;
-    unsigned long t1, t2, t3, t4;
+    hid_t dapl;
+    unsigned long t1, t2, t3;
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_all_coll_metadata_ops(dapl, true);
 
@@ -97,13 +98,8 @@ void read_h5_data(time_step* ts, hid_t loc, hid_t filespace, hid_t memspace,
 
     t3 = get_time_usec();
 
-    for(int i = 0; i < 8; i++)
-        H5Dclose_async(dset_ids[i], ts->es_meta_close);
-
-    t4 = get_time_usec();
-
     *read_time = t3 - t2;
-    *metadata_time = t4 - t1 - *read_time;
+    *metadata_time = t2 - t1;
 
     if (MY_RANK == 0) printf ("  Read 8 variable completed\n");
     H5Pclose(dapl);
@@ -194,11 +190,11 @@ unsigned long _set_dataspace_seq_3D(hid_t* filespace_in_out, hid_t* memspace_out
 hid_t get_filespace(hid_t file_id){
     char* grp_name = "/Timestep_0";
     char* ds_name = "px";
-    hid_t gid = H5Gopen2(file_id, grp_name, H5P_DEFAULT);//H5Gopen_async(file_id, grp_name, H5P_DEFAULT, 0);
+    hid_t gid = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
     hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
     hid_t filespace = H5Dget_space(dsid);
-    H5Dclose(dsid);//H5Dclose_async(dsid, 0);
-    H5Gclose(gid);//H5Gclose_async(gid, 0);
+    H5Dclose(dsid);
+    H5Gclose(gid);
     return filespace;
 }
 
@@ -234,7 +230,6 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     *raw_read_time_out = 0;
     *inner_metadata_time = 0;
     int nts = params.cnt_time_step;
-    int sleep_time = params.sleep_time;
     unsigned long read_elem_cnt = params.cnt_try_particles_M * M_VAL;
     hid_t grp;
     char grp_name[128];
@@ -249,36 +244,41 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         print_params(&params);
 
     MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.memory_bound_M * M_VAL);
-    unsigned long t1, t2, t3, t4;
+    unsigned long t1 = 0, t2 = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
+        MEM_MONITOR->mem_used += ts->mem_size;
+//        print_mem_bound(MEM_MONITOR);
         assert(ts);
 
+        if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
+            ts_delayed_close(MEM_MONITOR, &meta_time1);
+
+        mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
+
         t1 = get_time_usec();
-        grp = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+        ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
         t2 = get_time_usec();
+        meta_time3 = (t2 - t1);
+
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
-        read_h5_data(ts, grp, filespace, memspace, &read_time_exp, &metadata_time_exp);
-        t3 = get_time_usec();
-
-        H5Gclose_async(grp, ts->es_meta_close);
-        t4 = get_time_usec();
-        ts->status = TS_READY;
-        mem_monitor_check_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
 
         if (ts_index != nts - 1) {//no sleep after the last ts
-            if (sleep_time >= 0) {
-                if (MY_RANK == 0) printf ("  sleep for %ds\n", sleep_time);
-                sleep(sleep_time);
+            if (params.compute_time.time_num >= 0){
+                if(MY_RANK == 0) printf("sleeping for %d sec\n", params.compute_time);
+                async_sleep(file_id, fapl, params.compute_time);
             }
         }
 
+        ts->status = TS_DELAY;
         *raw_read_time_out += (read_time_exp + read_time_imp);
-        *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
+        *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
     }
 
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
@@ -328,7 +328,6 @@ int main (int argc, char* argv[]){
     }
     ASYNC_MODE = params.asyncMode;
     NUM_TIMESTEPS = params.cnt_time_step;
-    sleep_time = params.sleep_time;
 
     if (NUM_TIMESTEPS <= 0) {
         if(MY_RANK == 0) printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
@@ -432,7 +431,7 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        int total_sleep_time_s = sleep_time * (NUM_TIMESTEPS - 1);
+        int total_sleep_time_s = params.compute_time.time_num * (NUM_TIMESTEPS - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total sleep time %d sec, total read size = %lu MB\n",
                 total_sleep_time_s, total_size_mb);

@@ -27,14 +27,10 @@ message(STATUS "WITH_GPU=" ${WITH_GPU})
 
 #Dependency: Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
-#set(async_static_src ${ASYNC_HOME}/h5_async_lib.c
-#		${ASYNC_HOME}/h5_async_lib.h)
-#add_library(asynchdf5 ${async_static_src})
-#set(async_vol_src ${ASYNC_HOME}/h5_vol_external_async_native.c
-#		 ${ASYNC_HOME}/h5_vol_external_async_native.h)
-#add_library(h5async ${async_vol_src})
-#include_directories(${ASYNC_HOME})
-#link_directories(${ASYNC_HOME})
+option(WITH_ASYNC_VOL "" ON)
+if(WITH_ASYNC_VOL)
+	add_definitions(-DUSE_ASYNC_VOL)
+endif()
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
@@ -42,6 +38,7 @@ set(h5bench_util_src
     commons/h5bench_util.h
     )
 add_library(h5bench_util ${h5bench_util_src})
+target_link_libraries(h5bench_util asynchdf5 h5async)
 # =================================================================
 
 # ===========  Build basic_io: vpic and bdcats ===========
@@ -68,7 +65,6 @@ endif(WITH_GPU)
 # async libs: h5async asynchdf5
 add_executable(h5bench_vpicio ${vpic_src})
 target_link_libraries(h5bench_vpicio h5bench_util asynchdf5 h5async hdf5 z MPI::MPI_C)
-
 #link_directories(${ASYNC_HOME}})
 
 add_executable(h5bench_bdcatsio ${bdcats_src})
