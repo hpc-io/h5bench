@@ -48,6 +48,7 @@ if(WITH_GPU)
     basic_io/gpu_kernels/cuda_kernel.h
   )
   set_target_properties(h5bench_gpu_kernels PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  set_property(TARGET h5bench_gpu_kernels PROPERTY CUDA_ARCHITECTURES 50 70 72)
   target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 endif(WITH_GPU)
 
