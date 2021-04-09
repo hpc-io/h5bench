@@ -95,7 +95,6 @@ const int X_RAND = 191;
 const int Y_RAND = 1009;
 const int Z_RAND = 3701;
 int gpu_id = -1;
-int sleep_time = 0;
 
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
@@ -651,7 +650,6 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
     write_pattern mode = params.access_pattern.pattern_write;
     long particle_cnt = params.cnt_particle_M * M_VAL;
     int timestep_cnt = params.cnt_time_step;
-    sleep_time = params.sleep_time;
     *data_preparation_time = 0;
     *metadata_time_total = 0;
     *data_time_total = 0;

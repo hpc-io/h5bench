@@ -51,6 +51,8 @@ if(WITH_GPU)
   target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 endif(WITH_GPU)
 
+include_directories(${ASYNC_HOME})
+
 set(vpic_src basic_io/h5bench_vpicio.c)
 set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
