@@ -1,6 +1,6 @@
 # H5bench: a Parallel I/O Benchmark suite for HDF5
 H5bench is a suite of parallel I/O benchmarks or kernels representing I/O patterns that are commonly used in HDF5 applications on high performance computing systems. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
-  
+
 # Instructions to build H5bench
 ## Build with CMake (**recommended**)
 ### Dependency and environment variable settings
@@ -32,54 +32,116 @@ Assume that the repo is cloned and now you are in the source directory h5bench, 
 - `make`
 
 And all the binaries will be built to the build / directory.
-
-## Build with Spack (experimental)
-Assuming you have installed Spack, and it will try to find and install dependencies for you.
-
-- Create a spack package:
-    - `spack create --force https://bitbucket.org/berkeleylab/h5bench/downloads/h5bench-0.1.tar`
-
-- Then you will be put in an opend python document (for details see here https://spack-tutorial.readthedocs.io/en/latest/tutorial_packaging.html) and you only need to add 2 dependencies:
-    - `depends_on(mpi)`
-    - `depends_on(hdf5)`
-
-- And you are good to install:
-    - `spack install h5bench`
-
-- Binaries will be added to your $PATH environment variable after you load them by
-    - `spack load h5bench`
-
-And now you can call the benchmark apps in your scripts directly. 
   
 # Benchmark suite usage
 ## Basic I/O benchmark
-## Major refactoring is in progress, this document may be out of date. Both h5bench_vpicio and h5bench_bdcats take config and data file path as command line arguments.
+Major refactoring is in progress, this document may be out of date. Both h5bench_vpicio and h5bench_bdcats take config and data file path as command line arguments.
+
+- ./h5bench_vpicio my_config.cfg my_data.h5
+- ./h5bench_bdcats my_config.cfg my_data.h5
+
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
+
+
+
+
 - Optional CSV file output: Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
-    - - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv` 
+    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv` 
 - Optional metadata capture: **Use this only when you select to use the above CSV option**: If you want to collect running metadata, add `META metadata_list_file` after the two CSV arguments. The metadata_list_file contains a list of envaronment variable names that you want to capture, such as LSB_JOBID for the systems that run LSB scheduler, or SLURM_JOB_ID for Slurm.
     - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` 
+
+
+
+
+
+## Settings in the config file
+
+The h5bench_vpicio and h5bench_bdcats take parameters in a plain text config file. The content format is **strict**. Unsupported formats :
+- Blank/empty lines, including ending lines.
+- Comment symbol(#) follows value immediately:
+  -   TIMESTEPS=5# Not supported
+  -   TIMESTEPS=5 #This is supported
+  -   TIMESTEPS=5 # This is supported
+- Blank space in assignment
+  -   TIMESTEPS=5 # This is supported
+  -   TIMESTEPS = 5 # Not supported
+  -   TIMESTEPS =5 # Not supported
+  -   TIMESTEPS= 5 # Not supported
+
+
+A template of config file can be found `basic_io/sample_config/template.cfg`:
+```
+#========================================================
+#   General settings
+NUM_PARTICLES=16 M #16 K/G
+TIMESTEPS=5
+EMULATED_COMPUTE_TIME_PER_TIMESTEP=1 s #1 ms, 1 min
+#========================================================
+#   Benchmark data dimensionality
+NUM_DIMS=1
+DIM_1=16777216 # 16777216, 8388608
+DIM_2=1
+DIM_3=1
+#========================================================
+#   IO pattern settings
+IO_OPERATION=READ # WRITE
+MEM_PATTERN=CONTIG # INTERLEAVED STRIDED
+FILE_PATTERN=CONTIG # STRIDED
+#========================================================
+#   Options for IO_OPERATION=READ
+READ_OPTION=FULL # PARTIAL STRIDED
+TO_READ_NUM_PARTICLES=4 M
+#========================================================
+#   Strided access parameters
+#STRIDE_SIZE=
+#BLOCK_SIZE=
+#BLOCK_CNT=
+#========================================================
+# Collective data/metadata settings
+#COLLECTIVE_DATA=NO #Optional, default for NO.
+#COLLECTIVE_METADATA=NO #Optional, default for NO.
+#========================================================
+#    Compression, optional, default is NO.
+#COMPRESS=NO
+#CHUNK_DIM_1=1
+#CHUNK_DIM_2=1
+#CHUNK_DIM_3=1
+#========================================================
+#    Async related settings
+DELAYED_CLOSE_TIMESTEPS=2
+IO_MEM_LIMIT=5000 K
+ASYNC_MODE=ASYNC_EXP #EXP #ASYNC_IMP ASYNC_NON ASYNC_EXP
+#========================================================
+#    Output performance results to a CSV file
+#CSV_FILE=perf_write_1d.csv
+#
+#FILE_PER_PROC=
+```
+
+### General settings  
+- IO_OPERATION: required, chose from **READ** and **WRITE**.
+- MEM_PATTERN: required, chose from **CONTIG**, **INTERLEAVED** and **STRIDED**
+- FILE_PATTERN: required, chose from **CONTIG**, and **STRIDED**
+
+- NUM_PARTICLES: the number of particles that each rank needs to process, can be in exact numbers (12345) or in units (format like 16 K, 128 M and 256 G are supported,  format like 16K, 128M, 256G is NOT supported).  
+
+ 
+#### TIMESTEPS and EMULATED_COMPUTE_TIME_PER_TIMESTEP: the number of iterations
+In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $EMULATED_COMPUTE_TIME_PER_TIMESTEP time to emulate the application computation.
+
+#### NUM_DIMS, DIM_1, DIM_2, and DIM_3: the dimensionality of the source data
+Always set these parameters in ascending order, and set unused dimensions to 1, and remember that NUM_PARTICLES == DIM_1 * DIM_2 * DIM_3 must hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array.
+
+#### Settings for READ
+- READ_OPTION: required.
+  - FULL: read the whole file
+  - PARTIAL: read the first $TO_READ_NUM_PARTICLES particles
+  - STRIDED: read in streded pattern
+- TO_READ_NUM_PARTICLES: required, the number for particles attempt to read.
+- 
 ## Basic write benchmark - h5bench_vpicio
 
-**To set parameters for the h5bench_vpicio:**
-
-The h5bench_vpicio takes all parameters in a plain text config file. The content format is strict.
-Take `basic_io/sample_config/sample_cc2d.cfg` as an example, it looks like below, and we will discus them one by one:
-```
-# this is a comment
-# Benchmark mode can only be one of these: CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D
-PATTERN=CC2D
-DATA_COLL=NO # Optional, specify to use independent or collective data operations, if not set, it will be treated as NO.
-META_COLL=NO # Optional, specify to use independent or collective metadata, NO for default.
-PARTICLE_CNT_M=8
-TIME_STEPS_CNT=1
-SLEEP_TIME=1
-DIM_1=4096
-DIM_2=2048
-DIM_3=64 # extra dimension take no effects.
-FILE_PER_PROC=NO #Optional, default is NO.
-```
 - To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size. **Note:** There is a know bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.  
 ```
 COMPRESS=YES # to enable parallel compression(chunking)
@@ -99,18 +161,10 @@ CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark.
 
 This defines the write access pattern, including CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D where C strands for “contiguous” and I stands for “interleaved” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, CI2D is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
-  
-#### Parameter PARTICLE_CNT_M: the number of particles that each rank needs to process, in M (1024*1024)
-This number and the three dimension parameters (DIM_1, DIM_2, and DIM_3) must be set such that the formula holds: PARTICLE_CNT_M * (1024 * 1024) == DIM_1 * DIM_2 * DIM_3
-  
-#### Parameters TIME_STEPS_CNT and SLEEP_TIME: the number of iterations
-In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $SLEEP_TIME seconds to emulate the application computation.
 
 #### Parameters DATA_COLL and META_COLL: optional lines for collective operations.
 These are optional, set to "YES" to collective operations on data and metadata respectively, otherwise and default (not set) cases independent.
 
-#### Parameters DIM_1, DIM_2, and DIM_3: the dimensionality of the source data
-Always set these parameters in ascending order, and set unused dimensions to 1, and remember that PARTICLE_CNT_M * (1024 * 1024) == DIM_1 * DIM_2 * DIM_3 must hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array.
 
 **To run the vpicio_h5bench:**
 
@@ -215,14 +269,12 @@ Example run:
 
    - `mpirun -n 8 ./h5bench_exerciser $write_file_prefix -numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 --dimranks 8 4`
 
-
 ## The metadata stress test: h5bench_hdf5_iotest
 This is the same benchmark as it's originally found at https://github.com/HDFGroup/hdf5-iotest. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
 
 Example run:
 
    - `mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini`
-
 
 ## Streaming operation benchmark: h5bench_vl_stream_hl
 This benchmark tests the performance of append operation. It supports two types of appends, FIXED and VLEN, represents fixed length data and variable length data respectively.
