@@ -42,19 +42,6 @@ Major refactoring is in progress, this document may be out of date. Both h5bench
 
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
-
-
-
-
-- Optional CSV file output: Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
-    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv` 
-- Optional metadata capture: **Use this only when you select to use the above CSV option**: If you want to collect running metadata, add `META metadata_list_file` after the two CSV arguments. The metadata_list_file contains a list of envaronment variable names that you want to capture, such as LSB_JOBID for the systems that run LSB scheduler, or SLURM_JOB_ID for Slurm.
-    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` 
-
-
-
-
-
 ## Settings in the config file
 
 The h5bench_vpicio and h5bench_bdcats take parameters in a plain text config file. The content format is **strict**. Unsupported formats :
@@ -93,7 +80,7 @@ FILE_PATTERN=CONTIG # STRIDED
 READ_OPTION=FULL # PARTIAL STRIDED
 TO_READ_NUM_PARTICLES=4 M
 #========================================================
-#   Strided access parameters
+#   Strided access parameters, required for strided access
 #STRIDE_SIZE=
 #BLOCK_SIZE=
 #BLOCK_CNT=
@@ -120,35 +107,44 @@ ASYNC_MODE=ASYNC_EXP #EXP #ASYNC_IMP ASYNC_NON ASYNC_EXP
 ```
 
 ### General settings  
-- IO_OPERATION: required, chose from **READ** and **WRITE**.
-- MEM_PATTERN: required, chose from **CONTIG**, **INTERLEAVED** and **STRIDED**
-- FILE_PATTERN: required, chose from **CONTIG**, and **STRIDED**
+- **IO_OPERATION**: required, chose from **READ** and **WRITE**.
+- **MEM_PATTERN**: required, chose from **CONTIG**, **INTERLEAVED** and **STRIDED**
+- **FILE_PATTERN**: required, chose from **CONTIG**, and **STRIDED**
+- **NUM_PARTICLES**: required, the number of particles that each rank needs to process, can be in exact numbers (12345) or in units (format like 16 K, 128 M and 256 G are supported,  format like 16K, 128M, 256G is NOT supported).   
+- **TIMESTEPS**: required, the number of iterations
+- **EMULATED_COMPUTE_TIME_PER_TIMESTEP**: required, must be with units (eg,. 10 s, 100 ms or 5000 us).  In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $EMULATED_COMPUTE_TIME_PER_TIMESTEP time to emulate the application computation.
+- **NUM_DIMS**: required, the number of dimensions, valid values are 1, 2 and 3.
+- **DIM_1, DIM_2, and DIM_3**: required, the dimensionality of the source data. Always set these parameters in ascending order, and set unused dimensions to 1, and remember that NUM_PARTICLES == DIM_1 * DIM_2 * DIM_3 **MUST** hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array when `NUM_PARTICLES=262144` or `NUM_PARTICLES=256 K`, because 1024*256*1 = 262144, which is 256 K.
 
-- NUM_PARTICLES: the number of particles that each rank needs to process, can be in exact numbers (12345) or in units (format like 16 K, 128 M and 256 G are supported,  format like 16K, 128M, 256G is NOT supported).  
+### Async related settings
+- **ASYNC_MODE**: optional, the default is ASYNC_NON.
+  - ASYNC_NON: the benchmark will run in synchronous mode. 
+  - ASYNC_EXP: enable the asynchronous mode. An installed async VOL connector and coresponding environment variables are required.
+- **IO_MEM_LIMIT**: optional, the default is 0, requires **ASYNC_MODE=ASYNC_EXP**, only works in asynchronous mode. This is the memory threshold used to determine when to actually execute the IO operations. The actual IO operations (data read/write) will not be executed until the timesteps associated memory reachs the threshold, or the application run to the end.
+- **DELAYED_CLOSE_TIMESTEPS**: optional, the default is 0. The groups and datasets associated to to the timesteps will be closed later for potential caching.
 
- 
-#### TIMESTEPS and EMULATED_COMPUTE_TIME_PER_TIMESTEP: the number of iterations
-In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $EMULATED_COMPUTE_TIME_PER_TIMESTEP time to emulate the application computation.
-
-#### NUM_DIMS, DIM_1, DIM_2, and DIM_3: the dimensionality of the source data
-Always set these parameters in ascending order, and set unused dimensions to 1, and remember that NUM_PARTICLES == DIM_1 * DIM_2 * DIM_3 must hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array.
-
-#### Settings for READ
-- READ_OPTION: required.
-  - FULL: read the whole file
-  - PARTIAL: read the first $TO_READ_NUM_PARTICLES particles
-  - STRIDED: read in streded pattern
-- TO_READ_NUM_PARTICLES: required, the number for particles attempt to read.
-- 
-## Basic write benchmark - h5bench_vpicio
-
-- To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size. **Note:** There is a know bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.  
+### Compression settings
+- **COMPRESS**: YES or NO, optional. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required.
+To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size. 
 ```
 COMPRESS=YES # to enable parallel compression(chunking)
 CHUNK_DIM_1=512 # chunk dimensions
 CHUNK_DIM_2=256
 CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 ```
+**Note:** There is a known bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.  
+
+
+### Additional settings for READ (h5bench_bdcats)
+- **READ_OPTION**: required for IO_OPERATION=READ, not allowed for IO_OPERATION=WRITE.
+  - FULL: read the whole file
+  - PARTIAL: read the first $TO_READ_NUM_PARTICLES particles
+  - STRIDED: read in streded pattern
+- **TO_READ_NUM_PARTICLES**: required, the number for particles attempt to read.
+
+
+##----------------------------------------
+
 
 - For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64 * 64 * 256 = 1,048,576 (1M); and 10 * 20 * 30 is an invalid setting.
 - For 1D benchmarks (CC/CI/IC/II), DIM_1 must be set to the total particle number, and the rest two dimensions must be set to 1.
@@ -157,13 +153,29 @@ CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 - No blank line and blank space are allowed.
 
 
+
+
+
+
+- Optional CSV file output: Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
+    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv` 
+- Optional metadata capture: **Use this only when you select to use the above CSV option**: If you want to collect running metadata, add `META metadata_list_file` after the two CSV arguments. The metadata_list_file contains a list of envaronment variable names that you want to capture, such as LSB_JOBID for the systems that run LSB scheduler, or SLURM_JOB_ID for Slurm.
+    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` 
+
+
+
+
+
+
+
 #### Parameter PATTERN: the write pattern
 The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark.
 
 This defines the write access pattern, including CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D where C strands for “contiguous” and I stands for “interleaved” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, CI2D is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
 
-#### Parameters DATA_COLL and META_COLL: optional lines for collective operations.
-These are optional, set to "YES" to collective operations on data and metadata respectively, otherwise and default (not set) cases independent.
+#### Collective operation settings
+- **COLLECTIVE_DATA**: optional, set to "YES" for collective data operations, otherwise and default (not set) cases for independent operations.
+- **COLLECTIVE_METADATA**: optional, set to "YES" for collective metadata operations, otherwise and default (not set) cases for independent operations.
 
 
 **To run the vpicio_h5bench:**
