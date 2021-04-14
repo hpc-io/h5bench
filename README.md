@@ -115,6 +115,23 @@ ASYNC_MODE=ASYNC_EXP #EXP #ASYNC_IMP ASYNC_NON ASYNC_EXP
 - **EMULATED_COMPUTE_TIME_PER_TIMESTEP**: required, must be with units (eg,. 10 s, 100 ms or 5000 us).  In each iteration, the same amount of data will be written and the file size will increase correspondingly. After each iteration, the program sleeps for $EMULATED_COMPUTE_TIME_PER_TIMESTEP time to emulate the application computation.
 - **NUM_DIMS**: required, the number of dimensions, valid values are 1, 2 and 3.
 - **DIM_1, DIM_2, and DIM_3**: required, the dimensionality of the source data. Always set these parameters in ascending order, and set unused dimensions to 1, and remember that NUM_PARTICLES == DIM_1 * DIM_2 * DIM_3 **MUST** hold. For example, DIM_1=1024, DIM_2=256, DIM_3=1 is a valid setting for a 2D array when `NUM_PARTICLES=262144` or `NUM_PARTICLES=256 K`, because 1024*256*1 = 262144, which is 256 K.
+#### Example for using multi-dimensional array data 
+- Using 2D as the example, 3D cases are similar, the file is generated with with 4 ranks, each rank write 8M elements, organized in a 4096 * 2048 array, in total it forms a (4 * 4096) * 2048 2D array. The file should be around 1GB. 
+
+Dimensionality part of the Config file:
+```
+NUM_DIMS=2
+DIM_1=4096
+DIM_2=2048
+DIM_3=64 # Note: extra dimensions than specified by NUM_DIMS are ignored.
+```
+
+### Additional settings for READ (h5bench_bdcats)
+- **READ_OPTION**: required for IO_OPERATION=READ, not allowed for IO_OPERATION=WRITE.
+  - FULL: read the whole file
+  - PARTIAL: read the first $TO_READ_NUM_PARTICLES particles
+  - STRIDED: read in streded pattern
+- **TO_READ_NUM_PARTICLES**: required, the number for particles attempt to read.
 
 ### Async related settings
 - **ASYNC_MODE**: optional, the default is ASYNC_NON.
@@ -134,145 +151,76 @@ CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 ```
 **Note:** There is a known bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.  
 
-
-### Additional settings for READ (h5bench_bdcats)
-- **READ_OPTION**: required for IO_OPERATION=READ, not allowed for IO_OPERATION=WRITE.
-  - FULL: read the whole file
-  - PARTIAL: read the first $TO_READ_NUM_PARTICLES particles
-  - STRIDED: read in streded pattern
-- **TO_READ_NUM_PARTICLES**: required, the number for particles attempt to read.
-
-
-##----------------------------------------
-
-
-- For 2D/3D benchmarks (such as CI2D or CC3D), make sure the dimensions are set correctly and matches the per rank particle number. For example, when your PATTERN is CC3D, and PARTICLE_CNT_M is 1, means 1M particles per rank, setting DIM_1~3 to 64, 64, and 256 is valid, because 64 * 64 * 256 = 1,048,576 (1M); and 10 * 20 * 30 is an invalid setting.
-- For 1D benchmarks (CC/CI/IC/II), DIM_1 must be set to the total particle number, and the rest two dimensions must be set to 1.
-- FILE_PER_PROC enables file-per-process mode. This mode does not utilize mpio for I/O.
-
-- No blank line and blank space are allowed.
-
-
-
-
-
-
-- Optional CSV file output: Performance results will be print to standard output, an optional CSV output is available, simply add `CSV my_csv_file_path` to the end of your h5bench_vpicio/h5bench_bdcatsio command line.
-    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv` 
-- Optional metadata capture: **Use this only when you select to use the above CSV option**: If you want to collect running metadata, add `META metadata_list_file` after the two CSV arguments. The metadata_list_file contains a list of envaronment variable names that you want to capture, such as LSB_JOBID for the systems that run LSB scheduler, or SLURM_JOB_ID for Slurm.
-    - Example: `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` 
-
-
-
-
-
-
-
-#### Parameter PATTERN: the write pattern
-The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark.
-
-This defines the write access pattern, including CC/CI/IC/II/CC2D/CI2D/IC2D/II2D/CC2D/CC3D where C strands for “contiguous” and I stands for “interleaved” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, CI2D is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
-
-#### Collective operation settings
+### Collective operation settings
 - **COLLECTIVE_DATA**: optional, set to "YES" for collective data operations, otherwise and default (not set) cases for independent operations.
 - **COLLECTIVE_METADATA**: optional, set to "YES" for collective metadata operations, otherwise and default (not set) cases for independent operations.
 
+### Other settings
+- **CSV_FILE**=my_csv_file: optional CSV file output, performance results will be print to the file and the standard output as well. 
 
-**To run the vpicio_h5bench:**
+## Supported patterns
+Note: not every pattern combination is covered, supported benchmark parameter settings are listed below.
+### Supported write patterns(h5bench_vpicio): IO_OPERATION=WRITE 
+The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark. This defines the write access pattern, including CONTIG (contiguous), INTERLEAVED and STRIDED” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, MEM_PATTERN=CONTIG and FILE_PATTERN=INTERLEAVED is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
 
-- Single process test:
-    - `./h5bench_vpicio your_config_file output_file`
+#### 4 patterns for both 1D and 2D array write (`NUM_DIMS=1` or `NUM_DIMS=2`)
+- MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG
+- MEM_PATTERN=CONTIG, FILE_PATTERN=INTERLEAVED
+- MEM_PATTERN=INTERLEAVED, FILE_PATTERN=CONTIG
+- MEM_PATTERN=INTERLEAVED, FILE_PATTERN=INTERLEAVED 
+#### 1 pattern for 3D array (`NUM_DIMS=3`)
+- MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG
+#### 1 strided pattern for 1D array (`NUM_DIMS=1`)
+- MEM_PATTERN=CONTIG, FILE_PATTERN=STRIDED
 
+
+### Supported read patterns(h5bench_bdcatsio): IO_OPERATION=READ 
+#### 1 pattern for 1D, 2D and 3D read (`NUM_DIMS=1` or `NUM_DIMS=2`)
+- MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, READ_OPTION=FULL, contiguously read through the whole data file.
+#### 2 patterns for 1D read
+- MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, READ_OPTION=PARTIAL, contiguously read the first $TO_READ_NUM_PARTICLES elements.
+- MEM_PATTERN=CONTIG, FILE_PATTERN=STRIDED, READ_OPTION=STRIDED 
+
+### Sample settings
+The following setting reads 2048 particles from 128 blocks in total, each block consists of the top 16 from every 64 elements. See HDF5 documentation for details of using strided access.
+```
+#   General settings
+NUM_PARTICLES=16 M
+TIMESTEPS=5
+EMULATED_COMPUTE_TIME_PER_TIMESTEP=1 s
+#========================================================
+#   Benchmark data dimensionality
+NUM_DIMS=1
+DIM_1=16777216
+DIM_2=1
+DIM_3=1
+#========================================================
+#   IO pattern settings
+IO_OPERATION=READ
+MEM_PATTERN=CONTIG
+FILE_PATTERN=CONTIG
+#========================================================
+#    Options for IO_OPERATION=READ
+READ_OPTION=PARTIAL # PARTIAL STRIDED
+TO_READ_NUM_PARTICLES=2048
+#========================================================
+#    Strided access parameters
+STRIDE_SIZE=64
+BLOCK_SIZE=16
+BLOCK_CNT=128
+```
+For more exampes, please find the config files and template.cfg in basic_io/sample_config/ directory. 
+
+### To run the h5bench_vpicio and h5bench_bdcatsio
+Both h5bench_vpicio and h5bench_bdcatsio use the same command line arguments:
+- Single process run: 
+  - `./h5bench_vpicio sample_write_cc1d_es1.cfg my_data.h5`
 - Parallel run (replace mpirun with your system provided command, for example, srun on Cori/NERSC and jsrun on Summit/OLCF):
-    - `mpirun -n 2 ./h5bench_vpicio your_config_file output_file`
-    - `mpirun -n 2 ./h5bench_vpicio sample_1d.cfg data_1d.h5 CSV perf_1d.csv META sample_metadata_list` will also generate a CSV file that contains performance data and job metadata.
-        - A sample metadata list file for systems runing Slurm can be found in metalist_cori.txt, looks like below, just list your interested environment variables. Note: lines started with # will be ignored, and blank spaces (tabs, white spaces) are not allowed in the lines.
-        ```
-        SLURM_PROCID
-        SLURM_JOB_GID
-        SLURM_CPU_BIND
-        SLURMD_NODENAME
-        ```
-
-## Basic read benchmark - h5bench_bdcatsio
-
-BDCATSIO takes an h5 file generated by VPICIO as an input, and performs a series of parallel read operations. 
-**NOTE:** BDCATSIO only accepts files that are created in one of the three CC (contig-contig) modes: CC, CC2D and CC3D, and the dimensionality must match too.
-
-The parameters should be organized in a config file and given from the command line:
-`./h5bench_bdcatsio $config_file $data_file_path`
-
-The definitions of **time_steps** and **sleep_time** are same as those for h5bench_vpicio.
-Following read patterns are supported: Contiguous reading on 1D/2D/3D, Partial reading on 1D, Strided reading on 1D.
-Parameter $pattern can only be one of 5 below. The examples used below assume the file has 8M particles in total, and we use 2 MPI processes.
-
--   **SEQ**: contiguously read through the whole 1D data file.
-    - Followed by $cnt_element_to_read per rank in 1024 * 1024.
-    - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time SEQ $M_particles_to_read`
-    - Example run: `mpirun -n 2 ./h5bench_bdcatsio data_1d.h5 1 1 SEQ 8` 
-
--   **PART**: contiguously read the first K elements.
-    - Followed by $cnt_element_to_read.
-    - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time PART $M_elements_to_read`
-    - Example run: `mpirun -n 2 ./h5bench_bdcatsio data_1d.h5 1 1 PART 1`
-
--   **STRIDED**: strided reading.   **NOTE**: Strided reading only supported on 1D data.
-    - Followed by $cnt_element_to_read $stride_length $block_size
-    - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time  STRIDED  $M_elements_to_read $stride_length $block_size` 
-    - Example run: `mpirun -n 2 ./h5bench_bdcatsio data_1d.h5 1 1 STRIDED 1 64 16` reads top 16 elements every 64 elements.
-
--   **2D**: contiguously read through the whole 2D data file.
-    - Followed by $cnt_element_to_read $dim_1 $dim_2
-    - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time 2D $dim_1 $dim_2` 
-    - Example run: ` mpirun -n 2 ./h5bench_bdcatsio data_2d.h5 1 1 2D 1024 2048` reads a 2D array with dimensionality of 1024 * 2048, dimensioanl values must no greater than that of the data file, in this case 4096 * 2048 (sample_cc2d.cfg).
-
--   **3D**: contiguously read through the whole 3D data file.
-    - Followed by $dim_1 $dim_2 $dim_3
-    - Command format: `mpirun -n 2 ./h5bench_bdcatsio my_file $cnt_time_steps $sleep_time 3D $dim_1 $dim_2 $dim_3` 
-    - Example: `mpirun -n 2 ./h5bench_bdcatsio data_3d.h5 1 1 3D 512 256 32` reads a 3D array of elements with dimensionality of 512 * 256 * 32, dimensioanl values must no greater than that of the data file, in this case 1024 * 2048 * 64 (sample_cc3d.cfg).
+  - `mpirun -n 2 ./h5bench_vpicio sample_write_cc1d_es1.cfg output_file`
 
 
-## Example combination runs of h5bench_vpicio and h5bench_bdcatsio 
-### 1D array data
-- 1D array write: the file is generated with with 4 ranks, each rank write 8M elements. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_config/sample_cc1d.cfg 1d_4ranks_8M.h5`
+## --------------------------------------------------------------------------------
 
-Config file:    
-```
-# sample_cc1d.cfg 
-PATTERN=CC
-PARTICLE_CNT_M=8
-TIME_STEPS_CNT=1
-SLEEP_TIME=1
-DIM_1=8388608
-```
-Some valid bdcats runs:
-
-- Read all 8M elements on each rank
-    - `mpirun -n 4 ./h5bench_bdcatsio 1d_4ranks_8M.h5 1 1 SEQ 8`
-
-- Read top 1M elements on each rank
-    - `mpirun -n 4 ./h5bench_bdcatsio 1d_4ranks_8M.h5 1 1 PART 1`
-
-- On each rank, reads top 16 elements every 64 elements.
-    - `mpirun -n 4 ./h5bench_bdcatsio 1d_4ranks_8M.h5 1 1 STRIDED 1 64 16`  
-
-### Multi-dimensional array data 
-- Using 2D as the example, 3D cases are similar, the file is generated with with 4 ranks, each rank write 8M elements, organized in a 4096 * 2048 array, in total it forms a (4 * 4096) * 2048 2D array. The file should be around 1GB.
-    - `mpirun -n 4 ./h5bench_vpicio ../basic_io/sample_config/sample_cc2d.cfg 2d_4ranks_8M.h5`
-    
-Config file:
-```
-PATTERN=CC2D
-PARTICLE_CNT_M=8
-TIME_STEPS_CNT=1
-SLEEP_TIME=1
-DIM_1=4096
-DIM_2=2048
-DIM_3=64 # extra dimension take no effects.
-```
-- Read with 4 ranks, each rank reads an 4096 * 2048 array, so they read out all the elements from the file.
-    - `mpirun -n 4 ./h5bench_bdcatsio 2d_4ranks_8M.h5 1 1 2D 4096 2048`
 
 ## h5bench_exerciser
 We modified this benchmark slightly so to be able to specify a file location that is writable. Except for the first argument $write_file_prefix, it's identical to the original one. Original README can be found here https://xgitlab.cels.anl.gov/ExaHDF5/BuildAndTest/-/blob/master/Exerciser/README.md
