@@ -11,7 +11,7 @@
 #define DEBUG_PRINT printf("%s:%d\n", __func__, __LINE__); fflush(stdout);
 //Maximal line length of the config file
 #define CFG_LINE_LEN_MAX 510
-#define CFG_DELIMS "=\n \t"
+#define CFG_DELIMS "=\n"
 #define T_VAL ((unsigned long long) 1024 * 1024 * 1024 * 1024)
 #define G_VAL ((unsigned long long) 1024 * 1024 * 1024)
 #define M_VAL ((unsigned long long) 1024 * 1024)

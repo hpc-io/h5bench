@@ -688,7 +688,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 
         if (ts_index != timestep_cnt - 1) {//no sleep after the last ts
             if (params.compute_time.time_num >= 0){
-                if(MY_RANK == 0) printf("sleeping for %d sec\n", params.compute_time);
+                if(MY_RANK == 0) printf("Computing... \n");
                 async_sleep(file_id, fapl, params.compute_time);
             }
         }
@@ -801,14 +801,14 @@ int main(int argc, char* argv[]) {
     MPI_Info info = MPI_INFO_NULL;
     char* num_str = "1024 Ks";
     unsigned long long num = 0;
-    char* unit_str;
-//    parse_unit(num_str, &num, &unit_str);
-
-    int ret = str_to_ull(num_str, &num);
-    if(ret >= 0)
-        printf("str_in = %s, unit = %s, num = %llu, \n", num_str, unit_str, num);
-    else
-        printf("parsing failed\n");
+//    char* unit_str;
+////    parse_unit(num_str, &num, &unit_str);
+//
+//    int ret = str_to_ull(num_str, &num);
+//    if(ret >= 0)
+//        printf("str_in = %s, unit = %s, num = %llu, \n", num_str, unit_str, num);
+//    else
+//        printf("parsing failed\n");
 
     int rand_seed_value = time(NULL);
     srand(rand_seed_value);
@@ -932,13 +932,12 @@ int main(int argc, char* argv[]) {
         printf("\n==================  Performance results  =================\n");
         int total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total sleep time %d sec\n"
+        printf("Total emulated compute time %d sec\n"
                 "Total write size = %lu MB\n", total_sleep_time_us/(1000*1000), total_size_mb);
 
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
-        printf("Raw write time = %.3f sec\n"
-                "Raw write rate = %.3f MB/sec \n", rwt_s, raw_rate_mbs);
+        printf("Raw write time = %.3f sec\n", rwt_s);
 
         float meta_time_ms = (float)inner_metadata_time / 1000;
         //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
@@ -953,12 +952,14 @@ int main(int argc, char* argv[]) {
         float fclose_time_ms = (float) (tfclose_end - tfclose_start)/1000;
         printf("H5Fclose() takes %.3f ms\n", fclose_time_ms);
 
+        float oct_s = (float)(t4 - t0) / (1000*1000);
+        printf("Observed completion time = %.3f sec\n", oct_s);
+
+        printf("Raw write rate = %.3f MB/sec \n", raw_rate_mbs);
+
         float or_mbs = (float)total_size_mb /
                 ((float)(t4 - t0 - total_sleep_time_us)/(1000 * 1000));
         printf("Observed write rate = %.3f MB/sec\n", or_mbs);
-
-        float oct_s = (float)(t4 - t0) / (1000*1000);
-        printf("Observed completion time = %.3f sec\n", oct_s);
 
 
 	printf("===========================================================\n");

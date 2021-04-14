@@ -274,7 +274,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
 
         if (ts_index != nts - 1) {//no sleep after the last ts
             if (params.compute_time.time_num >= 0){
-                if(MY_RANK == 0) printf("sleeping for %d sec\n", params.compute_time);
+                if(MY_RANK == 0) printf("Computing... \n");
                 async_sleep(file_id, fapl, params.compute_time);
             }
         }
@@ -442,19 +442,18 @@ int main (int argc, char* argv[]){
 
         float meta_time_ms = (float)metadata_time/1000;
         printf("Metadata time = %.3f ms\n", meta_time_ms);
+        float rrt_s = (float)raw_read_time / (1000*1000);
+
+        float raw_rate_mbs = total_size_mb / rrt_s;
+         printf("Raw read time = %.3f sec \n", rrt_s);
 
         float oct_s = (float)(t4 - t0) / (1000*1000);
-        printf("OCT (observed read completion time) = %.3f sec\n", oct_s);
+        printf("Observed read completion time = %.3f sec\n", oct_s);
 
-        float rrt_s = (float)raw_read_time / (1000*1000);
-        float raw_rate_mbs = total_size_mb / rrt_s;
-        printf("Raw read time = %.3f sec \n"
-                "Raw read rate = %.3f MB/sec \n",
-                rrt_s, raw_rate_mbs);
-
+        printf("Raw read rate = %.3f MB/sec \n", raw_rate_mbs);
         double or_mbs = (float)total_size_mb /
                 ((float)(t4 - t1 - total_sleep_time_us)/(1000 * 1000));
-        printf("OR (observed read rate) = %.6f MB/sec\n", or_mbs);
+        printf("Observed read rate = %.6f MB/sec\n", or_mbs);
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);

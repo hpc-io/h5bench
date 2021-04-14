@@ -39,9 +39,12 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
 }
 
 void h5bench_sleep(duration sleep_time) {
-    if(sleep_time.unit == TIME_SEC)
+    printf("%s: time unit = %d\n", __func__, sleep_time.unit);
+    if(sleep_time.unit == TIME_SEC) {
         sleep(sleep_time.time_num);
+    }
     else if(sleep_time.unit == TIME_MIN){
+
         sleep(60 * sleep_time.time_num);
     }
     else {
@@ -61,7 +64,7 @@ void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time){
     if(H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
 #endif
-    h5bench_sleep(sleep_time);;
+    h5bench_sleep(sleep_time);
 }
 
 void timestep_es_id_close(time_step* ts, async_mode mode) {
@@ -380,7 +383,7 @@ int parse_time(char* str_in, duration* time){
     unsigned long long num = 0;
     char* unit_str;
     parse_unit(str_in, &num, &unit_str);
-    printf("unit_str = %p\n", unit_str);
+
     if(!unit_str)
         time->unit = TIME_SEC;
     else if(unit_str[0] == 'S' || unit_str[0] == 's')
@@ -725,6 +728,7 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         }
     } else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
         duration time;
+        printf("EMULATED_COMPUTE_TIME_PER_TIMESTEP = [%s]\n", val);
         if(parse_time(val, &time) < 0)
             return -1;
         if (time.time_num >= 0)
@@ -932,7 +936,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
                 return -1;
         } else
             return -1;
-        //printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
+//        printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
     if (parsed < 0)
