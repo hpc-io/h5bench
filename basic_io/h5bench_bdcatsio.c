@@ -107,11 +107,8 @@ void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hi
 
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
     *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
-
-    printf("%d: read_elem_cnt = %llu\n", __LINE__, read_elem_cnt);
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
             (hsize_t *) &read_elem_cnt, NULL);
-    printf("%d: read_elem_cnt = %llu\n", __LINE__, read_elem_cnt);
     return read_elem_cnt;
 }
 
@@ -436,9 +433,9 @@ int main (int argc, char* argv[]){
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total emulated compute time = %d sec\n"
+        printf("Total emulated compute time = %d ms\n"
                 "Total read size = %llu MB\n",
-                total_sleep_time_us/(1000*1000), total_size_mb);
+                total_sleep_time_us/1000, total_size_mb);
 
         float meta_time_ms = (float)metadata_time/1000;
         printf("Metadata time = %.3f ms\n", meta_time_ms);
@@ -457,13 +454,14 @@ int main (int argc, char* argv[]){
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_us/(1000*1000));
-            fprintf(params.csv_fs, "Total_read_size, %lu, MB\n", total_size_mb);
-            fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Raw_read_rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Core_metadata_time, %.3f, ms\n", meta_time_ms);
-            fprintf(params.csv_fs, "Observed_read_rate, %.3f, MB/sec\n", or_mbs);
-            fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
+            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us/(1000*1000));
+            fprintf(params.csv_fs, "Total read size, %lu, MB\n", total_size_mb);
+            fprintf(params.csv_fs, "Metadata_time, %.3f, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
+            fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
+
+            fprintf(params.csv_fs, "Raw read rate, %.3f, MB/sec\n", raw_rate_mbs);
+            fprintf(params.csv_fs, "Observed read rate, %.3f, MB/sec\n", or_mbs);
             fclose (params.csv_fs);
         }
     }

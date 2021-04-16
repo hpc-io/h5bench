@@ -162,10 +162,8 @@ particle* prepare_data_interleaved(long particle_cnt, unsigned long *data_size_o
     return data_out;
 }
 
-data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_size_out) {
-
+data_contig_md * prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long * data_size_out) {
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
-
     data_out->particle_cnt = particle_cnt;
 
     data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
@@ -192,7 +190,7 @@ data_contig_md * prepare_data_contig_1D(long particle_cnt, unsigned long * data_
     return data_out;
 }
 
-data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
+data_contig_md* prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, unsigned long * data_size_out){
     if(particle_cnt != dim_1 * dim_2){
         if(MY_RANK == 0)
             printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) = %ld, must equal num_particles (%ld) per rank.\n",
@@ -233,7 +231,7 @@ data_contig_md* prepare_data_contig_2D(long particle_cnt, long dim_1, long dim_2
     return data_out;
 }
 
-data_contig_md* prepare_data_contig_3D(long particle_cnt, long dim_1, long dim_2, long dim_3,
+data_contig_md* prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, long dim_3,
         unsigned long * data_size_out){
     if(particle_cnt != dim_1 * dim_2 * dim_3){
         if(MY_RANK == 0)
@@ -314,8 +312,6 @@ void set_dspace_plist(hid_t* plist_id_out, int data_collective){
     else
         H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
-
-
 
 int set_select_spaces_default(hid_t* filespace_out, hid_t* memspace_out){
     *filespace_out = H5Screate_simple(1, (hsize_t *) &TOTAL_PARTICLES, NULL);
@@ -521,9 +517,9 @@ void data_write_interleaved_to_interleaved(time_step* ts, hid_t loc, hid_t *dset
 
 int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigned long* total_data_size_out,
         unsigned long* data_preparation_time, unsigned long* data_time_total, unsigned long* metadata_time_total) {
-
+    unsigned long t_prep_start = get_time_usec();
     write_pattern mode = params.access_pattern.pattern_write;
-    long particle_cnt = params.num_particles * M_VAL;
+    unsigned long long particle_cnt = params.num_particles;
     int timestep_cnt = params.cnt_time_step;
     *data_preparation_time = 0;
     *metadata_time_total = 0;
@@ -543,8 +539,9 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 
     make_compound_type_separates();
     make_compound_type();
+
     unsigned long actual_elem_cnt = 0;//only for set_select_spaces_strided()
-    unsigned long t_prep_start = get_time_usec();
+
     switch(mode){
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(&filespace, &memspace);
@@ -623,7 +620,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
         return -1;
     }
 
-    MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.io_mem_limit * M_VAL);
+    MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.io_mem_limit);
 
     if(!MEM_MONITOR) {
         printf("Invalid MEM_MONITOR returned: NULL\n");
@@ -718,7 +715,7 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, unsigne
 }
 
 void set_globals(const bench_params *params){
-    NUM_PARTICLES = params->num_particles * 1024 *1024;
+    NUM_PARTICLES = params->num_particles;
     NUM_TIMESTEPS = params->cnt_time_step;
     //following variables only used to generate data
     X_DIM = X_RAND;
@@ -849,8 +846,8 @@ int main(int argc, char* argv[]) {
     NUM_TIMESTEPS = params.cnt_time_step;
 
     if (MY_RANK == 0)
-        printf("Start benchmark: VPIC %s, Number of particles per rank: %lld M\n",
-                params.pattern_name, NUM_PARTICLES/(1024*1024));
+        printf("Start benchmark: h5bench_vpicio, Number of particles per rank: %llu M\n",
+                NUM_PARTICLES/(1024*1024));
 
     unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
 
@@ -930,11 +927,12 @@ int main(int argc, char* argv[]) {
 
     if (MY_RANK == 0) {
         printf("\n==================  Performance results  =================\n");
-        int total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
+        unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total emulated compute time %d sec\n"
-                "Total write size = %lu MB\n", total_sleep_time_us/(1000*1000), total_size_mb);
+        printf("Total emulated compute time %llu ms\n"
+                "Total write size = %lu MB\n", total_sleep_time_us/(1000), total_size_mb);
 
+        printf("Data preparation time = %lu ms\n", data_preparation_time/1000);
         float rwt_s = (float)raw_write_time / (1000*1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
@@ -961,14 +959,13 @@ int main(int argc, char* argv[]) {
                 ((float)(t4 - t0 - total_sleep_time_us)/(1000 * 1000));
         printf("Observed write rate = %.3f MB/sec\n", or_mbs);
 
-
 	printf("===========================================================\n");
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             if(params.meta_coll == 1) fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total_sleep_time, %d, sec\n", total_sleep_time_us/(1000*1000));
+            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us/(1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);

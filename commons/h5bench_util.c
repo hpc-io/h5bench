@@ -39,7 +39,6 @@ int metric_msg_print(unsigned long number, char *msg, char *unit) {
 }
 
 void h5bench_sleep(duration sleep_time) {
-    printf("%s: time unit = %d\n", __func__, sleep_time.unit);
     if(sleep_time.unit == TIME_SEC) {
         sleep(sleep_time.time_num);
     }
@@ -546,123 +545,53 @@ int _set_io_pattern(bench_params *params_in_out) {
     return ret;
 }
 
-int _set_params(char *key, char *val, bench_params *params_in_out, int do_write) {
+char* _parse_val(char* val_in){
+    char* val_str = strdup(val_in);
+    char *tokens[2];
+    char *tok = strtok(val_str, "#");
+    char* val = NULL;
+    val = strdup(tok);
+//    printf("_parse_val: val_in = [%s], val = [%s]\n", val_in, val);
+    if(val_str)
+        free(val_str);
+    return val;
+}
+
+int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write) {
     if (!params_in_out)
         return 0;
+    char* val = _parse_val(val_in);
+
     if (strcmp(key, "IO_OPERATION") == 0){
         if (strcmp(val, "READ") == 0){
             params_in_out->io_op = IO_READ;
-
         } else if(strcmp(val, "WRITE") == 0) {
             params_in_out->io_op = IO_WRITE;
-
         } else {
             printf("Unknown value for \"IO_OPERATION\": %s\n", val);
             return -1;
         }
     } else if(strcmp(key, "MEM_PATTERN") == 0) {
-        if (strcmp(val, "CONTIG") == 0){
+        if (strcmp(val_in, "CONTIG") == 0){
             params_in_out->mem_pattern = PATTERN_CONTIG;
-        } else if(strcmp(val, "INTERLEAVED") == 0) {
+        } else if(strcmp(val_in, "INTERLEAVED") == 0) {
             params_in_out->mem_pattern = PATTERN_INTERLEAVED;
-        }else if(strcmp(val, "STRIDED") == 0) {
+        }else if(strcmp(val_in, "STRIDED") == 0) {
             params_in_out->mem_pattern = PATTERN_STRIDED;
         } else {
             params_in_out->mem_pattern = PATTERN_INVALID;
         }
     } else if(strcmp(key, "FILE_PATTERN") == 0) {
-        if (strcmp(val, "CONTIG") == 0){
+        if (strcmp(val_in, "CONTIG") == 0){
             params_in_out->file_pattern = PATTERN_CONTIG;
-        } else if(strcmp(val, "INTERLEAVED") == 0) {
+        } else if(strcmp(val_in, "INTERLEAVED") == 0) {
             params_in_out->file_pattern = PATTERN_INTERLEAVED;
-        }else if(strcmp(val, "STRIDED") == 0) {
+        }else if(strcmp(val_in, "STRIDED") == 0) {
             params_in_out->file_pattern = PATTERN_STRIDED;
         } else {
             params_in_out->file_pattern = PATTERN_INVALID;
         }
     }
-
-//    else if (strcmp(key, "WRITE_PATTERN") == 0) {
-//        if (do_write < 1) {
-//            printf("This is NOT a write benchmark, but try to set a WRITE_PATTERN\n");
-//            return -1;
-//        }
-//        if (strcmp(val, "CC") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if(strcmp(val, "CC_STRIDED") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_STRIDED_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "CC2D") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_2D");
-//            (*params_in_out).num_dims = 2;
-//        } else if (strcmp(val, "CI") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_1D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_COMPOUND_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "CI2D") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_2D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_COMPOUND_2D");
-//            (*params_in_out).num_dims = 2;
-//        } else if (strcmp(val, "II") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_1D;
-//            (*params_in_out).pattern_name = strdup("COMPOUND_COMPOUND_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "II2D") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_2D;
-//            (*params_in_out).pattern_name = strdup("COMPOUND_COMPOUND_2D");
-//            (*params_in_out).num_dims = 2;
-//        } else if (strcmp(val, "IC") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_1D;
-//            (*params_in_out).pattern_name = strdup("COMPOUND_CONTIG_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "IC2D") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_2D;
-//            (*params_in_out).pattern_name = strdup("COMPOUND_CONTIG_2D");
-//            (*params_in_out).num_dims = 2;
-//        } else if (strcmp(val, "CC3D") == 0) {
-//            (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_CONTIG_3D");
-//            (*params_in_out).num_dims = 3;
-//        } else {
-//            printf("Unknown WRITE_PATTERN: %s\n", val);
-//            return -1;
-//        }
-//    }
-
-//    else if (strcmp(key, "READ_PATTERN") == 0) {
-//        if (do_write > 0) {
-//            printf("This is a write benchmark, but try to set a READ_PATTERN\n");
-//            return -1;
-//        }
-//        if (strcmp(val, "SEQ") == 0) {
-//            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "PART") == 0) {
-//            (*params_in_out).access_pattern.pattern_read = CONTIG_1D_PART;
-//            (*params_in_out).pattern_name = strdup("CONTIG_1D_PART");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "STRIDED") == 0) {
-//            (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
-//            (*params_in_out).pattern_name = strdup("STRIDED_1D");
-//            (*params_in_out).num_dims = 1;
-//        } else if (strcmp(val, "2D") == 0) {
-//            (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_2D");
-//            (*params_in_out).num_dims = 2;
-//        } else if (strcmp(val, "3D") == 0) {
-//            (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
-//            (*params_in_out).pattern_name = strdup("CONTIG_3D");
-//            (*params_in_out).num_dims = 3;
-//        } else {
-//            printf("Unknown READ_PATTERN: %s\n", val);
-//            return -1;
-//        }
-//    }
 
     else if (strcmp(key, "TO_READ_NUM_PARTICLES") == 0) {
         if ((*params_in_out).io_op != IO_READ) {
@@ -739,11 +668,11 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
         }
     }
     else if(strcmp(key, "READ_OPTION") == 0) {
-        if(strcmp(val, "READ_FULL") == 0) {
+        if(val_in[0] == 'F') {//FULL
             (*params_in_out).read_option = READ_FULL;
-        } else if(strcmp(val, "READ_PARTIAL")) {
+        } else if(val_in[0] == 'P') {//PARTIAL
             (*params_in_out).read_option = READ_PARTIAL;
-        } else if(strcmp(val, "READ_STRIDED")) {
+        } else if(val_in[0] == 'S') {//STRIDED
             (*params_in_out).read_option = READ_STRIDED;
         } else
             (*params_in_out).read_option = READ_OPTION_INVALID;
@@ -846,9 +775,9 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     } else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);
     } else if (strcmp(key, "ASYNC_MODE") == 0) {
-        if (strcmp(val, "ASYNC_EXP") == 0 || strcmp(val, "ASYNC_EXPLICIT") == 0)
+        if (val_in[0] == 'E')
             (*params_in_out).asyncMode = ASYNC_EXPLICIT;
-         else if (strcmp(val, "ASYNC_IMP") == 0 || strcmp(val, "ASYNC_IMPLICIT") == 0)
+         else if (val_in[0] == 'I')
             (*params_in_out).asyncMode = ASYNC_IMPLICIT;
          else
             (*params_in_out).asyncMode = ASYNC_NON;
@@ -864,6 +793,8 @@ int _set_params(char *key, char *val, bench_params *params_in_out, int do_write)
     if ((*params_in_out).useCSV)
         (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
 
+    if(val)
+        free(val);
     return 1;
 }
 void bench_params_init(bench_params* params_out){
@@ -930,8 +861,9 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         if (tok) {
             tokens[0] = tok;
             tok = strtok(NULL, CFG_DELIMS);
-            if (tok)
+            if (tok){
                 tokens[1] = tok;
+            }
             else
                 return -1;
         } else
@@ -989,7 +921,7 @@ void print_params(const bench_params *p) {
     printf("Number of particles per rank: %llu\n", p->num_particles);
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
-    printf("Sleep time between time steps: %d\n", p->compute_time.time_num);
+    printf("Emulated compute time per timestep: %d\n", p->compute_time.time_num);
     printf("Async mode = %d (0: AYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", p->asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
