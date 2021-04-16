@@ -24,15 +24,27 @@ Make sure to unload any system provided HDF5 version, and set an environment var
 Assume that the repo is cloned and now you are in the source directory h5bench, run the following simple steps:
 
 - `mkdir build`
-
 - `cd build`
-
 - `cmake ..`
-
 - `make`
 
+### Build to run in async
+To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the `async_vol_register_optional` branch of HDF5 and Async-VOL and build H5bench separately. 
+- `mkdir build`
+- `cd build`
+- `cmake .. -DUSE_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"`
+- `make`
+
+Necessary environment variable settings:
+```
+export HDF5_HOME="$YOUR_HDF5_COMBO_BRANCH_BUILD/hdf5"
+export ASYNC_HOME="$YOUR_ASYNC_VOL/src"
+export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
+export HDF5_PLUGIN_PATH="$ASYNC_HOME"
+export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
+```
 And all the binaries will be built to the build / directory.
-  
+
 # Benchmark suite usage
 ## Basic I/O benchmark
 Major refactoring is in progress, this document may be out of date. Both h5bench_vpicio and h5bench_bdcats take config and data file path as command line arguments.
@@ -67,13 +79,15 @@ EMULATED_COMPUTE_TIME_PER_TIMESTEP=1 s #1 ms, 1 min
 #========================================================
 #   Benchmark data dimensionality
 NUM_DIMS=1
-DIM_1=16777216 # 16777216, 8388608
+DIM_1=16777216
 DIM_2=1
 DIM_3=1
 #========================================================
 #   IO pattern settings
-IO_OPERATION=READ # WRITE
-MEM_PATTERN=CONTIG # INTERLEAVED STRIDED
+IO_OPERATION=READ
+#IO_OPERATION=WRITE
+MEM_PATTERN=CONTIG
+# INTERLEAVED STRIDED
 FILE_PATTERN=CONTIG # STRIDED
 #========================================================
 #   Options for IO_OPERATION=READ
@@ -98,7 +112,7 @@ TO_READ_NUM_PARTICLES=4 M
 #    Async related settings
 DELAYED_CLOSE_TIMESTEPS=2
 IO_MEM_LIMIT=5000 K
-ASYNC_MODE=ASYNC_EXP #EXP #ASYNC_IMP ASYNC_NON ASYNC_EXP
+ASYNC_MODE=EXP #EXP IMP NON 
 #========================================================
 #    Output performance results to a CSV file
 #CSV_FILE=perf_write_1d.csv
@@ -134,14 +148,14 @@ DIM_3=64 # Note: extra dimensions than specified by NUM_DIMS are ignored.
 - **TO_READ_NUM_PARTICLES**: required, the number for particles attempt to read.
 
 ### Async related settings
-- **ASYNC_MODE**: optional, the default is ASYNC_NON.
-  - ASYNC_NON: the benchmark will run in synchronous mode. 
-  - ASYNC_EXP: enable the asynchronous mode. An installed async VOL connector and coresponding environment variables are required.
-- **IO_MEM_LIMIT**: optional, the default is 0, requires **ASYNC_MODE=ASYNC_EXP**, only works in asynchronous mode. This is the memory threshold used to determine when to actually execute the IO operations. The actual IO operations (data read/write) will not be executed until the timesteps associated memory reachs the threshold, or the application run to the end.
+- **ASYNC_MODE**: optional, the default is NON.
+  - NON: the benchmark will run in synchronous mode. 
+  - EXP: enable the asynchronous mode. An installed async VOL connector and coresponding environment variables are required.
+- **IO_MEM_LIMIT**: optional, the default is 0, requires **ASYNC_MODE=EXP**, only works in asynchronous mode. This is the memory threshold used to determine when to actually execute the IO operations. The actual IO operations (data read/write) will not be executed until the timesteps associated memory reachs the threshold, or the application run to the end.
 - **DELAYED_CLOSE_TIMESTEPS**: optional, the default is 0. The groups and datasets associated to to the timesteps will be closed later for potential caching.
 
 ### Compression settings
-- **COMPRESS**: YES or NO, optional. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required.
+- **COMPRESS**: YES or NO, optional. Only applicable for WRITE(h5bench_vpicio), has no effect for READ. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required.
 To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size. 
 ```
 COMPRESS=YES # to enable parallel compression(chunking)
@@ -201,7 +215,7 @@ MEM_PATTERN=CONTIG
 FILE_PATTERN=CONTIG
 #========================================================
 #    Options for IO_OPERATION=READ
-READ_OPTION=PARTIAL # PARTIAL STRIDED
+READ_OPTION=PARTIAL # FULL PARTIAL STRIDED
 TO_READ_NUM_PARTICLES=2048
 #========================================================
 #    Strided access parameters
@@ -218,12 +232,42 @@ Both h5bench_vpicio and h5bench_bdcatsio use the same command line arguments:
 - Parallel run (replace mpirun with your system provided command, for example, srun on Cori/NERSC and jsrun on Summit/OLCF):
   - `mpirun -n 2 ./h5bench_vpicio sample_write_cc1d_es1.cfg output_file`
 
+### Understanding the output
+The metadata and raw data operations are timed separately, and overserved time and rate are based on the total time.
 
+Sample output of h5bench_vpicio:
+```
+==================  Performance results  =================
+Total emulated compute time 4000 ms
+Total write size = 2560 MB
+Data preparation time = 739 ms
+Raw write time = 1.012 sec
+Metadata time = 284.990 ms
+H5Fcreate() takes 4.009 ms
+H5Fflush() takes 14.575 ms
+H5Fclose() takes 4.290 ms
+Observed completion time = 6.138 sec
+Raw write rate = 2528.860 MB/sec
+Observed write rate = 1197.592 MB/sec
+===========================================================
+```
+
+Sample output of h5bench_bdcatsio:
+ ```
+ =================  Performance results  =================
+Total emulated compute time = 4 sec
+Total read size = 2560 MB
+Metadata time = 17.523 ms
+Raw read time = 1.201 sec
+Observed read completion time = 5.088 sec
+Raw read rate = 2132.200 MB/sec
+Observed read rate = 2353.605225 MB/sec
+```
 ## --------------------------------------------------------------------------------
 
 
 ## h5bench_exerciser
-We modified this benchmark slightly so to be able to specify a file location that is writable. Except for the first argument $write_file_prefix, it's identical to the original one. Original README can be found here https://xgitlab.cels.anl.gov/ExaHDF5/BuildAndTest/-/blob/master/Exerciser/README.md
+We modified this benchmark slightly so to be able to specify a file location that is writable. Except for the first argument $write_file_prefix, it's identical to the original one. Detailed README can be found int source code directory, the original can be found here https://xgitlab.cels.anl.gov/ExaHDF5/BuildAndTest/-/blob/master/Exerciser/README.md
 
 Example run:
 
