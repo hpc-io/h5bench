@@ -12,6 +12,7 @@ set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
 message("Detected hdf5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
+include_directories(${HDF5_HOME}/../vol/include)
 link_directories(${HDF5_HOME}/lib)
 link_directories(${HDF5_HOME}/lib/plugin)
 
@@ -24,6 +25,41 @@ if(CUDAToolkit_FOUND)
 endif(CUDAToolkit_FOUND)
 option(WITH_GPU "Compile Source Code with NVIDIA GPU" ${HDF5_USE_GPU})
 message(STATUS "WITH_GPU=" ${WITH_GPU})
+
+# Optional Dependency: HIP
+# Search for rocm in common locations
+if(WIN32)
+  list(APPEND CMAKE_PREFIX_PATH "C:/hip")
+  list(APPEND CMAKE_PREFIX_PATH "C:/Program Files/AMD HIP SDK/hip")
+else()
+  list(APPEND CMAKE_PREFIX_PATH /opt/rocm/hip /opt/rocm)
+endif()
+
+# Find HIP.
+# The user may override AMDGPU_TARGETS defined in the HIP config file
+# to select the AMDGPU archs to compile for.
+# ex. set(AMDGPU_TARGETS "gfx803;gfx900;gfx906")
+find_package(hip)
+if(HIP_FOUND)
+  set(HDF5_USE_HIP_GPU ON)
+endif(HIP_FOUND)
+# # Set compiler and linker.
+# if(NOT WIN32)
+#   set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+#   set(CMAKE_CXX_LINKER   ${HIP_HIPCC_EXECUTABLE})
+# endif()
+
+# # Preparing the executable.
+# add_executable(test_openmp_helloworld ${CPP_SOURCES})
+# 
+# # Link Libraries - HIP Device and OpenMP.
+# target_compile_options(test_openmp_helloworld PRIVATE ${OpenMP_CXX_FLAGS})
+# target_link_libraries(test_openmp_helloworld PRIVATE hip::device ${OpenMP_CXX_FLAGS})
+# 
+# if(WIN32)
+#   target_link_libraries(test_openmp_helloworld PRIVATE OpenMP::OpenMP_CXX)
+# endif()
+###################################################
 
 #Dependency: Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
