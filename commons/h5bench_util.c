@@ -72,7 +72,7 @@ void timestep_es_id_close(time_step* ts, async_mode mode) {
     es_id_close(ts->es_meta_close, mode);
 }
 unsigned long long read_time_val(duration time, time_unit unit) {
-    unsigned long long t_us = 1;
+    unsigned long long t_us = time.time_num;
     unsigned long long factor = 1;
     unsigned long long t_output = 1;
     switch(time.unit) {
@@ -225,7 +225,7 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     *metadata_time_total = 0;
     *data_time_total = 0;
     size_t num_in_progress;
-    H5ES_status_t op_failed;
+    hbool_t op_failed;
     time_step* ts_run;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
@@ -260,7 +260,6 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
             t3 = get_time_usec();
             H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t4 = get_time_usec();
-
             timestep_es_id_close(ts_run, mon->mode);
             meta_time += ((t2 - t1) + (t4 - t3));
             data_time += (t3 - t2);
@@ -651,6 +650,7 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             return -1;
         if(num >= 0) {
             (*params_in_out).io_mem_limit = num;
+            printf("IO_MEM_LIMIT = %llu\n", num);
         } else {
             printf("IO_MEM_LIMIT must be at least 0.\n");
             return -1;
@@ -880,9 +880,9 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     if(params_out->io_mem_limit > 0) {
         if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
-            printf("Requested memory (%d MB) is larger than specified memory bound (%d MB), "
-                    "please check MEM_BOUND_M in your config file.\n",
-                    params_out->num_particles * PARTICLE_SIZE, params_out->io_mem_limit);
+            printf("Requested memory (%llu particles, %llu MB, PARTICLE_SIZE = %llu) is larger than specified memory bound (%d MB), "
+                    "please check IO_MEM_LIMIT in your config file.\n",
+                    params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE, params_out->io_mem_limit);
             return -1;
         }
     }

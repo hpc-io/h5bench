@@ -181,6 +181,7 @@ mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
 int mem_monitor_free(mem_monitor* mon);
 int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total);
 int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
+int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
 float uniform_random_number();
 

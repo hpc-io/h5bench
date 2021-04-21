@@ -279,12 +279,13 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         ts->status = TS_DELAY;
         *raw_read_time_out += (read_time_exp + read_time_imp);
         *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
+//        printf("%s: meta_time1 = %llu, meta_time2 = %llu, meta_time3 = %llu, meta_time4 = %llu us, total metadata time this round = %llu us, inner_metadata_time = %llu us\n",
+//                __func__, meta_time1, meta_time2, meta_time3, meta_time4, (meta_time1 + meta_time2 + meta_time3 + meta_time4), *inner_metadata_time);
     }
 
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
     *raw_read_time_out += (read_time_exp + read_time_imp);
     *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
-
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
@@ -393,11 +394,12 @@ int main (int argc, char* argv[]){
 
     MPI_Barrier (MPI_COMM_WORLD);
 
-    unsigned long t0 = get_time_usec();
+
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     FILE_OFFSET -= NUM_PARTICLES;
     BUF_STRUCT = prepare_contig_memory_multi_dim(params.dim_1, params.dim_2, params.dim_3);
+
     unsigned long t1 = get_time_usec();
 
     if(file_id < 0) {
@@ -431,20 +433,22 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         printf("\n =================  Performance results  =================\n");
-        unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
+        unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US)
+                * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total emulated compute time = %d ms\n"
                 "Total read size = %llu MB\n",
                 total_sleep_time_us/1000, total_size_mb);
 
-        float meta_time_ms = (float)metadata_time/1000;
-        printf("Metadata time = %.3f ms\n", meta_time_ms);
         float rrt_s = (float)raw_read_time / (1000*1000);
 
         float raw_rate_mbs = total_size_mb / rrt_s;
          printf("Raw read time = %.3f sec \n", rrt_s);
 
-        float oct_s = (float)(t4 - t0) / (1000*1000);
+         float meta_time_ms = (float)metadata_time/1000;
+         printf("Metadata time = %.3f ms\n", meta_time_ms);
+
+        float oct_s = (float)(t4 - t1) / (1000*1000);
         printf("Observed read completion time = %.3f sec\n", oct_s);
 
         printf("Raw read rate = %.3f MB/sec \n", raw_rate_mbs);
