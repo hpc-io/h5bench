@@ -35,6 +35,7 @@
 // Created:	in 2011
 // Modified:	01/06/2014 --> Removed all H5Part calls and using HDF5 calls
 //          	02/19/2019 --> Add option to write multiple timesteps of data - Tang
+//          	07/2020 --> Add GPU transfers, computation - John Ravi
 //
 
 #include <hdf5.h>
@@ -46,7 +47,23 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+
 #include "../commons/h5bench_util.h"
+
+#ifdef HDF5_USE_CUDA
+#include <cuda_runtime.h>
+#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                 \
+  {                                                                        \
+    cudaError_t _status = apiFuncCall;                                     \
+    if (_status != cudaSuccess) {                                          \
+      fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", \
+        __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));    \
+      exit(-1);                                                            \
+    }                                                                      \
+  }
+extern void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t stream_id);
+#endif
+
 #include "../commons/async_adaptor.h"
 
 //#ifdef USE_ASYNC_VOL
@@ -76,6 +93,7 @@ hid_t ES_ID, ES_META_CREATE, ES_META_CLOSE, ES_DATA;
 const int X_RAND = 191;
 const int Y_RAND = 1009;
 const int Z_RAND = 3701;
+int gpu_id = -1;
 
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
@@ -165,14 +183,44 @@ data_contig_md* prepare_data_contig_1D(unsigned long long particle_cnt, unsigned
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
 
-    data_out->x = (float*) malloc(particle_cnt * sizeof(float));
-    data_out->y = (float*) malloc(particle_cnt * sizeof(float));
-    data_out->z = (float*) malloc(particle_cnt * sizeof(float));
+#ifdef HDF5_USE_CUDA
+    // pinned host memory allocate
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->x, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->y, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->z, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->px, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->py, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->pz, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->id_1, particle_cnt*sizeof(int), cudaHostAllocDefault));
+    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->id_2, particle_cnt*sizeof(float), cudaHostAllocDefault));
+
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_x, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_y, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_z, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_px, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_py, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_pz, particle_cnt*sizeof(float), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_id_1, particle_cnt*sizeof(int), cudaMemAttachGlobal));
+    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_id_2, particle_cnt*sizeof(int), cudaMemAttachGlobal));
+
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_x, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_y, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_z, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_px, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_py, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_pz, particle_cnt*sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_1, particle_cnt*sizeof(int)));
+    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_2, particle_cnt*sizeof(int)));
+#else
+    data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
+    data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
     data_out->px = (float*) malloc(particle_cnt * sizeof(float));
     data_out->py = (float*) malloc(particle_cnt * sizeof(float));
     data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
     data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
     data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
+#endif
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
     data_out->dim_3 = 1;
@@ -187,6 +235,27 @@ data_contig_md* prepare_data_contig_1D(unsigned long long particle_cnt, unsigned
         data_out->z[i] = ((float) data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
         data_out->pz[i] = (data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
+
+#ifdef HDF5_USE_CUDA
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_x, data_out->x, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_y, data_out->y, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_z, data_out->z, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_px, data_out->px, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_py, data_out->py, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_pz, data_out->pz, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_1, data_out->id_1, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_2, data_out->id_2, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_x, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_y, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_z, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_px, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_py, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_pz, particle_cnt*sizeof(float), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_id_1, particle_cnt*sizeof(int), gpu_id, 0) );
+    // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_id_2, particle_cnt*sizeof(int), gpu_id, 0) );
+#endif
+
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
@@ -289,6 +358,17 @@ void data_free(write_pattern mode, void *data) {
         case CONTIG_COMPOUND_2D:
         case CONTIG_CONTIG_2D:
         case CONTIG_CONTIG_3D:
+#ifdef HDF5_USE_CUDA
+            // pinned host memory free
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->x) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->y) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->z) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->px) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->py) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->pz) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->id_1) );
+            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->id_2) );
+#else
             free(((data_contig_md*) data)->x);
             free(((data_contig_md*) data)->y);
             free(((data_contig_md*) data)->z);
@@ -297,6 +377,10 @@ void data_free(write_pattern mode, void *data) {
             free(((data_contig_md*) data)->pz);
             free(((data_contig_md*) data)->id_1);
             free(((data_contig_md*) data)->id_2);
+#endif
+
+
+
             free(((data_contig_md*) data));
             break;
         case COMPOUND_CONTIG_1D:
@@ -396,6 +480,23 @@ int set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, u
 }
 
 /*
+ *  copy data from gpu to host memory: copy an m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
+ */
+void data_dtohcopy_contig_contig_MD_array(data_contig_md* data_in){
+
+#ifdef HDF5_USE_CUDA
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->x, data_in->d_x, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->y, data_in->d_y, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->z, data_in->d_z, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->px, data_in->d_px, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->py, data_in->d_py, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->pz, data_in->d_pz, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_1, data_in->d_id_1, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_2, data_in->d_id_2, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+#endif
+}
+
+/*
  *  write file: create m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
  */
 void data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
@@ -432,6 +533,19 @@ void data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids
             ts->es_meta_create);
     unsigned t2 = get_time_usec();
 
+#ifdef HDF5_USE_CUDA
+    // TODO: check if HDF5 is gpu-enabled {vol-cache with gpu plugin or GDS VFD}
+    // ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_x, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_y, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_z, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_px, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_py, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_pz, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->d_id_1, ts->es_data);
+    // ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_id_2, ts->es_data);
+
+    // TODO: check if HDF5 is gpu-enabled {vol-cache with gpu plugin or GDS VFD}
+    data_dtohcopy_contig_contig_MD_array((data_contig_md*)data_in);
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
@@ -440,6 +554,17 @@ void data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ts->es_data);
+#else
+    ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ts->es_data);
+#endif
+
     unsigned t3 = get_time_usec();
 
     *metadata_time = t2 - t1;
@@ -656,6 +781,11 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
         return -1;
     }
 
+#ifdef HDF5_USE_CUDA
+    volatile int *kernel_flag;
+    CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&kernel_flag, sizeof(int), cudaMemAttachGlobal));
+#endif
+
     MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.io_mem_limit);
 
     if (!MEM_MONITOR) {
@@ -688,6 +818,12 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
 
+#ifdef HDF5_USE_CUDA
+        *kernel_flag = 0;
+        kernel_call((data_contig_md*)data, kernel_flag, (cudaStream_t)0);
+        *kernel_flag = 1;
+        CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
+#endif
         switch (pattern) {
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
@@ -850,6 +986,31 @@ int main(int argc, char *argv[]) {
             return 0;
         }
     }
+
+#ifdef HDF5_USE_CUDA
+    int devCount;
+    CUDA_RUNTIME_API_CALL(cudaGetDeviceCount(&devCount));
+    // printf("CUDA Device Query...\n");
+    // printf("There are %d CUDA devices.\n", devCount);
+    // printf("mpi_rank: %d\n", MY_RANK);
+    // fflush(stdout);
+    int local_rank;
+    char *str;
+
+    // int gpu_id = -1;
+
+    if ((str = getenv ("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
+      local_rank = atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
+      gpu_id = local_rank;
+    }
+    else {
+      printf("OMPI_COMM_WORLD_LOCAL_RANK is NULL\n");
+      gpu_id = 0;
+    }
+
+    gpu_id %= devCount; // there are only devCount
+    CUDA_RUNTIME_API_CALL(cudaSetDevice(gpu_id));
+#endif
 
     char *output_file;
     bench_params params;

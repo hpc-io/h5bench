@@ -78,27 +78,27 @@ target_link_libraries(h5bench_util asynchdf5 h5async)
 # =================================================================
 
 # ===========  Build basic_io: vpic and bdcats ===========
+include_directories(${ASYNC_HOME})
+
 if(WITH_GPU)
   add_library(h5bench_gpu_kernels SHARED
-    basic_io/gpu_kernels/cuda_kernel.cu 
-    basic_io/gpu_kernels/cuda_kernel.h
+    gpu_io/gpu_kernels/cuda_kernel.cu
+    gpu_io/gpu_kernels/cuda_kernel.h
   )
   set_target_properties(h5bench_gpu_kernels PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   set_property(TARGET h5bench_gpu_kernels PROPERTY CUDA_ARCHITECTURES 50 70 72)
   target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-endif(WITH_GPU)
 
-include_directories(${ASYNC_HOME})
-
-set(vpic_src basic_io/h5bench_vpicio.c)
-set(bdcats_src basic_io/h5bench_bdcatsio.c)
-
-if(WITH_GPU)
-  add_executable(h5bench_vpicio_cuda ${vpic_src})
+  set(vpic_gpu_src gpu_io/h5bench_vpicio_gpu.c)
+  set(bdcats_gpu_src gpu_io/h5bench_bdcatsio_gpu.c)
+  add_executable(h5bench_vpicio_cuda ${vpic_gpu_src})
   set_target_properties(h5bench_vpicio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   target_link_libraries(h5bench_vpicio_cuda PRIVATE h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   target_compile_options(h5bench_vpicio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
 endif(WITH_GPU)
+
+set(vpic_src basic_io/h5bench_vpicio.c)
+set(bdcats_src basic_io/h5bench_bdcatsio.c)
 
 #link_directories(${ASYNC_HOME})
 # async libs: h5async asynchdf5
