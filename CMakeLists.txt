@@ -15,7 +15,7 @@ link_directories(${HDF5_HOME}/lib)
 
 #Dependency: Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
-option(WITH_ASYNC_VOL "" ON)
+option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
 	add_definitions(-DUSE_ASYNC_VOL)
 endif()
