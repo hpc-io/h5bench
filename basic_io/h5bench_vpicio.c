@@ -552,6 +552,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
     make_compound_type();
     hid_t filespace, memspace;
     *data_preparation_time = 0;
+
 //    unsigned long data_size;
     unsigned long long particle_cnt = params.num_particles;
     unsigned long actual_elem_cnt = 0; //only for set_select_spaces_strided()
@@ -625,7 +626,6 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             assert(0 && "this mode is not yet implemented");
             break;
     }
-
     *data_preparation_time = get_time_usec() - t_prep_start;
     return data;
 }
@@ -667,16 +667,19 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
 
     unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
-    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
+        meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
 //        print_mem_bound(MEM_MONITOR);
         sprintf(grp_name, "Timestep_%d", ts_index);
         assert(ts);
 
-        if (ts_index > params.cnt_time_step_delay - 1)    //delayed close on all ids of the previous ts
-            ts_delayed_close(MEM_MONITOR, &meta_time1);
+        if(params.cnt_time_step_delay > 0){
+            if (ts_index > params.cnt_time_step_delay - 1)    //delayed close on all ids of the previous ts
+                ts_delayed_close(MEM_MONITOR, &meta_time1, dset_cnt);
+        }
 
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &data_time_imp);
 
@@ -695,29 +698,46 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
             case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 8;
                 break;
 
             case CONTIG_COMPOUND_1D:
             case CONTIG_COMPOUND_2D:
                 data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 1;
                 break;
 
             case COMPOUND_CONTIG_1D:
             case COMPOUND_CONTIG_2D:
                 data_write_interleaved_to_contig(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 8;
                 break;
 
             case COMPOUND_COMPOUND_1D:
             case COMPOUND_COMPOUND_2D:
                 data_write_interleaved_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 1;
                 break;
 
             default:
                 break;
         }
+
+        ts->status = TS_DELAY;
+
+        if(params.cnt_time_step_delay == 0) {
+            t3 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            H5Gclose_async(ts->grp_id, ts->es_meta_close);
+            ts->status = TS_READY;
+            t4 = get_time_usec();
+            meta_time5 += (t4 - t3);
+        }
+
 
         if (ts_index != timestep_cnt - 1) {    //no sleep after the last ts
             if (params.compute_time.time_num >= 0) {
@@ -726,15 +746,16 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
                 async_sleep(file_id, fapl, params.compute_time);
             }
         }
-        ts->status = TS_DELAY;
+
+
         *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
         *data_time_total += (data_time_exp + data_time_imp);
-
-        // delayed close ids for the last ts
     }    // end for timestep_cnt
 
     //all done, check if any timesteps undone
+
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+
     *metadata_time_total += metadata_time_imp;
     *data_time_total += data_time_imp;
 
@@ -902,6 +923,7 @@ int main(int argc, char *argv[]) {
         H5Pset_fapl_mpio(fapl, comm, info);
         set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
     }
+
     void *data = _prepare_data(params, &filespace, &memspace, &data_preparation_time, &data_size);
 
     unsigned long t1 = get_time_usec();

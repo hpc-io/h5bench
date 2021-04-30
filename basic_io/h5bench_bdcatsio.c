@@ -245,19 +245,22 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
         print_params(&params);
 
     MEM_MONITOR = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.io_mem_limit);
-    unsigned long t1 = 0, t2 = 0;
-    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
+    unsigned long t1 = 0, t2 = 0, t3 = 0, t4 = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5;
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
+    int dset_cnt = 8;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
+        meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step* ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
         assert(ts);
 
-        if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
-            ts_delayed_close(MEM_MONITOR, &meta_time1);
-
+        if(params.cnt_time_step_delay > 0){
+            if(ts_index > params.cnt_time_step_delay - 1)//delayed close on all ids of the previous ts
+                ts_delayed_close(MEM_MONITOR, &meta_time1, dset_cnt);
+        }
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
         t1 = get_time_usec();
@@ -269,6 +272,18 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
 
         read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
 
+        ts->status = TS_DELAY;
+
+        if(params.cnt_time_step_delay == 0) {
+            t3 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            H5Gclose_async(ts->grp_id, ts->es_meta_close);
+            ts->status = TS_READY;
+            t4 = get_time_usec();
+            meta_time5 = (t4 - t3);
+        }
+
         if (ts_index != nts - 1) {//no sleep after the last ts
             if (params.compute_time.time_num >= 0){
                 if(MY_RANK == 0) printf("Computing... \n");
@@ -276,11 +291,8 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
             }
         }
 
-        ts->status = TS_DELAY;
         *raw_read_time_out += (read_time_exp + read_time_imp);
-        *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
-//        printf("%s: meta_time1 = %llu, meta_time2 = %llu, meta_time3 = %llu, meta_time4 = %llu us, total metadata time this round = %llu us, inner_metadata_time = %llu us\n",
-//                __func__, meta_time1, meta_time2, meta_time3, meta_time4, (meta_time1 + meta_time2 + meta_time3 + meta_time4), *inner_metadata_time);
+        *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
     }
 
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
