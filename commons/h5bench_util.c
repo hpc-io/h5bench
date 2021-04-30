@@ -64,7 +64,7 @@ void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time){
         H5Fstart(file_id, fapl);
 #endif
     h5bench_sleep(sleep_time);
-}
+    }
 
 void timestep_es_id_close(time_step* ts, async_mode mode) {
     es_id_close(ts->es_meta_create, mode);
@@ -151,7 +151,7 @@ int mem_monitor_free(mem_monitor* mon){
     return 0;
 }
 
-int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total) {
+int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total, int dset_cnt) {
     *metadata_time_total = 0;
     if(!mon || !metadata_time_total)
         return -1;
@@ -161,7 +161,9 @@ int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total) {
     H5ES_status_t op_failed;
     unsigned long t1, t2;
     unsigned long meta_time = 0;
-    int dset_cnt = 8;
+
+    if(mon->mode == ASYNC_NON)
+        return 0;
 
     for(int i = 0; i < mon->time_step_cnt; i++){
         ts_run = &(mon->time_steps[i]);
@@ -227,25 +229,31 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     size_t num_in_progress;
     hbool_t op_failed;
     time_step* ts_run;
-    unsigned long t1, t2, t3, t4;
+    unsigned long t1, t2, t3, t4, t5, t6;
     unsigned long meta_time = 0, data_time = 0;
     int dset_cnt = 8;
 
+    if(mon->mode == ASYNC_NON)
+        return 0;
+
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
-
+    t1 = get_time_usec();
     for(int i = 0; i < mon->time_step_cnt; i++){
         ts_run = &(mon->time_steps[i]);
         if(mon->time_steps[i].status == TS_DELAY){
-            t1 = get_time_usec();
+
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
-            t2 = get_time_usec();
+
             ts_run->status = TS_READY;
-            meta_time += (t2 - t1);
+
         }
     }
+
+    t2 = get_time_usec();
+    meta_time += (t2 - t1);
 
     if(mon->mode == ASYNC_NON)
         return 0;
@@ -256,16 +264,24 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
             t1 = get_time_usec();
             H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t2 = get_time_usec();
+
             H5ESwait(ts_run->es_data, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t3 = get_time_usec();
+
             H5ESwait(ts_run->es_meta_close, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t4 = get_time_usec();
+
             timestep_es_id_close(ts_run, mon->mode);
+            t5 = get_time_usec();
+
+            t6 = get_time_usec();
+
             meta_time += ((t2 - t1) + (t4 - t3));
             data_time += (t3 - t2);
             ts_run->status = TS_DONE;
         }
     }
+
     *metadata_time_total = meta_time;
     *data_time_total = data_time;
     return 0;
@@ -650,14 +666,12 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             return -1;
         if(num >= 0) {
             (*params_in_out).io_mem_limit = num;
-            printf("IO_MEM_LIMIT = %llu\n", num);
         } else {
             printf("IO_MEM_LIMIT must be at least 0.\n");
             return -1;
         }
     } else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
         duration time;
-        printf("EMULATED_COMPUTE_TIME_PER_TIMESTEP = [%s]\n", val);
         if(parse_time(val, &time) < 0)
             return -1;
         if (time.time_num >= 0)
@@ -880,7 +894,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     if(params_out->io_mem_limit > 0) {
         if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
-            printf("Requested memory (%llu particles, %llu MB, PARTICLE_SIZE = %llu) is larger than specified memory bound (%d MB), "
+            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %llu) is larger than specified memory bound (%d), "
                     "please check IO_MEM_LIMIT in your config file.\n",
                     params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE, params_out->io_mem_limit);
             return -1;

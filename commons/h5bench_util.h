@@ -189,7 +189,7 @@ void timestep_es_id_close(time_step* ts, async_mode mode);
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long long time_step_size, unsigned long long mem_threshold);
 int mem_monitor_free(mem_monitor* mon);
-int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total);
+int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total, int dset_cnt);
 int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total);
 // Uniform random number
