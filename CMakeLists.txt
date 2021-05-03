@@ -26,7 +26,9 @@ set(h5bench_util_src
     commons/h5bench_util.h
     )
 add_library(h5bench_util ${h5bench_util_src})
-target_link_libraries(h5bench_util asynchdf5 h5async)
+if(WITH_ASYNC_VOL)
+	target_link_libraries(h5bench_util asynchdf5 h5async)
+endif()
 # =================================================================
 
 # ===========  Build basic_io: vpic and bdcats ===========
@@ -58,9 +60,9 @@ add_executable(h5bench_hdf5_iotest ${meta_stress_src})
 target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
-message("============== Build without USE_DEV_VL ==============")
-add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
-target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5 hdf5_hl z)
+#message("============== Build without USE_DEV_VL ==============")
+#add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
+#target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5 hdf5_hl z)
 
 
 #set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})
