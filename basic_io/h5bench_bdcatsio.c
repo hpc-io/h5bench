@@ -444,6 +444,11 @@ int main (int argc, char* argv[]){
     free_contig_memory(BUF_STRUCT);
 
     if (MY_RANK == 0) {
+        char* mode_str = NULL;
+        if(params.asyncMode == ASYNC_EXPLICIT)
+            mode_str = "Async";
+        else
+            mode_str = "Sync";
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US)
                 * (params.cnt_time_step - 1);
@@ -463,10 +468,10 @@ int main (int argc, char* argv[]){
         float oct_s = (float)(t4 - t1) / (1000*1000);
         printf("Observed read completion time = %.3f sec\n", oct_s);
 
-        printf("Raw read rate = %.3f MB/sec \n", raw_rate_mbs);
+        printf("%s Raw read rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
         double or_mbs = (float)total_size_mb /
                 ((float)(t4 - t1 - total_sleep_time_us)/(1000 * 1000));
-        printf("Observed read rate = %.6f MB/sec\n", or_mbs);
+        printf("%s Observed read rate = %.6f MB/sec\n", mode_str, or_mbs);
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
