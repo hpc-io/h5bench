@@ -47,21 +47,14 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-
 #include "../commons/h5bench_util.h"
+
+#include "h5_memory/h5_mem.h"
+#include "h5_memory/h5_xfer.h"
 
 #ifdef HDF5_USE_CUDA
 #include <cuda_runtime.h>
-#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                 \
-  {                                                                        \
-    cudaError_t _status = apiFuncCall;                                     \
-    if (_status != cudaSuccess) {                                          \
-      fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", \
-        __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));    \
-      exit(-1);                                                            \
-    }                                                                      \
-  }
-extern void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t stream_id);
+#include "gpu_kernels/cuda_kernel.h"
 #endif
 
 #include "../commons/async_adaptor.h"
@@ -212,6 +205,9 @@ data_contig_md* prepare_data_contig_1D(unsigned long long particle_cnt, unsigned
     CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_1, particle_cnt*sizeof(int)));
     CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_2, particle_cnt*sizeof(int)));
 #else
+
+    // data_out->x = h5_mem_alloc(particle_cnt, sizeof(float));
+
     data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
     data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
     data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
@@ -483,7 +479,6 @@ int set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, u
  *  copy data from gpu to host memory: copy an m-D array as the dateset type, now linear-linear is 8 datasets of 1D array
  */
 void data_dtohcopy_contig_contig_MD_array(data_contig_md* data_in){
-
 #ifdef HDF5_USE_CUDA
     CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->x, data_in->d_x, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
     CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->y, data_in->d_y, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
@@ -677,6 +672,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
     make_compound_type();
     hid_t filespace, memspace;
     *data_preparation_time = 0;
+
 //    unsigned long data_size;
     unsigned long long particle_cnt = params.num_particles;
     unsigned long actual_elem_cnt = 0; //only for set_select_spaces_strided()
@@ -750,7 +746,6 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             assert(0 && "this mode is not yet implemented");
             break;
     }
-
     *data_preparation_time = get_time_usec() - t_prep_start;
     return data;
 }
@@ -797,16 +792,19 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
 
     unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
-    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0;
+    unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
+        meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
 //        print_mem_bound(MEM_MONITOR);
         sprintf(grp_name, "Timestep_%d", ts_index);
         assert(ts);
 
-        if (ts_index > params.cnt_time_step_delay - 1)    //delayed close on all ids of the previous ts
-            ts_delayed_close(MEM_MONITOR, &meta_time1);
+        if(params.cnt_time_step_delay > 0){
+            if (ts_index > params.cnt_time_step_delay - 1)    //delayed close on all ids of the previous ts
+                ts_delayed_close(MEM_MONITOR, &meta_time1, dset_cnt);
+        }
 
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &data_time_imp);
 
@@ -831,29 +829,46 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
             case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 8;
                 break;
 
             case CONTIG_COMPOUND_1D:
             case CONTIG_COMPOUND_2D:
                 data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (data_contig_md*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 1;
                 break;
 
             case COMPOUND_CONTIG_1D:
             case COMPOUND_CONTIG_2D:
                 data_write_interleaved_to_contig(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 8;
                 break;
 
             case COMPOUND_COMPOUND_1D:
             case COMPOUND_COMPOUND_2D:
                 data_write_interleaved_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
                         (particle*) data, &meta_time4, &data_time_exp);
+                dset_cnt = 1;
                 break;
 
             default:
                 break;
         }
+
+        ts->status = TS_DELAY;
+
+        if(params.cnt_time_step_delay == 0) {
+            t3 = get_time_usec();
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            H5Gclose_async(ts->grp_id, ts->es_meta_close);
+            ts->status = TS_READY;
+            t4 = get_time_usec();
+            meta_time5 += (t4 - t3);
+        }
+
 
         if (ts_index != timestep_cnt - 1) {    //no sleep after the last ts
             if (params.compute_time.time_num >= 0) {
@@ -862,15 +877,16 @@ int _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t f
                 async_sleep(file_id, fapl, params.compute_time);
             }
         }
-        ts->status = TS_DELAY;
+
+
         *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
         *data_time_total += (data_time_exp + data_time_imp);
-
-        // delayed close ids for the last ts
     }    // end for timestep_cnt
 
     //all done, check if any timesteps undone
+
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+
     *metadata_time_total += metadata_time_imp;
     *data_time_total += data_time_imp;
 
@@ -1063,6 +1079,7 @@ int main(int argc, char *argv[]) {
         H5Pset_fapl_mpio(fapl, comm, info);
         set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
     }
+
     void *data = _prepare_data(params, &filespace, &memspace, &data_preparation_time, &data_size);
 
     unsigned long t1 = get_time_usec();
@@ -1114,6 +1131,11 @@ int main(int argc, char *argv[]) {
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
+        char* mode_str = NULL;
+        if(params.asyncMode == ASYNC_EXPLICIT)
+            mode_str = "Async";
+        else
+            mode_str = "Sync";
         printf("\n==================  Performance results  =================\n");
 
         unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US)
@@ -1143,10 +1165,10 @@ int main(int argc, char *argv[]) {
         float oct_s = (float) (t4 - t1) / (1000 * 1000);
         printf("Observed completion time = %.3f sec\n", oct_s);
 
-        printf("Raw write rate = %.3f MB/sec \n", raw_rate_mbs);
+        printf("%s Raw write rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
 
         float or_mbs = (float) total_size_mb / ((float) (t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("Observed write rate = %.3f MB/sec\n", or_mbs);
+        printf("%s Observed write rate = %.3f MB/sec\n", mode_str, or_mbs);
 
         printf("===========================================================\n");
 

@@ -11,7 +11,7 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
-#define RUNTIME_API_CALL(apiFuncCall)                                    \
+#define CUDA_RUNTIME_API_CALL(apiFuncCall)                               \
 {                                                                        \
   cudaError_t _status = apiFuncCall;                                     \
   if (_status != cudaSuccess) {                                          \
