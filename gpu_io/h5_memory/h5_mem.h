@@ -7,7 +7,12 @@
 #include <stdio.h>
 #include <errno.h>
 
-typedef enum {CPU_PAGED, CPU_PINNED, CPU_GPU_MANAGED, GPU_MEMORY} h5_mem_type_t;
+typedef enum {
+  MEMORY_CPU_PAGEABLE,
+  MEMORY_CPU_PINNED,
+  MEMORY_CPU_GPU_MANAGED,
+  MEMORY_GPU
+} h5_mem_type_t;
 
 typedef struct h5_mem_functions_t h5_mem_functions;
 typedef struct h5_mem_t h5_mem;
@@ -21,7 +26,7 @@ struct h5_mem_t
   h5_mem_functions const* fn; // Object-Oriented Programming in C
 };
 
-h5_mem* h5_mem_alloc(size_t nitems, size_t size);
+h5_mem* h5_mem_alloc(size_t nitems, size_t size, h5_mem_type_t mem_type);
 
 struct h5_mem_functions_t {
   // float (*query)(h5_mem *);

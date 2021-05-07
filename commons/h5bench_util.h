@@ -89,6 +89,22 @@ typedef enum read_option {
     READ_STRIDED
 }read_option;
 
+typedef enum device_api_t {
+    CUDA,
+    HIP,
+    OneAPI,
+    API_INVALID
+}device_api_t;
+
+typedef enum memory_type
+{
+  MEMORY_PAGEABLE,
+  MEMORY_PINNED,
+  MEMORY_DEVICE,
+  MEMORY_MANAGED,
+  MEMORY_INVALID
+} memory_type;
+
 typedef struct bench_params {
     io_operation io_op;
     pattern mem_pattern;
@@ -128,6 +144,12 @@ typedef struct bench_params {
     char* env_meta_path;
     FILE* csv_fs;
     int file_per_proc;
+
+    // gpu_io
+    memory_type host_mem_type;
+    memory_type device_mem_type;
+    device_api_t device_api;
+
 } bench_params;
 
 typedef struct data_md {

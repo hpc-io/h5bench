@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-// TODO: ???
 typedef enum {EXPLICIT, IMPLICIT, GDS} h5_xfer_type_t;
 
 typedef struct h5_xfer_functions_t h5_xfer_functions;

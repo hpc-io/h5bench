@@ -83,6 +83,7 @@ endif()
 include_directories(${ASYNC_HOME})
 
 if(WITH_GPU)
+  ###########################################################3
   add_library(h5_memory SHARED
     gpu_io/h5_memory/h5_mem.c
     gpu_io/h5_memory/h5_mem.h
@@ -90,7 +91,12 @@ if(WITH_GPU)
     # gpu_io/h5_memory/h5_xfer.c
     # gpu_io/h5_memory/h5_xfer.h
   )
+  set_target_properties(h5_memory PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  set_property(TARGET h5_memory PROPERTY CUDA_ARCHITECTURES 50 70 72)
+  target_include_directories(h5_memory PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  ###########################################################3
 
+  ###########################################################3
   add_library(h5bench_gpu_kernels SHARED
     gpu_io/gpu_kernels/cuda_kernel.cu
     gpu_io/gpu_kernels/cuda_kernel.h
@@ -98,13 +104,16 @@ if(WITH_GPU)
   set_target_properties(h5bench_gpu_kernels PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   set_property(TARGET h5bench_gpu_kernels PROPERTY CUDA_ARCHITECTURES 50 70 72)
   target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  ###########################################################3
 
+  ###########################################################3
   set(vpic_gpu_src gpu_io/h5bench_vpicio_gpu.c)
   set(bdcats_gpu_src gpu_io/h5bench_bdcatsio_gpu.c)
   add_executable(h5bench_vpicio_cuda ${vpic_gpu_src})
   set_target_properties(h5bench_vpicio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   target_link_libraries(h5bench_vpicio_cuda PRIVATE h5_memory h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   target_compile_options(h5bench_vpicio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
+  ###########################################################3
 endif(WITH_GPU)
 
 set(vpic_src basic_io/h5bench_vpicio.c)

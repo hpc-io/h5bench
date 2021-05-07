@@ -800,7 +800,44 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             (*params_in_out).file_per_proc = 1;
         else
             (*params_in_out).file_per_proc = 0;
-    } else {
+    } else if (strcmp(key, "HOST_MEM_TYPE") == 0) {
+        if (strcmp(val_in, "PAGEABLE") == 0){
+            params_in_out->host_mem_type = MEMORY_PAGEABLE;
+        } else if(strcmp(val_in, "PINNED") == 0) {
+            params_in_out->host_mem_type = MEMORY_PINNED;
+        }else if(strcmp(val_in, "MANAGED") == 0) {
+            params_in_out->host_mem_type = MEMORY_MANAGED;
+        } else {
+            params_in_out->host_mem_type = MEMORY_INVALID;
+        }
+    } else if (strcmp(key, "DEVICE_MEM_TYPE") == 0) {
+         if (strcmp(val_in, "DEVICE") == 0){
+             params_in_out->device_mem_type = MEMORY_DEVICE;
+         } else if(strcmp(val_in, "PINNED") == 0) {
+             params_in_out->device_mem_type = MEMORY_PINNED;
+         }else if(strcmp(val_in, "MANAGED") == 0) {
+             params_in_out->device_mem_type = MEMORY_MANAGED;
+         } else {
+             params_in_out->device_mem_type = MEMORY_INVALID;
+         }
+    } else if (strcmp(key, "DEVICE_API") == 0) {
+         if (strcmp(val_in, "CUDA") == 0){
+             params_in_out->device_api = CUDA;
+         } else if(strcmp(val_in, "HIP") == 0) {
+             params_in_out->device_api = HIP;
+         }else if(strcmp(val_in, "OneAPI") == 0) {
+             params_in_out->device_api = OneAPI;
+         } else {
+             params_in_out->device_api = API_INVALID;
+         }
+    }
+    else if (strcmp(key, "FILE_PER_PROC") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y')
+            (*params_in_out).file_per_proc = 1;
+        else
+            (*params_in_out).file_per_proc = 0;
+    } 
+    else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
     }

@@ -172,51 +172,78 @@ particle* prepare_data_interleaved(long particle_cnt, unsigned long *data_size_o
     return data_out;
 }
 
-data_contig_md* prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long *data_size_out) {
+data_contig_md* prepare_data_contig_1D(bench_params params, unsigned long long particle_cnt, unsigned long *data_size_out) {
     data_contig_md *data_out = (data_contig_md*) malloc(sizeof(data_contig_md));
     data_out->particle_cnt = particle_cnt;
 
-#ifdef HDF5_USE_CUDA
-    // pinned host memory allocate
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->x, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->y, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->z, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->px, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->py, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->pz, particle_cnt*sizeof(float), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->id_1, particle_cnt*sizeof(int), cudaHostAllocDefault));
-    CUDA_RUNTIME_API_CALL(cudaHostAlloc(&data_out->id_2, particle_cnt*sizeof(float), cudaHostAllocDefault));
+    if(params.host_mem_type == MEMORY_PAGEABLE)
+    {
+      data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+    }
+    else if (params.host_mem_type == MEMORY_PINNED)
+    {
+      data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PINNED)->ptr;
+      data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+    }
+    else if(params.host_mem_type == MEMORY_MANAGED)
+    {
+      if(params.device_mem_type == MEMORY_MANAGED)
+      {
+        data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
 
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_x, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_y, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_z, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_px, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_py, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_pz, particle_cnt*sizeof(float), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_id_1, particle_cnt*sizeof(int), cudaMemAttachGlobal));
-    // CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&data_out->d_id_2, particle_cnt*sizeof(int), cudaMemAttachGlobal));
+        data_out->d_x =  data_out->x;
+        data_out->d_y =  data_out->y;
+        data_out->d_z =  data_out->z;
+        data_out->d_px = data_out->px;
+        data_out->d_py = data_out->py;
+        data_out->d_pz = data_out->pz;
+        data_out->d_id_1 = data_out->id_1;
+        data_out->d_id_2 = data_out->id_2;
+      }
+      else
+      {
+        fprintf(stderr, "Error config: both host memory and device memory need to be managed\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+    else
+    {
+      fprintf(stderr, "Error config: host memory\n");
+      exit(EXIT_FAILURE);
+    }
 
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_x, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_y, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_z, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_px, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_py, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_pz, particle_cnt*sizeof(float)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_1, particle_cnt*sizeof(int)));
-    CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&data_out->d_id_2, particle_cnt*sizeof(int)));
-#else
+    if(params.device_mem_type == MEMORY_DEVICE)
+    {
+      data_out->d_x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      data_out->d_id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_GPU)->ptr;
+      data_out->d_id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+    }
 
-    // data_out->x = h5_mem_alloc(particle_cnt, sizeof(float));
-
-    data_out->x =  (float*) malloc(particle_cnt * sizeof(float));
-    data_out->y =  (float*) malloc(particle_cnt * sizeof(float));
-    data_out->z =  (float*) malloc(particle_cnt * sizeof(float));
-    data_out->px = (float*) malloc(particle_cnt * sizeof(float));
-    data_out->py = (float*) malloc(particle_cnt * sizeof(float));
-    data_out->pz = (float*) malloc(particle_cnt * sizeof(float));
-    data_out->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    data_out->id_2 = (float*) malloc(particle_cnt * sizeof(float));
-#endif
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
     data_out->dim_3 = 1;
@@ -232,6 +259,7 @@ data_contig_md* prepare_data_contig_1D(unsigned long long particle_cnt, unsigned
         data_out->pz[i] = (data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
 
+    // put data on the gpu
 #ifdef HDF5_USE_CUDA
     CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_x, data_out->x, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
     CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_y, data_out->y, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
@@ -354,18 +382,6 @@ void data_free(write_pattern mode, void *data) {
         case CONTIG_COMPOUND_2D:
         case CONTIG_CONTIG_2D:
         case CONTIG_CONTIG_3D:
-#ifdef HDF5_USE_CUDA
-            // pinned host memory free
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->x) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->y) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->z) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->px) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->py) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->pz) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->id_1) );
-            CUDA_RUNTIME_API_CALL( cudaFreeHost(((data_contig_md*)data)->id_2) );
-#else
-            free(((data_contig_md*) data)->x);
             free(((data_contig_md*) data)->y);
             free(((data_contig_md*) data)->z);
             free(((data_contig_md*) data)->px);
@@ -373,10 +389,6 @@ void data_free(write_pattern mode, void *data) {
             free(((data_contig_md*) data)->pz);
             free(((data_contig_md*) data)->id_1);
             free(((data_contig_md*) data)->id_2);
-#endif
-
-
-
             free(((data_contig_md*) data));
             break;
         case COMPOUND_CONTIG_1D:
@@ -681,7 +693,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
     switch (params.access_pattern.pattern_write) {
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(filespace_out, memspace_out);
-            data = (void*) prepare_data_contig_1D(particle_cnt, data_size);
+            data = (void*) prepare_data_contig_1D(params, particle_cnt, data_size);
             dset_cnt = 8;
             break;
 
@@ -697,13 +709,13 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
                 printf("Strided write setting error.\n");
                 return NULL;
             }
-            data = (void*) prepare_data_contig_1D(actual_elem_cnt, data_size);
+            data = (void*) prepare_data_contig_1D(params, actual_elem_cnt, data_size);
             dset_cnt = 8;
             break;
 
         case CONTIG_COMPOUND_1D:
             set_select_spaces_default(filespace_out, memspace_out);
-            data = (void*) prepare_data_contig_1D(particle_cnt, data_size);
+            data = (void*) prepare_data_contig_1D(params, particle_cnt, data_size);
             dset_cnt = 1;
             break;
 
