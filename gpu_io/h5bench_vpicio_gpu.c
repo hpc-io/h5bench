@@ -49,8 +49,8 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 
-#include "h5_memory/h5_mem.h"
-#include "h5_memory/h5_xfer.h"
+#include "h5deepmem/h5mem.h"
+#include "h5deepmem/h5xfer.h"
 
 #ifdef HDF5_USE_CUDA
 #include <cuda_runtime.h>
@@ -178,47 +178,47 @@ data_contig_md* prepare_data_contig_1D(bench_params params, unsigned long long p
 
     if(params.host_mem_type == MEMORY_PAGEABLE)
     {
-      data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PAGEABLE)->ptr;
-      data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->x =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->y =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->z =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->px = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->py = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->pz = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->id_1 = (int*) h5mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PAGEABLE)->ptr;
+      data_out->id_2 = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PAGEABLE)->ptr;
     }
     else if (params.host_mem_type == MEMORY_PINNED)
     {
-      data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
-      data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PINNED)->ptr;
-      data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->x =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->y =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->z =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->px = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->py = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->pz = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
+      data_out->id_1 = (int*) h5mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_PINNED)->ptr;
+      data_out->id_2 = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_PINNED)->ptr;
     }
     else if(params.host_mem_type == MEMORY_MANAGED)
     {
       if(params.device_mem_type == MEMORY_MANAGED)
       {
-        data_out->x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_GPU_MANAGED)->ptr;
-        data_out->id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->x =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->y =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->z =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->px = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->py = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->pz = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->id_1 = (int*) h5mem_alloc(particle_cnt, sizeof(int), MEMORY_CPU_GPU_MANAGED)->ptr;
+        data_out->id_2 = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_CPU_GPU_MANAGED)->ptr;
 
-        data_out->d_x =  data_out->x;
-        data_out->d_y =  data_out->y;
-        data_out->d_z =  data_out->z;
-        data_out->d_px = data_out->px;
-        data_out->d_py = data_out->py;
-        data_out->d_pz = data_out->pz;
-        data_out->d_id_1 = data_out->id_1;
-        data_out->d_id_2 = data_out->id_2;
+        // data_out->d_x =  data_out->x;
+        // data_out->d_y =  data_out->y;
+        // data_out->d_z =  data_out->z;
+        // data_out->d_px = data_out->px;
+        // data_out->d_py = data_out->py;
+        // data_out->d_pz = data_out->pz;
+        // data_out->d_id_1 = data_out->id_1;
+        // data_out->d_id_2 = data_out->id_2;
       }
       else
       {
@@ -234,14 +234,14 @@ data_contig_md* prepare_data_contig_1D(bench_params params, unsigned long long p
 
     if(params.device_mem_type == MEMORY_DEVICE)
     {
-      data_out->d_x =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_y =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_z =  (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_px = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_py = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_pz = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
-      data_out->d_id_1 = (int*) h5_mem_alloc(particle_cnt, sizeof(int), MEMORY_GPU)->ptr;
-      data_out->d_id_2 = (float*) h5_mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_x =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_y =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_z =  (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_px = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_py = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_pz = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
+      // data_out->d_id_1 = (int*) h5mem_alloc(particle_cnt, sizeof(int), MEMORY_GPU)->ptr;
+      // data_out->d_id_2 = (float*) h5mem_alloc(particle_cnt, sizeof(float), MEMORY_GPU)->ptr;
     }
 
     data_out->dim_1 = particle_cnt;
@@ -261,14 +261,14 @@ data_contig_md* prepare_data_contig_1D(bench_params params, unsigned long long p
 
     // put data on the gpu
 #ifdef HDF5_USE_CUDA
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_x, data_out->x, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_y, data_out->y, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_z, data_out->z, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_px, data_out->px, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_py, data_out->py, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_pz, data_out->pz, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_1, data_out->id_1, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_2, data_out->id_2, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_x, data_out->x, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_y, data_out->y, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_z, data_out->z, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_px, data_out->px, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_py, data_out->py, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_pz, data_out->pz, particle_cnt*sizeof(float), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_1, data_out->id_1, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_out->d_id_2, data_out->id_2, particle_cnt*sizeof(int), cudaMemcpyHostToDevice));
 
     // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_x, particle_cnt*sizeof(float), gpu_id, 0) );
     // CUDA_RUNTIME_API_CALL( cudaMemPrefetchAsync(data_out->d_y, particle_cnt*sizeof(float), gpu_id, 0) );
@@ -492,14 +492,14 @@ int set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, u
  */
 void data_dtohcopy_contig_contig_MD_array(data_contig_md* data_in){
 #ifdef HDF5_USE_CUDA
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->x, data_in->d_x, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->y, data_in->d_y, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->z, data_in->d_z, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->px, data_in->d_px, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->py, data_in->d_py, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->pz, data_in->d_pz, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_1, data_in->d_id_1, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
-    CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_2, data_in->d_id_2, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->x, data_in->d_x, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->y, data_in->d_y, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->z, data_in->d_z, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->px, data_in->d_px, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->py, data_in->d_py, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->pz, data_in->d_pz, data_in->particle_cnt*sizeof(float), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_1, data_in->d_id_1, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
+    // CUDA_RUNTIME_API_CALL(cudaMemcpy(data_in->id_2, data_in->d_id_2, data_in->particle_cnt*sizeof(int), cudaMemcpyDeviceToHost));
 #endif
 }
 
@@ -684,8 +684,6 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
     make_compound_type();
     hid_t filespace, memspace;
     *data_preparation_time = 0;
-
-//    unsigned long data_size;
     unsigned long long particle_cnt = params.num_particles;
     unsigned long actual_elem_cnt = 0; //only for set_select_spaces_strided()
     int dset_cnt = 0;
@@ -1015,31 +1013,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-#ifdef HDF5_USE_CUDA
-    int devCount;
-    CUDA_RUNTIME_API_CALL(cudaGetDeviceCount(&devCount));
-    // printf("CUDA Device Query...\n");
-    // printf("There are %d CUDA devices.\n", devCount);
-    // printf("mpi_rank: %d\n", MY_RANK);
-    // fflush(stdout);
-    int local_rank;
-    char *str;
-
-    // int gpu_id = -1;
-
-    if ((str = getenv ("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
-      local_rank = atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
-      gpu_id = local_rank;
-    }
-    else {
-      printf("OMPI_COMM_WORLD_LOCAL_RANK is NULL\n");
-      gpu_id = 0;
-    }
-
-    gpu_id %= devCount; // there are only devCount
-    CUDA_RUNTIME_API_CALL(cudaSetDevice(gpu_id));
-#endif
-
     char *output_file;
     bench_params params;
 
@@ -1061,6 +1034,49 @@ int main(int argc, char *argv[]) {
         print_params(&params);
 
     set_globals(&params);
+
+    if(params.device_api == CUDA)
+    {
+#ifdef HDF5_USE_CUDA
+      int devCount;
+      CUDA_RUNTIME_API_CALL(cudaGetDeviceCount(&devCount));
+      // printf("CUDA Device Query...\n");
+      // printf("There are %d CUDA devices.\n", devCount);
+      // printf("mpi_rank: %d\n", MY_RANK);
+      // fflush(stdout);
+      int local_rank;
+      char *str;
+      // int gpu_id = -1;
+
+      if ((str = getenv ("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
+        local_rank = atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
+        gpu_id = local_rank;
+      }
+      else {
+        printf("OMPI_COMM_WORLD_LOCAL_RANK is NULL\n");
+        gpu_id = 0;
+      }
+
+      gpu_id %= devCount; // there are only devCount
+      CUDA_RUNTIME_API_CALL(cudaSetDevice(gpu_id));
+#else
+      fprintf(stderr, "CUDA Device API not supported\n");
+      exit(EXIT_FAILURE);
+#endif
+    }
+    else if(params.device_api == HIP)
+    {
+
+    }
+    else if(params.device_api == OneAPI)
+    {
+
+    }
+    else
+    {
+      fprintf(stderr, "Device API invalid\n");
+      exit(EXIT_FAILURE);
+    }
 
     NUM_TIMESTEPS = params.cnt_time_step;
 

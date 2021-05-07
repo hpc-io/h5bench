@@ -33,9 +33,10 @@ void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t s
   //dim3 blockspergrid = dim3(ceil((double)numparticles/256), 1, 1);
   //printf("cuda kernel launch with %d blocks of %d threads\n", blockspergrid, threadsperblock);
   // kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(data, kernel_flag);
-  kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(
-    data->d_x, data->d_y, data->d_z, data->d_px, data->d_py, data->d_pz, data->d_id_1, data->d_id_2, data->particle_cnt, 
-    kernel_flag);
+
+  // kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(
+    // data->d_x, data->d_y, data->d_z, data->d_px, data->d_py, data->d_pz, data->d_id_1, data->d_id_2, data->particle_cnt,
+    // kernel_flag);
 
   // todo: false postive cufile error?
   //runtime_api_call(cudapeekatlasterror());

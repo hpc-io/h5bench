@@ -1,4 +1,4 @@
-#include "h5_mem.h"
+#include "h5mem.h"
 
 #include <stdio.h>
 #include <string.h> // memset
@@ -31,7 +31,7 @@
 }
 #endif
 
-static void h5_mem_free(h5_mem *inst)
+static void h5mem_free(h5mem *inst)
 {
   if(inst)
   {
@@ -40,16 +40,16 @@ static void h5_mem_free(h5_mem *inst)
   }
 }
 
-static h5_mem_functions const h5_mem_vtable = {
-  &h5_mem_free
+static h5mem_functions const h5mem_vtable = {
+  &h5mem_free
 };
 
-h5_mem* h5_mem_alloc(size_t nitems, size_t size, h5_mem_type_t mem_type)
+h5mem* h5mem_alloc(size_t nitems, size_t size, h5mem_type_t mem_type)
 {
-  h5_mem *inst = malloc( sizeof(h5_mem) );
+  h5mem *inst = malloc( sizeof(h5mem) );
   if(!inst)
   {
-    fprintf(stderr, "failed to create h5_mem instance\n");
+    fprintf(stderr, "failed to create h5mem instance\n");
     return NULL;
   }
 
