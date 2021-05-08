@@ -1,18 +1,8 @@
 #ifndef H5MEM_H
 #define H5MEM_H
 
-#include <sys/time.h> // time
 #include <stdlib.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <errno.h>
-
-typedef enum {
-  MEMORY_CPU_PAGEABLE,
-  MEMORY_CPU_PINNED,
-  MEMORY_CPU_GPU_MANAGED,
-  MEMORY_GPU
-} h5mem_type_t;
+#include "h5deepmem_globals.h"
 
 typedef struct h5mem_functions_t h5mem_functions;
 typedef struct h5mem_t h5mem;
@@ -26,11 +16,10 @@ struct h5mem_t
   h5mem_functions const* fn; // Object-Oriented Programming in C
 };
 
-h5mem* h5mem_alloc(size_t nitems, size_t size, h5mem_type_t mem_type);
+h5mem* h5mem_alloc(size_t nitems, size_t size, h5deepmem_api_t device_api, h5mem_type_t mem_type);
 
 struct h5mem_functions_t {
-  // float (*query)(h5mem *);
-  void (*free)(h5mem*);
+  void (*free)(h5mem*, h5deepmem_api_t);
 };
 
 #endif // H5MEM_H

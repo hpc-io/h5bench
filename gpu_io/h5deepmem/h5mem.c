@@ -18,33 +18,44 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef HDF5_USE_CUDA
-#include <cuda_runtime.h>
-#define CUDA_RUNTIME_API_CALL(apiFuncCall)                               \
-{                                                                        \
-  cudaError_t _status = apiFuncCall;                                     \
-  if (_status != cudaSuccess) {                                          \
-    fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", \
-      __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));    \
-    exit(-1);                                                            \
-  }                                                                      \
-}
-#endif
-
-static void h5mem_free(h5mem *inst)
+static void h5mem_free(h5mem *inst, h5deepmem_api_t device_api)
 {
-  if(inst)
+  if(device_api == DEEPMEM_CUDA)
   {
-    if(inst->ptr) free(inst->ptr);
-    free(inst);
+    switch(inst->mem_type)
+    {
+      case H5MEM_CPU_PAGEABLE:
+        free(inst->ptr);
+        break;
+      case H5MEM_CPU_PINNED:
+        CUDA_RUNTIME_API_CALL(cudaFreeHost(inst->ptr));
+        break;
+      case H5MEM_CPU_GPU_MANAGED:
+      case H5MEM_GPU:
+        CUDA_RUNTIME_API_CALL(cudaFree(inst->ptr));
+        break;
+    }
   }
+  else if(device_api == DEEPMEM_HIP)
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
+  }
+  else if(device_api == DEEPMEM_OneAPI)
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
+  }
+  else
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
+  }
+  free(inst);
 }
 
 static h5mem_functions const h5mem_vtable = {
   &h5mem_free
 };
 
-h5mem* h5mem_alloc(size_t nitems, size_t size, h5mem_type_t mem_type)
+h5mem* h5mem_alloc(size_t nitems, size_t size, h5deepmem_api_t device_api, h5mem_type_t mem_type)
 {
   h5mem *inst = malloc( sizeof(h5mem) );
   if(!inst)
@@ -57,27 +68,43 @@ h5mem* h5mem_alloc(size_t nitems, size_t size, h5mem_type_t mem_type)
   inst->size = size;
   inst->mem_type = mem_type;
 
-  switch(mem_type)
+  if(device_api == DEEPMEM_CUDA)
   {
-    case MEMORY_CPU_PAGEABLE:
-      inst->ptr = malloc(nitems*size);
-      if(!inst->ptr)
-      {
-        fprintf(stderr, "failed to allocate memory for buffer\n");
-        return NULL;
-      }
-      break;
-    case MEMORY_CPU_PINNED:
-      CUDA_RUNTIME_API_CALL(cudaHostAlloc((void **)&inst->ptr, nitems*size, cudaHostAllocDefault));
-      break;
-    case MEMORY_CPU_GPU_MANAGED:
-      CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&inst->ptr, nitems*size, cudaMemAttachGlobal));
-      break;
-    case MEMORY_GPU:
-      CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&inst->ptr, nitems*size));
-      break;
+    switch(mem_type)
+    {
+      case H5MEM_CPU_PAGEABLE:
+        inst->ptr = malloc(nitems*size);
+        if(!inst->ptr)
+        {
+          fprintf(stderr, "failed to allocate memory for buffer\n");
+          return NULL;
+        }
+        break;
+      case H5MEM_CPU_PINNED:
+        CUDA_RUNTIME_API_CALL(cudaHostAlloc((void **)&inst->ptr, nitems*size, cudaHostAllocDefault));
+        break;
+      case H5MEM_CPU_GPU_MANAGED:
+        CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&inst->ptr, nitems*size, cudaMemAttachGlobal));
+        break;
+      case H5MEM_GPU:
+        CUDA_RUNTIME_API_CALL(cudaMalloc((void **)&inst->ptr, nitems*size));
+        break;
+    }
+  }
+  else if(device_api == DEEPMEM_HIP)
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
+  }
+  else if(device_api == DEEPMEM_OneAPI)
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
+  }
+  else
+  {
+    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__); exit(EXIT_FAILURE);
   }
 
+  inst->fn = &h5mem_vtable;
   return inst;
 }
 

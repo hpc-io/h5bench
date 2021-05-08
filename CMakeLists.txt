@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(h5bench)
 
+#########################################
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wpedantic")
+set(CMAKE_C_FLAGS_DEBUG "-g -O0")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
+
+set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
+################################################
+
 # Dependency: MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
@@ -95,6 +105,8 @@ include_directories(${ASYNC_HOME})
 if(WITH_GPUIO)
   ###########################################################3
   add_library(h5deepmem SHARED
+    gpu_io/h5deepmem/h5deepmem_globals.h
+
     gpu_io/h5deepmem/h5deepmem.c
     gpu_io/h5deepmem/h5deepmem.h
 
@@ -107,6 +119,7 @@ if(WITH_GPUIO)
   set_target_properties(h5deepmem PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   set_property(TARGET h5deepmem PROPERTY CUDA_ARCHITECTURES 50 70 72)
   target_include_directories(h5deepmem PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  set_target_properties(h5deepmem PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
   ###########################################################3
 
   ###########################################################3
@@ -117,6 +130,7 @@ if(WITH_GPUIO)
   set_target_properties(h5bench_gpu_kernels PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   set_property(TARGET h5bench_gpu_kernels PROPERTY CUDA_ARCHITECTURES 50 70 72)
   target_include_directories(h5bench_gpu_kernels PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  set_target_properties(h5bench_gpu_kernels PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
   ###########################################################3
 
   ###########################################################3
@@ -126,6 +140,7 @@ if(WITH_GPUIO)
   set_target_properties(h5bench_vpicio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   target_link_libraries(h5bench_vpicio_cuda PRIVATE h5deepmem h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   target_compile_options(h5bench_vpicio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
+  set_target_properties(h5bench_vpicio_cuda PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
   ###########################################################3
 endif(WITH_GPUIO)
 
