@@ -149,6 +149,7 @@ typedef struct bench_params {
     memory_type host_mem_type;
     memory_type device_mem_type;
     device_api_t device_api;
+    int device_aware_hdf5;
 
 } bench_params;
 

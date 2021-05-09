@@ -115,6 +115,9 @@ if(WITH_GPUIO)
 
     gpu_io/h5deepmem/h5xfer.c
     gpu_io/h5deepmem/h5xfer.h
+
+    gpu_io/h5deepmem/h5device.c
+    gpu_io/h5deepmem/h5device.h
   )
   set_target_properties(h5deepmem PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   set_property(TARGET h5deepmem PROPERTY CUDA_ARCHITECTURES 50 70 72)
@@ -134,13 +137,20 @@ if(WITH_GPUIO)
   ###########################################################3
 
   ###########################################################3
-  set(vpic_gpu_src gpu_io/h5bench_vpicio_gpu.c)
-  set(bdcats_gpu_src gpu_io/h5bench_bdcatsio_gpu.c)
-  add_executable(h5bench_vpicio_cuda ${vpic_gpu_src})
+  set(vpicio_gpu_src gpu_io/h5bench_vpicio_gpu.c)
+  set(bdcatsio_gpu_src gpu_io/h5bench_bdcatsio_gpu.c)
+
+  add_executable(h5bench_vpicio_cuda ${vpicio_gpu_src})
   set_target_properties(h5bench_vpicio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
   target_link_libraries(h5bench_vpicio_cuda PRIVATE h5deepmem h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   target_compile_options(h5bench_vpicio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
   set_target_properties(h5bench_vpicio_cuda PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+   add_executable(h5bench_bdcatsio_cuda ${bdcatsio_gpu_src})
+  set_target_properties(h5bench_bdcatsio_cuda PROPERTIES COMPILE_DEFINITIONS HDF5_USE_CUDA)
+  target_link_libraries(h5bench_bdcatsio_cuda PRIVATE h5deepmem h5bench_gpu_kernels h5bench_util asynchdf5 h5async hdf5 z CUDA::cudart ${MPI_C_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+  target_compile_options(h5bench_bdcatsio_cuda PRIVATE ${MPI_C_COMPILE_FLAGS})
+  set_target_properties(h5bench_bdcatsio_cuda PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
   ###########################################################3
 endif(WITH_GPUIO)
 

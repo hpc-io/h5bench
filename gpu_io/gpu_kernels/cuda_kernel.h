@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-  void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t stream_id);
+  void kernel_call(float *d_x, float *d_y, float *d_z, float *d_px, float *d_py, float *d_pz, int *d_id_1, float *d_id_2, long particle_cnt, volatile int *kernel_flag, cudaStream_t stream_id);
 
 #ifdef __cplusplus
 }

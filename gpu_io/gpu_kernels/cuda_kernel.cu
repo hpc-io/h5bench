@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "../../commons/h5bench_util.h"
 #include "cuda_kernel.h"
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -26,7 +25,8 @@ __global__ void kernel(float *d_x, float *d_y, float *d_z, float *d_px, float *d
   while(!*kernel_flag);
 }
 
-void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t stream_id) {
+void kernel_call(float *d_x, float *d_y, float *d_z, float *d_px, float *d_py, float *d_pz, int *d_id_1, float *d_id_2, long particle_cnt, volatile int *kernel_flag, cudaStream_t stream_id) {
+
   dim3 threadsperblock = 128;
   dim3 blockspergrid = 80;
 
@@ -34,9 +34,9 @@ void kernel_call(data_contig_md *data, volatile int *kernel_flag, cudaStream_t s
   //printf("cuda kernel launch with %d blocks of %d threads\n", blockspergrid, threadsperblock);
   // kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(data, kernel_flag);
 
-  // kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(
-    // data->d_x, data->d_y, data->d_z, data->d_px, data->d_py, data->d_pz, data->d_id_1, data->d_id_2, data->particle_cnt,
-    // kernel_flag);
+  kernel<<<threadsperblock, blockspergrid, 0, stream_id>>>(
+    d_x, d_y, d_z, d_px, d_py, d_pz, d_id_1, d_id_2, particle_cnt,
+    kernel_flag);
 
   // todo: false postive cufile error?
   //runtime_api_call(cudapeekatlasterror());

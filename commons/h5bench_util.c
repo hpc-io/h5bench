@@ -830,12 +830,11 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
          } else {
              params_in_out->device_api = API_INVALID;
          }
-    }
-    else if (strcmp(key, "FILE_PER_PROC") == 0) {
+    } else if (strcmp(key, "DEVICE_AWARE_HDF5") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
-            (*params_in_out).file_per_proc = 1;
+            (*params_in_out).device_aware_hdf5 = 1;
         else
-            (*params_in_out).file_per_proc = 0;
+            (*params_in_out).device_aware_hdf5 = 0;
     } 
     else {
         printf("Unknown Parameter: %s\n", key);
