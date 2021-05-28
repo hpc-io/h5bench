@@ -14,6 +14,11 @@
 }
 #endif
 
+#ifdef HDF5_USE_HIP
+#include "hip/hip_runtime.h"
+#define HIP_ASSERT(x) (assert((x)==hipSuccess))
+#endif
+
 typedef enum {
   DEEPMEM_CUDA,
   DEEPMEM_HIP,
