@@ -47,7 +47,7 @@ Assume that the repo is cloned and now you are in the source directory h5bench, 
 - `make`
 
 ### Build to run in async
-To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the `async_vol_register_optional` branch of HDF5 and Async-VOL and build H5bench separately. 
+To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the `develop` branchs of BOTH HDF5 and Async-VOL and build H5bench separately. 
 - `mkdir build`
 - `cd build`
 - `cmake .. -DUSE_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"`
@@ -55,7 +55,7 @@ To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the `async_vol
 
 Necessary environment variable settings:
 ```
-export HDF5_HOME="$YOUR_HDF5_COMBO_BRANCH_BUILD/hdf5"
+export HDF5_HOME="$YOUR_HDF5_DEVELOP_BRANCH_BUILD/hdf5"
 export ASYNC_HOME="$YOUR_ASYNC_VOL/src"
 export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 export HDF5_PLUGIN_PATH="$ASYNC_HOME"
