@@ -77,7 +77,7 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     unsigned long long t_output = 1;
     switch(time.unit) {
         case TIME_MIN:
-            factor = 60 * 1000 * 1000 * 1000;
+            factor = 60 * 1000 * 1000 * 1000llu;
             break;
         case TIME_SEC:
             factor = 1000 * 1000;
@@ -97,7 +97,7 @@ unsigned long long read_time_val(duration time, time_unit unit) {
 
     switch(unit) {
         case TIME_MIN:
-            t_output = t_us / (60 * 1000 * 1000 * 1000);
+            t_output = t_us / (60 * 1000 * 1000 * 1000llu);
             break;
         case TIME_SEC:
             t_output = t_us / (1000 * 1000);
@@ -190,7 +190,7 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         return 0;
     time_step* ts_run;
     size_t num_in_progress;
-    H5ES_status_t op_failed;
+    hbool_t op_failed;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
     int dset_cnt = 8;
