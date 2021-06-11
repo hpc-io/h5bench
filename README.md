@@ -50,7 +50,7 @@ Assume that the repo is cloned and now you are in the source directory h5bench, 
 To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the `develop` branchs of BOTH HDF5 and Async-VOL and build H5bench separately. 
 - `mkdir build`
 - `cd build`
-- `cmake .. -DUSE_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"`
+- `cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"`
 - `make`
 
 Necessary environment variable settings:
