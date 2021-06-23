@@ -30,7 +30,7 @@ Make sure to unload any system provided HDF5 version, and set an environment var
 
 .. code-block::
 
-	HDF5_Home: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories.
+	HDF5_HOME: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories.
 
 
 Compile with CMake
