@@ -155,7 +155,7 @@ Compression Settings
 
 
 Collective Operation Settings
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **COLLECTIVE_DATA**: optional, set to "YES" for collective data operations, otherwise and default (not set) cases for independent operations.
 
@@ -164,12 +164,12 @@ Collective Operation Settings
 
 
 Other Settings
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **CSV_FILE**=my_csv_file: optional CSV file output, performance results will be print to the file and the standard output as well.
 
 
--------------------------------------
+
 Supported Patterns
 -------------------------------------
 
@@ -179,7 +179,7 @@ Supported Patterns
 	Not every pattern combination is covered, supported benchmark parameter settings are listed below.
 
 Supported Write Patterns (h5bench_vpicio): IO_OPERATION=WRITE
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark. This defines the write access pattern, including CONTIG (contiguous), INTERLEAVED and STRIDED” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, MEM_PATTERN=CONTIG and FILE_PATTERN=INTERLEAVED is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
 
@@ -213,7 +213,7 @@ The I/O patterns include array of structures (AOS) and structure of arrays (SOA)
 
 
 Supported Read Patterns (h5bench_bdcatsio): IO_OPERATION=READ
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1 pattern for 1D, 2D and 3D read (NUM_DIMS=1 or NUM_DIMS=2)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
