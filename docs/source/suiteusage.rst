@@ -2,7 +2,7 @@ Benchmark Suite Usage
 =====================================
 
 -------------------------------------
-Basic I/O Benchmark
+h5bench_patterns benchmark
 -------------------------------------
 
 Major refactoring is in progress, this document may be out of date. Both h5bench_vpicio and h5bench_bdcats take config and data file path as command line arguments.
@@ -151,6 +151,7 @@ Compression Settings
 	CHUNK_DIM_3=1 # extra chunk dimension take no effects.
 
 .. attention::
+
 	There is a known bug on HDF5 parallel compression that could cause the system run out of memory when the chunk amount is large (large number of particle and very small chunk sizes). On Cori Hasswell nodes, the setting of 16M particles per rank, 8 nodes (total 256 ranks), 64 * 64 chunk size will crash the system by runing out of memory, on single nodes the minimal chunk size is 4 * 4.
 
 
@@ -174,8 +175,9 @@ Supported Patterns
 -------------------------------------
 
 
-..attention:: 
-	not every pattern combination is covered, supported benchmark parameter settings are listed below.
+.. attention:: 
+
+	Not every pattern combination is covered, supported benchmark parameter settings are listed below.
 
 Supported Write Patterns (h5bench_vpicio): IO_OPERATION=WRITE
 ------------------------------------------------------------------------
