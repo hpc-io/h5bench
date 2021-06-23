@@ -13,7 +13,6 @@ Major refactoring is in progress, this document may be out of date. Both h5bench
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
 
--------------------------------------
 Settings in the Configuration File
 -------------------------------------
 
@@ -84,7 +83,7 @@ A template of config file can be found basic_io/sample_config/template.cfg:
 	#FILE_PER_PROC=
 
 General Settings
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **IO_OPERATION**: required, chose from **READ** and **WRITE**.
 * **MEM_PATTERN**: required, chose from **CONTIG, INTERLEAVED** and **STRIDED**
@@ -112,7 +111,7 @@ Dimensionality part of the Config file:
 
 
 Addtional Settings for READ (h5bench_bdcats)
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **READ_OPTION**: required for IO_OPERATION=READ, not allowed for IO_OPERATION=WRITE.
 
@@ -124,7 +123,7 @@ Addtional Settings for READ (h5bench_bdcats)
 
 
 Async Related Settings
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **ASYNC_MODE**: optional, the default is NON.
 
@@ -138,7 +137,7 @@ Async Related Settings
 
 
 Compression Settings
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **COMPRESS**: YES or NO, optional. Only applicable for WRITE(h5bench_vpicio), has no effect for READ. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required. To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size.
 
