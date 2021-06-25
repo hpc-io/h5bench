@@ -117,9 +117,6 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     return t_output;
 }
 
-unsigned long long get_msec(duration time) {
-
-}
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long long time_step_size, unsigned long long mem_threshold){
     mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
