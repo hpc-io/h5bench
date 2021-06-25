@@ -197,7 +197,7 @@ data_contig_md* prepare_data_contig_2D(unsigned long long particle_cnt, long dim
     if (particle_cnt != dim_1 * dim_2) {
         if (MY_RANK == 0)
             printf(
-                    "Invalid dimension definition: dim_1(%llu) * dim_2(%ld) = %llu, must equal num_particles (%llu) per rank.\n",
+                    "Invalid dimension definition: dim_1(%ld) * dim_2(%ld) = %ld, must equal num_particles (%llu) per rank.\n",
                     dim_1, dim_2, dim_1 * dim_2, particle_cnt);
         return NULL;
     }
@@ -241,7 +241,7 @@ data_contig_md* prepare_data_contig_3D(unsigned long long particle_cnt, long dim
     if (particle_cnt != dim_1 * dim_2 * dim_3) {
         if (MY_RANK == 0)
             printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) = %ld,"
-                    " must equal num_particles (%ld) per rank.\n", dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3,
+                    " must equal num_particles (%llu) per rank.\n", dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3,
                     particle_cnt);
         return NULL;
     }
@@ -408,7 +408,7 @@ void data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids
         dcpl = H5P_DEFAULT;
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
-            printf("Parallel compressed: chunk_dim1 = %lu, chunk_dim2 = %lu\n", COMPRESS_INFO.chunk_dims[0],
+            printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
                     COMPRESS_INFO.chunk_dims[1]);
     }
 
@@ -1022,7 +1022,7 @@ int main(int argc, char *argv[]) {
                 fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us / (1000));
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);

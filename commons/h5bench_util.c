@@ -77,7 +77,7 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     unsigned long long t_output = 1;
     switch(time.unit) {
         case TIME_MIN:
-            factor = 60 * 1000 * 1000 * 1000;
+            factor = 60 * 1000 * 1000 * 1000llu;
             break;
         case TIME_SEC:
             factor = 1000 * 1000;
@@ -97,7 +97,7 @@ unsigned long long read_time_val(duration time, time_unit unit) {
 
     switch(unit) {
         case TIME_MIN:
-            t_output = t_us / (60 * 1000 * 1000 * 1000);
+            t_output = t_us / (60 * 1000 * 1000 * 1000llu);
             break;
         case TIME_SEC:
             t_output = t_us / (1000 * 1000);
@@ -894,7 +894,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     if(params_out->io_mem_limit > 0) {
         if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
-            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %llu) is larger than specified memory bound (%d), "
+            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified memory bound (%llu), "
                     "please check IO_MEM_LIMIT in your config file.\n",
                     params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE, params_out->io_mem_limit);
             return -1;
