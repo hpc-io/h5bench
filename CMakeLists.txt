@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(h5bench)
 
+# cmake_policy(SET CMP0074 NEW)
+
 # Dependency: MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
