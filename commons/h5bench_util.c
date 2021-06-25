@@ -937,8 +937,12 @@ void print_params(const bench_params *p) {
     printf("Number of particles per rank: %llu\n", p->num_particles);
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
-    printf("Emulated compute time per timestep: %d\n", p->compute_time.time_num);
-    printf("Async mode = %d (0: AYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", p->asyncMode);
+    printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
+    int asyncMode = p->asyncMode;
+    #ifndef USE_ASYNC_VOL
+    asyncMode = 0;
+    #endif
+    printf("Async mode = %d (0: ASYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
     else
