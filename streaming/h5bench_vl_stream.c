@@ -29,14 +29,8 @@ int test_ds_append(int n_elem, int vlen){
     hid_t fapl = -1;
     hid_t memtype = -1;
     hid_t filetype = -1;
-    int SDIM = 8; //???
-    /* The file's file access property list */
-    //hsize_t dims[2] = {0, 10};
-
-    //hsize_t maxdims[2] = {H5S_UNLIMITED, 20};
-    //hsize_t chunk_dims[2] = {2,5};                /* Chunk dimension sizes */
-
-
+    int SDIM = 8; 
+  
     hsize_t dims[1] = {0};                        /* Current dimension sizes */
     hsize_t maxdims[1] = {H5S_UNLIMITED};        /* Maximum dimension sizes */
     hsize_t chunk_dims[1] = {2048};
@@ -97,7 +91,6 @@ int test_ds_append(int n_elem, int vlen){
         char* data = "abcd";
         for(i = 0; i < n_elem; i++) {
             /* Append without boundary, callback and flush */
-            //H5D_append(hid_t dset_id, hid_t dxpl_id, unsigned axis, size_t extension, hid_t memtype, const void *buf)
 #ifdef DEV_VL
             if(H5Dappend(did, H5P_DEFAULT, 0, (size_t)1, memtype, &data) < 0)
                 ERROR_RETURN;
