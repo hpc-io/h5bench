@@ -4,16 +4,16 @@ H5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 For documentation please refer to [h5bench.readthedocs.io](http://h5bench.readthedocs.io "h5bench.readthedocs.io")
 
-------------
-
 If you use this benchmark in your experiments, please consider citing:
 
-  @inproceedings{h5bench,
-    title = {{h5bench: HDF5 I/O Kernel Suite for Exercising HPC I/O Patterns}},
-    author = {Li, Tonglin and Byna, Suren and Koziol, Quincey and Tang, Houjun and Bez, Jean Luca and Kang, Qiao},
-    booktitle = {Proceedings of Cray User Group Meeting, CUG 2021}
-    year = {2021}
-  }
+```
+@inproceedings{h5bench,
+  title = {{h5bench: HDF5 I/O Kernel Suite for Exercising HPC I/O Patterns}},
+  author = {Li, Tonglin and Byna, Suren and Koziol, Quincey and Tang, Houjun and Bez, Jean Luca and Kang, Qiao},
+  booktitle = {Proceedings of Cray User Group Meeting, CUG 2021}
+  year = {2021}
+}
+```
 
 ------------
 
