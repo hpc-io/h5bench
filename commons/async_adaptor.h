@@ -20,7 +20,7 @@ static hid_t H5EScreate(void) {
 static herr_t H5EStest(hid_t es_id, H5ES_status_t *status) {
     return 0;
 }
-static herr_t H5ESwait(hid_t es_id, uint64_t timeout, H5ES_status_t *status) {
+static herr_t H5ESwait(hid_t es_id, uint64_t timeout, size_t *num_in_progress, hbool_t *status) {
     return 0;
 }
 static herr_t H5EScancel(hid_t es_id, H5ES_status_t *status) {
@@ -96,6 +96,10 @@ static htri_t H5Aexists_by_name_async(hid_t loc_id, const char *obj_name, const 
 static hid_t H5Dcreate_async(hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t lcpl_id,
         hid_t dcpl_id, hid_t dapl_id, hid_t es_id) {
     return H5Dcreate2(loc_id, name, type_id, space_id, lcpl_id, dcpl_id, dapl_id);
+}
+
+static hid_t H5Dopen_async(hid_t loc_id, const char *name, hid_t dapl_id, hid_t es_id) {
+    return H5Dopen(loc_id, name, dapl_id);
 }
 
 static herr_t H5Dclose_async(hid_t dset_id, hid_t es_id) {

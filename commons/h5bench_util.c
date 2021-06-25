@@ -22,6 +22,7 @@
 #endif
 
 #include "h5bench_util.h"
+#include "async_adaptor.h"
 
 int str_to_ull(char* str_in, unsigned long long* num_out);
 int parse_time(char* str_in, duration* time);
@@ -190,7 +191,7 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         return 0;
     time_step* ts_run;
     size_t num_in_progress;
-    H5ES_status_t op_failed;
+    hbool_t op_failed;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
     int dset_cnt = 8;
@@ -289,6 +290,7 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
 
 hid_t es_id_set(async_mode mode) {
     hid_t es_id = 0;
+    #ifdef USE_ASYNC_VOL
     switch (mode) {
         case ASYNC_NON:
             es_id = H5ES_NONE;
@@ -301,6 +303,7 @@ hid_t es_id_set(async_mode mode) {
         default:
             break;
     }
+    #endif
     return es_id;
 }
 
@@ -308,9 +311,11 @@ void es_id_close(hid_t es_id, async_mode mode) {
     switch (mode) {
         case ASYNC_NON:
             break;
+        #ifdef USE_ASYNC_VOL
         case ASYNC_EXPLICIT:
             H5ESclose(es_id);
             break;
+        #endif
         case ASYNC_IMPLICIT:
             break;
         default:
