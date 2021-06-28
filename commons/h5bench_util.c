@@ -1065,7 +1065,7 @@ int record_env_metadata(FILE *fs, const char *metadata_list_file) {
 FILE *
 csv_init(const char *csv_path,
          const char *metadata_list_file) { //, const char* metadata_list_file:
-                                           //should be optional.
+                                           // should be optional.
   FILE *fs = fopen(csv_path, "w+");
 
   if (!fs) {

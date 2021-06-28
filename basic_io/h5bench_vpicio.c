@@ -1119,7 +1119,7 @@ int main(int argc, char *argv[]) {
 
     float meta_time_ms = (float)inner_metadata_time / 1000;
     //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 *
-    //1000)) / 1000;
+    // 1000)) / 1000;
     printf("Metadata time = %.3f ms\n", meta_time_ms);
 
     float fcreate_time_ms = (float)(tfopen_end - tfopen_start) / 1000;
