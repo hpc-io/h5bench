@@ -1,5 +1,3 @@
-set -eu -o pipefail
-
 sudo apt-get update
 
 # mpi
