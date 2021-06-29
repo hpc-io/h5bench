@@ -16,7 +16,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Dependencies
-        run: .github/workflows/dependencies-linux.sh
+        run: |
+          sudo apt-get update
+          # mpi
+          sudo apt-get install libopenmpi-dev
+          # hdf5
+          sudo apt-get install libhdf5-serial-dev
 
       - name: Build H5bench
         working-directory: ./src
