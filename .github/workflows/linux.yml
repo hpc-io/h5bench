@@ -25,7 +25,6 @@ jobs:
           
       - name: Build H5bench
         run: |
-          export CPATH="/usr/include/hdf5/serial/"
           mkdir build
           cd build
           cmake ..
