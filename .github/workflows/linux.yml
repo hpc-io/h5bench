@@ -24,7 +24,6 @@ jobs:
           sudo apt-get install libhdf5-serial-dev
 
       - name: Build H5bench
-        working-directory: ./src
         run: |
           mkdir build
           cd build
