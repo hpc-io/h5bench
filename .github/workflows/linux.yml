@@ -25,12 +25,12 @@ jobs:
 
       - name: Build H5bench
         run: |
-          find /usr -iname "*hdf5.h*"
+          export CPATH="/usr/include/hdf5/serial/"
           mkdir build
           cd build
           cmake ..
           make
 
       - name: Test H5bench
-        working-directory: ./src/build
+        working-directory: ./build
         run: ctest -L serial
