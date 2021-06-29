@@ -88,7 +88,7 @@ If the user wants to loop through a range of buffer sizes, the --nsizes flag can
 
 .. code-block::
 
-	mpirun -np 32 ./hdf5Exerciser --numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 --dimranks 8 4
+	mpirun -np 32 ./hdf5Exerciser --numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 2 --dimranks 8 4
 
 When executed for a single local-buffer size (default), the Exerciser output will look something like this:
 
