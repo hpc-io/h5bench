@@ -968,8 +968,7 @@ int main(int argc, char *argv[]) {
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
-    H5Fclose(file_id);
-//    H5Fclose_async(file_id, 0);
+    H5Fclose_async(file_id, 0);
     unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();

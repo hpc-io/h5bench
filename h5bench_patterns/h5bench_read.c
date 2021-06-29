@@ -347,6 +347,11 @@ int main (int argc, char* argv[]){
         return 0;
     }
 
+    if (params.io_op != IO_READ) {
+        if(MY_RANK == 0) printf("BD-CATS-IO is a READ benchmark. For WRITE, please use VPIC-IO.\n");
+        return 0;
+    }
+
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
