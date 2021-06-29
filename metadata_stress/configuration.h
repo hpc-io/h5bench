@@ -7,8 +7,7 @@
 
 /* Configuration parameters */
 
-typedef struct
-{
+typedef struct {
   int version;
   unsigned int steps;
   unsigned int arrays;
@@ -25,13 +24,11 @@ typedef struct
   char csv_file[PATH_MAX];
 } configuration;
 
-extern int handler(void* user,
-                   const char* section,
-                   const char* name,
-                   const char* value);
+extern int handler(void *user, const char *section, const char *name,
+                   const char *value);
 
-extern int sanity_check(void* user);
+extern int sanity_check(void *user);
 
-extern int validate(void* user, const int size);
+extern int validate(void *user, const int size);
 
 #endif
