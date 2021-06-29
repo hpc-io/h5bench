@@ -26,6 +26,7 @@ jobs:
       - name: Build H5bench
         run: |
           export CPATH="/usr/include/hdf5/serial/"
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/local/hulfeldl/hdf5/lib
           mkdir build
           cd build
           cmake ..
