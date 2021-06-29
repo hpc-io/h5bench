@@ -27,7 +27,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ..
+          cmake .. -DCMAKE_C_COMPILER=h5pcc
           make
 
       - name: Test H5bench
