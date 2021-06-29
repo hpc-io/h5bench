@@ -25,6 +25,7 @@ jobs:
 
       - name: Build H5bench
         run: |
+          find /usr -iname "*hdf5.h*"
           mkdir build
           cd build
           cmake ..
