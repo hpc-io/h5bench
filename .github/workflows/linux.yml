@@ -26,7 +26,8 @@ jobs:
       - name: Build H5bench
         working-directory: ./src
         run: |
-          mkdir build && cd build
+          mkdir build
+          cd build
           cmake ..
           make
 
