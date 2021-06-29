@@ -118,15 +118,15 @@ In case, Exerciser needs to be built separately, given the path to a parallel HD
 
 	HDF5_INSTALL_DIR=/Users/rzamora/hdf5-install
 
-	exerciser.o: exerciser.c
-        mpicc  -c -g -DMETACOLOK -I${HDF5_INSTALL_DIR}/include  exerciser.c -o exerciser.o
+	h5bench_exerciser.o: h5bench_exerciser.c
+    	mpicc  -c -g -DMETACOLOK -I${HDF5_INSTALL_DIR}/include  h5bench_exerciser.c -o h5bench_exerciser.o
 
-	hdf5Exerciser: exerciser.o
-        mpicc exerciser.o -o hdf5Exerciser  -L${HDF5_INSTALL_DIR}/lib -lhdf5 -lz
+	hdf5Exerciser: h5bench_exerciser.o
+    	mpicc h5bench_exerciser.o -o hdf5Exerciser  -L${HDF5_INSTALL_DIR}/lib -lhdf5 -lz
 
 	clean:
-        rm -f exerciser.o
-        rm -f hdf5Exerciser
+    	rm -f h5bench_exerciser.o
+    	rm -f hdf5Exerciser
 
 
 For more-detailed instructions of how to build and run both HDF5 and the exerciser on specific machines (at ALCF), see the Exerciser/BGQ/VESTA_XL and Exerciser/BGQ/THETA directories of this repository.
