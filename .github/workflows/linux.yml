@@ -21,7 +21,7 @@ jobs:
           # mpi
           sudo apt-get install libopenmpi-dev
           # hdf5
-          sudo apt-get install libhdf5-serial-dev
+          sudo apt-get install libhdf5-mpi-dev
           
       - name: Build H5bench
         run: |
