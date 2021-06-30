@@ -312,9 +312,9 @@ void es_id_close(hid_t es_id, async_mode mode) {
         case ASYNC_EXPLICIT:
             H5ESclose(es_id);
             break;
-        #endif
         case ASYNC_IMPLICIT:
             break;
+        #endif
         default:
             break;
     }
