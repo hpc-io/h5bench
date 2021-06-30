@@ -33,15 +33,15 @@ if(WITH_ASYNC_VOL)
 endif()
 # =================================================================
 
-# ===========  Build h5bench_patterns: write and read ===========
-set(write_src h5bench_patterns/write.c)
-set(read_src h5bench_patterns/read.c)
+# ===========  Build h5bench_patterns: h5bench_write and h5bench_read ===========
+set(h5bench_write_src h5bench_patterns/h5bench_write.c)
+set(h5bench_read_src h5bench_patterns/h5bench_read.c)
 
-add_executable(write ${write_src})
-target_link_libraries(write h5bench_util hdf5 z MPI::MPI_C) 
+add_executable(h5bench_write ${h5bench_write_src})
+target_link_libraries(h5bench_write h5bench_util hdf5 z MPI::MPI_C) 
 
-add_executable(read ${read_src})
-target_link_libraries(read h5bench_util hdf5 z MPI::MPI_C)
+add_executable(h5bench_read ${h5bench_read_src})
+target_link_libraries(h5bench_read h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)
@@ -86,8 +86,8 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # =========== Install binaries ===========
 install(TARGETS 
-	write 
-	read 
+	h5bench_write 
+	h5bench_read 
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl
