@@ -1021,11 +1021,15 @@ int main(int argc, char *argv[]) {
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            if (params.meta_coll == 1)
+            if (params.data_coll == 1)
                 fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
+            if (params.meta_coll == 1)
+                fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
+            else
+                fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
+            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us / (1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
