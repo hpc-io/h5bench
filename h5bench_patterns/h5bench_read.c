@@ -348,7 +348,7 @@ int main (int argc, char* argv[]){
     }
 
     if (params.io_op != IO_READ) {
-        if(MY_RANK == 0) printf("BD-CATS-IO is a READ benchmark. For WRITE, please use VPIC-IO.\n");
+        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
         return 0;
     }
 
