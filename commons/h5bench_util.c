@@ -19,10 +19,11 @@
 #ifdef USE_ASYNC_VOL
 #include <H5VLconnector.h>
 #include <h5_async_lib.h>
+#else
+#include "async_adaptor.h"
 #endif
 
 #include "h5bench_util.h"
-#include "async_adaptor.h"
 
 int str_to_ull(char* str_in, unsigned long long* num_out);
 int parse_time(char* str_in, duration* time);
