@@ -19,6 +19,8 @@
 #ifdef USE_ASYNC_VOL
 #include <H5VLconnector.h>
 #include <h5_async_lib.h>
+#else
+#include "async_adaptor.h"
 #endif
 
 #include "h5bench_util.h"
@@ -116,9 +118,6 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     return t_output;
 }
 
-unsigned long long get_msec(duration time) {
-
-}
 mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
         unsigned long long time_step_size, unsigned long long mem_threshold){
     mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
@@ -289,6 +288,7 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
 
 hid_t es_id_set(async_mode mode) {
     hid_t es_id = 0;
+    #ifdef USE_ASYNC_VOL
     switch (mode) {
         case ASYNC_NON:
             es_id = H5ES_NONE;
@@ -301,6 +301,7 @@ hid_t es_id_set(async_mode mode) {
         default:
             break;
     }
+    #endif
     return es_id;
 }
 
@@ -308,11 +309,13 @@ void es_id_close(hid_t es_id, async_mode mode) {
     switch (mode) {
         case ASYNC_NON:
             break;
+        #ifdef USE_ASYNC_VOL
         case ASYNC_EXPLICIT:
             H5ESclose(es_id);
             break;
         case ASYNC_IMPLICIT:
             break;
+        #endif
         default:
             break;
     }
@@ -894,7 +897,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     if(params_out->io_mem_limit > 0) {
         if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
-            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %llu) is larger than specified memory bound (%d), "
+            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified memory bound (%llu), "
                     "please check IO_MEM_LIMIT in your config file.\n",
                     params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE, params_out->io_mem_limit);
             return -1;
@@ -935,8 +938,12 @@ void print_params(const bench_params *p) {
     printf("Number of particles per rank: %llu\n", p->num_particles);
     //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
-    printf("Emulated compute time per timestep: %d\n", p->compute_time.time_num);
-    printf("Async mode = %d (0: AYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", p->asyncMode);
+    printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
+    int asyncMode = p->asyncMode;
+    #ifndef USE_ASYNC_VOL
+    asyncMode = 0;
+    #endif
+    printf("Async mode = %d (0: ASYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
     else

@@ -347,6 +347,11 @@ int main (int argc, char* argv[]){
         return 0;
     }
 
+    if (params.io_op != IO_READ) {
+        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
+        return 0;
+    }
+
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
@@ -445,25 +450,29 @@ int main (int argc, char* argv[]){
 
     if (MY_RANK == 0) {
         char* mode_str = NULL;
+        #ifdef USE_ASYNC_VOL
         if(params.asyncMode == ASYNC_EXPLICIT)
             mode_str = "Async";
         else
             mode_str = "Sync";
+        #else
+            mode_str = "Sync";
+        #endif
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US)
                 * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
-        printf("Total emulated compute time = %d ms\n"
-                "Total read size = %llu MB\n",
+        printf("Total emulated compute time = %llu ms\n"
+                "Total read size = %lu MB\n",
                 total_sleep_time_us/1000, total_size_mb);
 
         float rrt_s = (float)raw_read_time / (1000*1000);
 
         float raw_rate_mbs = total_size_mb / rrt_s;
-         printf("Raw read time = %.3f sec \n", rrt_s);
+        printf("Raw read time = %.3f sec \n", rrt_s);
 
-         float meta_time_ms = (float)metadata_time/1000;
-         printf("Metadata time = %.3f ms\n", meta_time_ms);
+        float meta_time_ms = (float)metadata_time/1000;
+        printf("Metadata time = %.3f ms\n", meta_time_ms);
 
         float oct_s = (float)(t4 - t1) / (1000*1000);
         printf("Observed read completion time = %.3f sec\n", oct_s);
@@ -475,7 +484,7 @@ int main (int argc, char* argv[]){
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us/(1000*1000));
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us/(1000*1000));
             fprintf(params.csv_fs, "Total read size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Metadata_time, %.3f, ms\n", meta_time_ms);
             fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);

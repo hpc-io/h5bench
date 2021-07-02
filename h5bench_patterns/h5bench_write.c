@@ -49,19 +49,16 @@
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 
-//#ifdef USE_ASYNC_VOL
-//#include <H5VLconnector.h>
-//#include <h5_async_lib.h>
-//#endif
-
 #define DIM_MAX 3
 
 herr_t ierr;
+
 typedef struct compress_info {
     int USE_COMPRESS;
     hid_t dcpl_id;
     hsize_t chunk_dims[DIM_MAX];
 } compress_info;
+
 // Global Variables and dimensions
 async_mode ASYNC_MODE;
 compress_info COMPRESS_INFO;  //Using parallel compressing: need to set chunk dimensions for dcpl.
@@ -72,7 +69,8 @@ int X_DIM = 64;
 int Y_DIM = 64;
 int Z_DIM = 64;
 hid_t ES_ID, ES_META_CREATE, ES_META_CLOSE, ES_DATA;
-//Factors for filling data.
+
+// Factors for filling data
 const int X_RAND = 191;
 const int Y_RAND = 1009;
 const int Z_RAND = 3701;
@@ -80,7 +78,7 @@ const int Z_RAND = 3701;
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
-//Optimization globals
+// Optimization globals
 int ALIGN = 1;
 unsigned long ALIGN_THRESHOLD = 16777216;
 unsigned long ALIGN_LEN = 16777216;
@@ -102,6 +100,10 @@ void timestep_es_id_set() {
 
 mem_monitor *MEM_MONITOR;
 
+/**
+ * Create a compound HDF5 type to represent the particle.
+ * @return The compound HDF5 type.
+ */
 hid_t make_compound_type() {
     PARTICLE_COMPOUND_TYPE = H5Tcreate(H5T_COMPOUND, sizeof(particle));
     H5Tinsert(PARTICLE_COMPOUND_TYPE, "x", HOFFSET(particle, x), H5T_NATIVE_FLOAT);
@@ -197,7 +199,7 @@ data_contig_md* prepare_data_contig_2D(unsigned long long particle_cnt, long dim
     if (particle_cnt != dim_1 * dim_2) {
         if (MY_RANK == 0)
             printf(
-                    "Invalid dimension definition: dim_1(%llu) * dim_2(%ld) = %llu, must equal num_particles (%llu) per rank.\n",
+                    "Invalid dimension definition: dim_1(%ld) * dim_2(%ld) = %ld, must equal num_particles (%llu) per rank.\n",
                     dim_1, dim_2, dim_1 * dim_2, particle_cnt);
         return NULL;
     }
@@ -241,7 +243,7 @@ data_contig_md* prepare_data_contig_3D(unsigned long long particle_cnt, long dim
     if (particle_cnt != dim_1 * dim_2 * dim_3) {
         if (MY_RANK == 0)
             printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) = %ld,"
-                    " must equal num_particles (%ld) per rank.\n", dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3,
+                    " must equal num_particles (%llu) per rank.\n", dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3,
                     particle_cnt);
         return NULL;
     }
@@ -408,7 +410,7 @@ void data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids
         dcpl = H5P_DEFAULT;
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
-            printf("Parallel compressed: chunk_dim1 = %lu, chunk_dim2 = %lu\n", COMPRESS_INFO.chunk_dims[0],
+            printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
                     COMPRESS_INFO.chunk_dims[1]);
     }
 
@@ -886,6 +888,11 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    if (params.io_op != IO_WRITE) {
+        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=WRITE defined\n");
+        return 0;
+    }
+
     if (params.useCompress)
         params.data_coll = 1;
 
@@ -897,7 +904,7 @@ int main(int argc, char *argv[]) {
     NUM_TIMESTEPS = params.cnt_time_step;
 
     if (MY_RANK == 0)
-        printf("Start benchmark: h5bench_vpicio, Number of particles per rank: %llu M\n",
+        printf("Start benchmark: h5bench_write, Number of particles per rank: %llu M\n",
                 NUM_PARTICLES / (1024 * 1024));
 
     unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
@@ -968,18 +975,21 @@ int main(int argc, char *argv[]) {
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
-    H5Fclose(file_id);
-//    H5Fclose_async(file_id, 0);
+    H5Fclose_async(file_id, 0);
     unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
         char* mode_str = NULL;
+        #ifdef USE_ASYNC_VOL
         if(params.asyncMode == ASYNC_EXPLICIT)
             mode_str = "Async";
         else
             mode_str = "Sync";
+        #else
+            mode_str = "Sync";
+        #endif
         printf("\n==================  Performance results  =================\n");
 
         unsigned long long total_sleep_time_us = read_time_val(params.compute_time, TIME_US)
@@ -988,7 +998,7 @@ int main(int argc, char *argv[]) {
         printf("Total emulated compute time %llu ms\n"
                 "Total write size = %lu MB\n", total_sleep_time_us / (1000), total_size_mb);
 
-//        printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
+        //printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
         float rwt_s = (float) raw_write_time / (1000 * 1000);
         float raw_rate_mbs = (float) total_size_mb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
@@ -1026,7 +1036,7 @@ int main(int argc, char *argv[]) {
                 fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us / (1000));
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);

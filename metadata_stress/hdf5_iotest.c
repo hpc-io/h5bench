@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     if (rank == 0) {
         if (file_create_try(config.hdf5_file) != 0)
             return 0;
-        if (file_exist(config.csv_file) != 0)
+        if (file_create_try(config.csv_file) != 0)
             return 0;
     }
     /* broadcast the input parameters */
