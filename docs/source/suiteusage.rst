@@ -290,6 +290,17 @@ Parallel run (replace mpirun with your system provided command, for example, sru
 	mpirun -n 2 ./h5bench_vpicio sample_write_cc1d_es1.cfg output_file
 
 
+
+Argobots in MacOS
+------------------------------------------------------------------------
+
+If you're trying to run the benchmark in a MacOS and are getting segmentation fault (from ABT_thread_create), please try to set the following environment variable:
+
+.. code-block:: Bash
+
+	ABT_THREAD_STACKSIZE=100000 ./h5bench_vpicio sample_write_cc1d_es1.cfg my_data.h5
+
+
 Understanding the Output
 ------------------------------------------------------------------------
 
