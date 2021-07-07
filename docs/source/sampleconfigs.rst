@@ -1,5 +1,7 @@
-Sample Configurations for h5bench_patterns
+h5bench_patterns
 ==============================================
+
+Here you can find some sample configuration files for h5bench patterns:
 
 -------------------------------------
 sample_2d_compressed.cfg
