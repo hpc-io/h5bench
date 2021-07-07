@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(h5bench)
 
+# cmake_policy(SET CMP0074 NEW)
+
 # Dependency: MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
@@ -31,15 +33,15 @@ if(WITH_ASYNC_VOL)
 endif()
 # =================================================================
 
-# ===========  Build basic_io: vpic and bdcats ===========
-set(vpic_src basic_io/h5bench_vpicio.c)
-set(bdcats_src basic_io/h5bench_bdcatsio.c)
+# ===========  Build h5bench_patterns: h5bench_write and h5bench_read ===========
+set(h5bench_write_src h5bench_patterns/h5bench_write.c)
+set(h5bench_read_src h5bench_patterns/h5bench_read.c)
 
-add_executable(h5bench_vpicio ${vpic_src})
-target_link_libraries(h5bench_vpicio h5bench_util hdf5 z MPI::MPI_C) 
+add_executable(h5bench_write ${h5bench_write_src})
+target_link_libraries(h5bench_write h5bench_util hdf5 z MPI::MPI_C) 
 
-add_executable(h5bench_bdcatsio ${bdcats_src})
-target_link_libraries(h5bench_bdcatsio h5bench_util hdf5 z MPI::MPI_C)
+add_executable(h5bench_read ${h5bench_read_src})
+target_link_libraries(h5bench_read h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)
@@ -84,8 +86,8 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # =========== Install binaries ===========
 install(TARGETS 
-	h5bench_vpicio 
-	h5bench_bdcatsio 
+	h5bench_write 
+	h5bench_read 
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl
