@@ -5,10 +5,12 @@ Benchmark Suite Usage
 h5bench_patterns benchmark
 -------------------------------------
 
-Major refactoring is in progress, this document may be out of date. Both h5bench_vpicio and h5bench_bdcats take config and data file path as command line arguments.
+Major refactoring is in progress, this document may be out of date. Both h5bench_write and h5bench_read take config and data file path as command line arguments.
 
-* ./h5bench_vpicio my_config.cfg my_data.h5
-* ./h5bench_bdcats my_config.cfg my_data.h5
+.. code-block:: bash
+
+	./h5bench_write my_config.cfg my_data.h5
+	./h5bench_read my_config.cfg my_data.h5
 
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
@@ -16,7 +18,7 @@ This set of benchmarks contains an I/O kernel developed based on a particle phys
 Settings in the Configuration File
 -------------------------------------
 
-The h5bench_vpicio and h5bench_bdcats take parameters in a plain text config file. The content format is **strict**. Unsupported formats :
+The h5bench_write and h5bench_read take parameters in a plain text config file. The content format is **strict**. Unsupported formats :
 
 * Blank/empty lines, including ending lines.
 * Comment symbol(#) follows value immediately:
@@ -32,7 +34,7 @@ The h5bench_vpicio and h5bench_bdcats take parameters in a plain text config fil
 
 A template of config file can be found basic_io/sample_config/template.cfg:
 
-.. code-block::
+.. code-block:: none
 
 	#========================================================
 	#   General settings
@@ -102,15 +104,15 @@ Example for using multi-dimensional array data
 
 Dimensionality part of the Config file:
 
-.. code-block::
+.. code-block:: bash
 
 	NUM_DIMS=2
 	DIM_1=4096
 	DIM_2=2048
-	DIM_3=64 # Note: extra dimensions than specified by NUM_DIMS are ignored.
+	DIM_3=64 	# Note: extra dimensions than specified by NUM_DIMS are ignored
 
 
-Addtional Settings for READ (h5bench_bdcats)
+Addtional Settings for READ (h5bench_read)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **READ_OPTION**: required for IO_OPERATION=READ, not allowed for IO_OPERATION=WRITE.
@@ -139,15 +141,15 @@ Async Related Settings
 Compression Settings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **COMPRESS**: YES or NO, optional. Only applicable for WRITE(h5bench_vpicio), has no effect for READ. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required. To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size.
+* **COMPRESS**: YES or NO, optional. Only applicable for WRITE(h5bench_write), has no effect for READ. Used to enable compression, when enabled, chunk dimensions(CHUNK_DIM_1, CHUNK_DIM_2, CHUNK_DIM_3) are required. To enable parallel compression feature for VPIC, add following section to the config file, and make sure chunk dimension settings are compatible with the data dimensions: they must have the same rank of dimensions (eg,. 2D array dataset needs 2D chunk dimensions), and chunk dimension size cannot be greater than data dimension size.
 
 
-.. code-block::
+.. code-block:: bash
 
-	COMPRESS=YES # to enable parallel compression(chunking)
+	COMPRESS=YES 	# to enable parallel compression( chunking)
 	CHUNK_DIM_1=512 # chunk dimensions
 	CHUNK_DIM_2=256
-	CHUNK_DIM_3=1 # extra chunk dimension take no effects.
+	CHUNK_DIM_3=1 	# extra chunk dimension take no effects
 
 .. attention::
 
@@ -166,7 +168,7 @@ Collective Operation Settings
 Other Settings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **CSV_FILE**=my_csv_file: optional CSV file output, performance results will be print to the file and the standard output as well.
+* **CSV_FILE**: optional CSV file output name, performance results will be print to the file and the standard output as well.
 
 
 
@@ -178,7 +180,7 @@ Supported Patterns
 
 	Not every pattern combination is covered, supported benchmark parameter settings are listed below.
 
-Supported Write Patterns (h5bench_vpicio): IO_OPERATION=WRITE
+Supported Write Patterns (h5bench_write): IO_OPERATION=WRITE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The I/O patterns include array of structures (AOS) and structure of arrays (SOA) in memory as well as in file. The array dimensions are 1D, 2D, and 3D for the write benchmark. This defines the write access pattern, including CONTIG (contiguous), INTERLEAVED and STRIDED” for the source (the data layout in the memory) and the destination (the data layout in the resulting file). For example, MEM_PATTERN=CONTIG and FILE_PATTERN=INTERLEAVED is a write pattern where the in-memory data layout is contiguous (see the implementation of prepare_data_contig_2D() for details) and file data layout is interleaved by due to its’ compound data structure (see the implementation of data_write_contig_to_interleaved () for details).
@@ -187,7 +189,7 @@ The I/O patterns include array of structures (AOS) and structure of arrays (SOA)
 4 patterns for both 1D and 2D array write (NUM_DIMS=1 or NUM_DIMS=2)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block::
+.. code-block:: none
 
 	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG
 	MEM_PATTERN=CONTIG, FILE_PATTERN=INTERLEAVED
@@ -198,7 +200,7 @@ The I/O patterns include array of structures (AOS) and structure of arrays (SOA)
 1 pattern for 3D array (NUM_DIMS=3)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block::
+.. code-block:: none
 
 	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG
 
@@ -206,26 +208,26 @@ The I/O patterns include array of structures (AOS) and structure of arrays (SOA)
 1 strided pattern for 1D array (NUM_DIMS=1)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block::
+.. code-block:: none
 
 	MEM_PATTERN=CONTIG, FILE_PATTERN=STRIDED
 
 
 
-Supported Read Patterns (h5bench_bdcatsio): IO_OPERATION=READ
+Supported Read Patterns (h5bench_read): IO_OPERATION=READ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1 pattern for 1D, 2D and 3D read (NUM_DIMS=1 or NUM_DIMS=2)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block::
+.. code-block:: none
 
 	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, READ_OPTION=FULL, contiguously read through the whole data file.
 
 2 patterns for 1D read
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block::
+.. code-block:: none
 
 	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, READ_OPTION=PARTIAL, contiguously read the first $TO_READ_NUM_PARTICLES elements.
 
@@ -240,7 +242,7 @@ Sample Settings
 The following setting reads 2048 particles from 128 blocks in total, each block consists of the top 16 from every 64 elements. See HDF5 documentation for details of using strided access.
 
 
-.. code-block::
+.. code-block:: none
 
 	#   General settings
 	NUM_PARTICLES=16 M
@@ -271,23 +273,23 @@ For more examples, please find the config files and template.cfg in basic_io/sam
 
 
 
-To Run the h5bench_vpicio and h5bench_bdcatsio
+To Run the h5bench_write and h5bench_read
 ------------------------------------------------------------------------
 
-Both h5bench_vpicio and h5bench_bdcatsio use the same command line arguments:
+Both h5bench_write and h5bench_read use the same command line arguments:
 
 Single process run:
 
-.. code-block:: Bash
+.. code-block:: bash
 
-	./h5bench_vpicio sample_write_cc1d_es1.cfg my_data.h5
+	./h5bench_write sample_write_cc1d_es1.cfg my_data.h5
 
 
 Parallel run (replace mpirun with your system provided command, for example, srun on Cori/NERSC and jsrun on Summit/OLCF):
 
-.. code-block:: Bash
+.. code-block:: bash
 	
-	mpirun -n 2 ./h5bench_vpicio sample_write_cc1d_es1.cfg output_file
+	mpirun -n 2 ./h5bench_write sample_write_cc1d_es1.cfg output_file
 
 
 
@@ -296,9 +298,9 @@ Argobots in MacOS
 
 If you're trying to run the benchmark in a MacOS and are getting segmentation fault (from ABT_thread_create), please try to set the following environment variable:
 
-.. code-block:: Bash
+.. code-block:: bash
 
-	ABT_THREAD_STACKSIZE=100000 ./h5bench_vpicio sample_write_cc1d_es1.cfg my_data.h5
+	ABT_THREAD_STACKSIZE=100000 ./h5bench_write sample_write_cc1d_es1.cfg my_data.h5
 
 
 Understanding the Output
@@ -306,9 +308,9 @@ Understanding the Output
 
 The metadata and raw data operations are timed separately, and overserved time and rate are based on the total time.
 
-Sample output of h5bench_vpicio:
+Sample output of h5bench_write:
 
-.. code-block::
+.. code-block:: none
 
 	==================  Performance results  =================
 	Total emulated compute time 4000 ms
@@ -323,9 +325,9 @@ Sample output of h5bench_vpicio:
 	Raw write rate = 2528.860 MB/sec
 	Observed write rate = 1197.592 MB/sec
 
-Sample output of h5bench_bdcatsio:
+Sample output of h5bench_read:
 
-.. code-block::
+.. code-block:: none
 
 	=================  Performance results  =================
 	Total emulated compute time = 4 sec
@@ -347,7 +349,7 @@ We modified this benchmark slightly so to be able to specify a file location tha
 
 Example run:
 
-.. code-block:: Bash
+.. code-block:: bash
 
 	mpirun -n 8 ./h5bench_exerciser $write_file_prefix -numdims 2 --minels 8 8 --nsizes 3 --bufmult 2 --dimranks 8 4
 
@@ -360,7 +362,7 @@ This is the same benchmark as it's originally found at https://github.com/HDFGro
 
 Example run:
 
-.. code-block:: Bash
+.. code-block:: bash
 
 	mpirun -n 4 ./h5bench_hdf5_iotest hdf5_iotest.ini
 
@@ -378,15 +380,15 @@ To run benchmarks
 -------------------------------------------------------------
 
 
-.. code-block:: Bash
+.. code-block:: bash
 
 	./h5bench_vl_stream_hl write_file_path FIXED/VLEN num_ops
 
 Example runs:
 
-.. code-block:: Bash
+.. code-block:: bash
 
-	- ` ./h5bench_vl_stream_hl here.dat FIXED 1000`
-	- ` ./h5bench_vl_stream_hl here.dat VLEN 1000`
+	./h5bench_vl_stream_hl here.dat FIXED 1000
+	./h5bench_vl_stream_hl here.dat VLEN 1000
 
 
