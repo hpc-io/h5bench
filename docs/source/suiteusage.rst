@@ -292,6 +292,12 @@ Parallel run (replace mpirun with your system provided command, for example, sru
 	mpirun -n 2 ./h5bench_write sample_write_cc1d_es1.cfg output_file
 
 
+In Cori/NERSC or similar platforms that use Cray-MPICH library, if you encouter a failed assertion regarding support for MPI_THREAD_MULTIPLE you should define the following environment variable:
+
+.. code-block:: bash
+
+	export MPICH_MAX_THREAD_SAFETY="multiple"
+
 
 Argobots in MacOS
 ------------------------------------------------------------------------
