@@ -296,8 +296,8 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
     }
 
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
-    *raw_read_time_out += (read_time_exp + read_time_imp);
-    *inner_metadata_time += (metadata_time_exp + metadata_time_imp);
+    *raw_read_time_out += read_time_imp;
+    *inner_metadata_time += metadata_time_imp;
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
