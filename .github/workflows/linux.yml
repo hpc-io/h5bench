@@ -83,9 +83,7 @@ jobs:
           # Run serial tests only
           make check_serial
           
-      - name: Compile/Build H5bench
-        run: |
-          mydir="$PWD"
+          cd $mydir
           export HDF5_HOME=$mydir/hdf5/install
           mkdir build
           cd build
