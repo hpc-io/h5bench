@@ -81,3 +81,12 @@ jobs:
           make check
           # Run serial tests only
           make check_serial
+          
+      - name: Compile and Test Vol-Async
+        run: |
+          mydir="$PWD"
+          export HDF5_HOME=$mydir/hdf5
+          mkdir build
+          cd build
+          cmake ..
+          make
