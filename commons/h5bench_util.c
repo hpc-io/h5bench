@@ -232,8 +232,18 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     unsigned long meta_time = 0, data_time = 0;
     int dset_cnt = 8;
 
-    if(mon->mode == ASYNC_NON)
+    if(mon->mode == ASYNC_NON) {
+        for(int i = 0; i < mon->time_step_cnt; i++){
+            ts_run = &(mon->time_steps[i]);
+            if(mon->time_steps[i].status == TS_DELAY){
+
+                for (int j = 0; j < dset_cnt; j++)
+                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
+            }
+        }
         return 0;
+    }
 
     if(!mon || !metadata_time_total || !data_time_total)
         return -1;
