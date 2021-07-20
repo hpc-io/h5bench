@@ -88,5 +88,5 @@ jobs:
           export HDF5_HOME=$mydir/hdf5
           mkdir build
           cd build
-          cmake ..
+          cmake .. -DCMAKE_C_COMPILER=h5pcc
           make
