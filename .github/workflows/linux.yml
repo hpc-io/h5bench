@@ -85,7 +85,9 @@ jobs:
           
       - name: Compile/Build H5bench
         run: |
+          mydir="$PWD"
           mkdir build
           cd build
+          export HDF5_HOME=$mydir/hdf5/install
           cmake .. -DCMAKE_C_COMPILER=h5pcc
           make
