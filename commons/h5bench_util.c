@@ -25,59 +25,71 @@
 
 #include "h5bench_util.h"
 
-int str_to_ull(char* str_in, unsigned long long* num_out);
-int parse_time(char* str_in, duration* time);
-int parse_unit(char* str_in, unsigned long long* num, char** unit_str);
+int str_to_ull(char *str_in, unsigned long long *num_out);
+int parse_time(char *str_in, duration *time);
+int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
-unsigned long get_time_usec() {
+unsigned long
+get_time_usec()
+{
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
-int metric_msg_print(unsigned long number, char *msg, char *unit) {
+int
+metric_msg_print(unsigned long number, char *msg, char *unit)
+{
     printf("%s %lu %s\n", msg, number, unit);
     return 0;
 }
 
-void h5bench_sleep(duration sleep_time) {
-    if(sleep_time.unit == TIME_SEC) {
+void
+h5bench_sleep(duration sleep_time)
+{
+    if (sleep_time.unit == TIME_SEC) {
         sleep(sleep_time.time_num);
     }
-    else if(sleep_time.unit == TIME_MIN){
+    else if (sleep_time.unit == TIME_MIN) {
 
         sleep(60 * sleep_time.time_num);
     }
     else {
-        if(sleep_time.unit == TIME_MS)
+        if (sleep_time.unit == TIME_MS)
             usleep(1000 * sleep_time.time_num);
-        else if(sleep_time.unit == TIME_US)
+        else if (sleep_time.unit == TIME_US)
             usleep(sleep_time.time_num);
         else
             printf("Invalid sleep time unit.\n");
     }
 }
 
-void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time){
+void
+async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
+{
 #ifdef USE_ASYNC_VOL
     unsigned cap = 0;
     H5Pget_vol_cap_flags(fapl, &cap);
-    if(H5VL_CAP_FLAG_ASYNC & cap)
+    if (H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
 #endif
     h5bench_sleep(sleep_time);
-    }
+}
 
-void timestep_es_id_close(time_step* ts, async_mode mode) {
+void
+timestep_es_id_close(time_step *ts, async_mode mode)
+{
     es_id_close(ts->es_meta_create, mode);
     es_id_close(ts->es_data, mode);
     es_id_close(ts->es_meta_close, mode);
 }
-unsigned long long read_time_val(duration time, time_unit unit) {
-    unsigned long long t_us = time.time_num;
-    unsigned long long factor = 1;
+unsigned long long
+read_time_val(duration time, time_unit unit)
+{
+    unsigned long long t_us     = time.time_num;
+    unsigned long long factor   = 1;
     unsigned long long t_output = 1;
-    switch(time.unit) {
+    switch (time.unit) {
         case TIME_MIN:
             factor = 60 * 1000 * 1000 * 1000llu;
             break;
@@ -97,7 +109,7 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     }
     t_us *= factor;
 
-    switch(unit) {
+    switch (unit) {
         case TIME_MIN:
             t_output = t_us / (60 * 1000 * 1000 * 1000llu);
             break;
@@ -118,55 +130,61 @@ unsigned long long read_time_val(duration time, time_unit unit) {
     return t_output;
 }
 
-mem_monitor* mem_monitor_new(int time_step_cnt, async_mode mode,
-        unsigned long long time_step_size, unsigned long long mem_threshold){
-    mem_monitor* monitor = calloc(1, sizeof(mem_monitor));
-    monitor->mode = mode;
+mem_monitor *
+mem_monitor_new(int time_step_cnt, async_mode mode, unsigned long long time_step_size,
+                unsigned long long mem_threshold)
+{
+    mem_monitor *monitor   = calloc(1, sizeof(mem_monitor));
+    monitor->mode          = mode;
     monitor->time_step_cnt = time_step_cnt;
 
-    monitor->mem_used = 0;
+    monitor->mem_used      = 0;
     monitor->mem_threshold = mem_threshold;
-    monitor->time_steps = calloc(time_step_cnt, sizeof(time_step));
+    monitor->time_steps    = calloc(time_step_cnt, sizeof(time_step));
 
-    for(int i = 0; i < time_step_cnt; i++){
+    for (int i = 0; i < time_step_cnt; i++) {
         monitor->time_steps[i].es_meta_create = es_id_set(mode);
-        monitor->time_steps[i].es_data = es_id_set(mode);
-        monitor->time_steps[i].es_meta_close = es_id_set(mode);
+        monitor->time_steps[i].es_data        = es_id_set(mode);
+        monitor->time_steps[i].es_meta_close  = es_id_set(mode);
 
         monitor->time_steps[i].mem_size = time_step_size;
-        monitor->time_steps[i].status = TS_INIT;
-        for(int j = 0; j < 8; j++)
+        monitor->time_steps[i].status   = TS_INIT;
+        for (int j = 0; j < 8; j++)
             monitor->time_steps[i].dset_ids[j] = 0;
     }
     return monitor;
 }
 
-int mem_monitor_free(mem_monitor* mon){
-    if(mon) {
-        if(mon->time_steps)
+int
+mem_monitor_free(mem_monitor *mon)
+{
+    if (mon) {
+        if (mon->time_steps)
             free(mon->time_steps);
         free(mon);
     }
     return 0;
 }
 
-int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total, int dset_cnt) {
+int
+ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_cnt)
+{
     *metadata_time_total = 0;
-    if(!mon || !metadata_time_total)
+    if (!mon || !metadata_time_total)
         return -1;
 
-    time_step* ts_run;
-    size_t num_in_progress;
+    time_step *   ts_run;
+    size_t        num_in_progress;
     H5ES_status_t op_failed;
     unsigned long t1, t2;
     unsigned long meta_time = 0;
 
-    if(mon->mode == ASYNC_NON)
+    if (mon->mode == ASYNC_NON)
         return 0;
 
-    for(int i = 0; i < mon->time_step_cnt; i++){
+    for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
-        if(mon->time_steps[i].status == TS_DELAY){
+        if (mon->time_steps[i].status == TS_DELAY) {
             t1 = get_time_usec();
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
@@ -180,23 +198,25 @@ int ts_delayed_close(mem_monitor* mon, unsigned long *metadata_time_total, int d
     return 0;
 }
 
-int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+int
+mem_monitor_check_run(mem_monitor *mon, unsigned long *metadata_time_total, unsigned long *data_time_total)
+{
     *metadata_time_total = 0;
-    *data_time_total = 0;
-    if(!mon || !metadata_time_total || !data_time_total)
+    *data_time_total     = 0;
+    if (!mon || !metadata_time_total || !data_time_total)
         return -1;
-    if(mon->mode == ASYNC_NON)
+    if (mon->mode == ASYNC_NON)
         return 0;
-    time_step* ts_run;
-    size_t num_in_progress;
-    hbool_t op_failed;
+    time_step *   ts_run;
+    size_t        num_in_progress;
+    hbool_t       op_failed;
     unsigned long t1, t2, t3, t4;
     unsigned long meta_time = 0, data_time = 0;
-    int dset_cnt = 8;
-    if(mon->mem_used >= mon->mem_threshold) {//call ESWait and do ops
-        for(int i = 0; i < mon->time_step_cnt; i++){
+    int           dset_cnt = 8;
+    if (mon->mem_used >= mon->mem_threshold) { // call ESWait and do ops
+        for (int i = 0; i < mon->time_step_cnt; i++) {
             ts_run = &(mon->time_steps[i]);
-            if(mon->time_steps[i].status == TS_READY){
+            if (mon->time_steps[i].status == TS_READY) {
                 t1 = get_time_usec();
                 H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
                 t2 = get_time_usec();
@@ -209,33 +229,36 @@ int mem_monitor_check_run(mem_monitor* mon, unsigned long *metadata_time_total, 
                 data_time += (t3 - t2);
                 ts_run->status = TS_DONE;
                 mon->mem_used -= ts_run->mem_size;
-                if(mon->mem_used >= mon->mem_threshold)
+                if (mon->mem_used >= mon->mem_threshold)
                     continue;
                 else
                     break;
-            }else if(mon->time_steps[i].status == TS_INIT)
+            }
+            else if (mon->time_steps[i].status == TS_INIT)
                 break;
         }
         *metadata_time_total = meta_time;
-        *data_time_total = data_time;
+        *data_time_total     = data_time;
     }
     return 0;
 }
 
-int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, unsigned long *data_time_total) {
+int
+mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsigned long *data_time_total)
+{
     *metadata_time_total = 0;
-    *data_time_total = 0;
-    size_t num_in_progress;
-    hbool_t op_failed;
-    time_step* ts_run;
+    *data_time_total     = 0;
+    size_t        num_in_progress;
+    hbool_t       op_failed;
+    time_step *   ts_run;
     unsigned long t1, t2, t3, t4, t5, t6;
     unsigned long meta_time = 0, data_time = 0;
-    int dset_cnt = 8;
+    int           dset_cnt = 8;
 
-    if(mon->mode == ASYNC_NON) {
-        for(int i = 0; i < mon->time_step_cnt; i++){
+    if (mon->mode == ASYNC_NON) {
+        for (int i = 0; i < mon->time_step_cnt; i++) {
             ts_run = &(mon->time_steps[i]);
-            if(mon->time_steps[i].status == TS_DELAY){
+            if (mon->time_steps[i].status == TS_DELAY) {
 
                 for (int j = 0; j < dset_cnt; j++)
                     H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
@@ -245,31 +268,30 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
         return 0;
     }
 
-    if(!mon || !metadata_time_total || !data_time_total)
+    if (!mon || !metadata_time_total || !data_time_total)
         return -1;
     t1 = get_time_usec();
-    for(int i = 0; i < mon->time_step_cnt; i++){
+    for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
-        if(mon->time_steps[i].status == TS_DELAY){
+        if (mon->time_steps[i].status == TS_DELAY) {
 
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
 
             ts_run->status = TS_READY;
-
         }
     }
 
     t2 = get_time_usec();
     meta_time += (t2 - t1);
 
-    if(mon->mode == ASYNC_NON)
+    if (mon->mode == ASYNC_NON)
         return 0;
 
-    for(int i = 0; i < mon->time_step_cnt; i++) {
+    for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
-        if(mon->time_steps[i].status == TS_READY){
+        if (mon->time_steps[i].status == TS_READY) {
             t1 = get_time_usec();
             H5ESwait(ts_run->es_meta_create, H5ES_WAIT_FOREVER, &num_in_progress, &op_failed);
             t2 = get_time_usec();
@@ -292,13 +314,15 @@ int mem_monitor_final_run(mem_monitor* mon, unsigned long *metadata_time_total, 
     }
 
     *metadata_time_total = meta_time;
-    *data_time_total = data_time;
+    *data_time_total     = data_time;
     return 0;
 }
 
-hid_t es_id_set(async_mode mode) {
+hid_t
+es_id_set(async_mode mode)
+{
     hid_t es_id = 0;
-    #ifdef USE_ASYNC_VOL
+#ifdef USE_ASYNC_VOL
     switch (mode) {
         case ASYNC_NON:
             es_id = H5ES_NONE;
@@ -311,68 +335,78 @@ hid_t es_id_set(async_mode mode) {
         default:
             break;
     }
-    #endif
+#endif
     return es_id;
 }
 
-void es_id_close(hid_t es_id, async_mode mode) {
+void
+es_id_close(hid_t es_id, async_mode mode)
+{
     switch (mode) {
         case ASYNC_NON:
             break;
-        #ifdef USE_ASYNC_VOL
+#ifdef USE_ASYNC_VOL
         case ASYNC_EXPLICIT:
             H5ESclose(es_id);
             break;
         case ASYNC_IMPLICIT:
             break;
-        #endif
+#endif
         default:
             break;
     }
 }
 
-float uniform_random_number() {
-    return (((float) rand()) / ((float) (RAND_MAX)));
+float
+uniform_random_number()
+{
+    return (((float)rand()) / ((float)(RAND_MAX)));
 }
 
-data_contig_md* prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3) {
-    data_contig_md *buf_struct = (data_contig_md*) malloc(sizeof(data_contig_md));
-    buf_struct->particle_cnt = particle_cnt;
-    buf_struct->dim_1 = dim_1;
-    buf_struct->dim_2 = dim_2;
-    buf_struct->dim_3 = dim_3;
-    buf_struct->x = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->y = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->z = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->px = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->py = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->pz = (float*) malloc(particle_cnt * sizeof(float));
-    buf_struct->id_1 = (int*) malloc(particle_cnt * sizeof(int));
-    buf_struct->id_2 = (float*) malloc(particle_cnt * sizeof(float));
+data_contig_md *
+prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3)
+{
+    data_contig_md *buf_struct = (data_contig_md *)malloc(sizeof(data_contig_md));
+    buf_struct->particle_cnt   = particle_cnt;
+    buf_struct->dim_1          = dim_1;
+    buf_struct->dim_2          = dim_2;
+    buf_struct->dim_3          = dim_3;
+    buf_struct->x              = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->y              = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->z              = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->px             = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->py             = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->pz             = (float *)malloc(particle_cnt * sizeof(float));
+    buf_struct->id_1           = (int *)malloc(particle_cnt * sizeof(int));
+    buf_struct->id_2           = (float *)malloc(particle_cnt * sizeof(float));
     return buf_struct;
 }
 
-data_contig_md* prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3) {
-    data_contig_md *buf_struct = (data_contig_md*) malloc(sizeof(data_contig_md));
-    buf_struct->dim_1 = dim_1;
-    buf_struct->dim_2 = dim_2;
-    buf_struct->dim_3 = dim_3;
+data_contig_md *
+prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3)
+{
+    data_contig_md *buf_struct       = (data_contig_md *)malloc(sizeof(data_contig_md));
+    buf_struct->dim_1                = dim_1;
+    buf_struct->dim_2                = dim_2;
+    buf_struct->dim_3                = dim_3;
     unsigned long long num_particles = dim_1 * dim_2 * dim_3;
 
     buf_struct->particle_cnt = num_particles;
-    buf_struct->x = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->y = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->z = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->px = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->py = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->pz = (float*) malloc(num_particles * sizeof(float));
-    buf_struct->id_1 = (int*) malloc(num_particles * sizeof(int));
-    buf_struct->id_2 = (float*) malloc(num_particles * sizeof(float));
+    buf_struct->x            = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->y            = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->z            = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->px           = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->py           = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->pz           = (float *)malloc(num_particles * sizeof(float));
+    buf_struct->id_1         = (int *)malloc(num_particles * sizeof(int));
+    buf_struct->id_2         = (float *)malloc(num_particles * sizeof(float));
     return buf_struct;
 }
 
-void free_contig_memory(data_contig_md *data) {
-    if(data){
+void
+free_contig_memory(data_contig_md *data)
+{
+    if (data) {
         free(data->x);
         free(data->y);
         free(data->z);
@@ -385,43 +419,47 @@ void free_contig_memory(data_contig_md *data) {
     }
 }
 
-int parse_unit(char* str_in, unsigned long long* num, char** unit_str){
-    char* str = strdup(str_in);
-    char* ptr = NULL;
-    ptr = strtok(str, " ");
-    char* num_str = strdup(ptr);
-    if(!num_str){
+int
+parse_unit(char *str_in, unsigned long long *num, char **unit_str)
+{
+    char *str     = strdup(str_in);
+    char *ptr     = NULL;
+    ptr           = strtok(str, " ");
+    char *num_str = strdup(ptr);
+    if (!num_str) {
         printf("Number parsing failed: \"%s\" is not recognized.\n", str_in);
         return -1;
     }
-    char* endptr;
+    char *endptr;
     *num = strtoul(num_str, &endptr, 10);
-    ptr = strtok(NULL, " ");
-    if(ptr)
-        *unit_str= strdup(ptr);
+    ptr  = strtok(NULL, " ");
+    if (ptr)
+        *unit_str = strdup(ptr);
     else
         *unit_str = NULL;
     return 0;
 }
 
-int parse_time(char* str_in, duration* time){
-    if(!time)
+int
+parse_time(char *str_in, duration *time)
+{
+    if (!time)
         time = calloc(1, sizeof(duration));
     unsigned long long num = 0;
-    char* unit_str;
+    char *             unit_str;
     parse_unit(str_in, &num, &unit_str);
 
-    if(!unit_str)
+    if (!unit_str)
         time->unit = TIME_SEC;
-    else if(unit_str[0] == 'S' || unit_str[0] == 's')
+    else if (unit_str[0] == 'S' || unit_str[0] == 's')
         time->unit = TIME_SEC;
-    else if(unit_str[0] == 'M' || unit_str[0] == 'm'){
-        if(strcmp(unit_str, "ms") == 0 ||strcmp(unit_str, "MS") == 0)
+    else if (unit_str[0] == 'M' || unit_str[0] == 'm') {
+        if (strcmp(unit_str, "ms") == 0 || strcmp(unit_str, "MS") == 0)
             time->unit = TIME_MS;
         else
-            time->unit = TIME_MIN ;
+            time->unit = TIME_MIN;
     }
-    else if(unit_str[0] == 'U' || unit_str[0] == 'u')
+    else if (unit_str[0] == 'U' || unit_str[0] == 'u')
         time->unit = TIME_US;
     else {
         printf("time parsing failed\n");
@@ -431,192 +469,226 @@ int parse_time(char* str_in, duration* time){
     return 0;
 }
 
-int str_to_ull(char* str_in, unsigned long long* num_out){
-    if(!str_in){
+int
+str_to_ull(char *str_in, unsigned long long *num_out)
+{
+    if (!str_in) {
         printf("Number parsing failed: \"%s\" is not recognized.\n", str_in);
         return -1;
     }
     unsigned long long num = 0;
-    char* unit_str;
-    int ret = parse_unit(str_in, &num, &unit_str);
-    if(ret < 0)
+    char *             unit_str;
+    int                ret = parse_unit(str_in, &num, &unit_str);
+    if (ret < 0)
         return -1;
-    if(!unit_str)
+    if (!unit_str)
         num = num * 1;
-    else if(unit_str[0] == 'K' || unit_str[0] == 'k')
+    else if (unit_str[0] == 'K' || unit_str[0] == 'k')
         num = num * K_VAL;
     else if (unit_str[0] == 'M' || unit_str[0] == 'm')
         num = num * M_VAL;
     else if (unit_str[0] == 'G' || unit_str[0] == 'g')
         num = num * G_VAL;
-    else  if (unit_str[0] == 'T' || unit_str[0] == 't')
+    else if (unit_str[0] == 'T' || unit_str[0] == 't')
         num = num * T_VAL;
 
-    if(unit_str)
+    if (unit_str)
         free(unit_str);
     *num_out = num;
     return 0;
 }
 
-int _set_io_pattern(bench_params *params_in_out) {
-    if(!params_in_out)
+int
+_set_io_pattern(bench_params *params_in_out)
+{
+    if (!params_in_out)
         return -1;
     int ret = 0;
-    if(params_in_out->io_op == IO_WRITE) {//mem --> file
-        if(params_in_out->mem_pattern == PATTERN_CONTIG) {
-            if(params_in_out->file_pattern == PATTERN_CONTIG) {//CC
-                switch(params_in_out->num_dims){
+    if (params_in_out->io_op == IO_WRITE) { // mem --> file
+        if (params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if (params_in_out->file_pattern == PATTERN_CONTIG) { // CC
+                switch (params_in_out->num_dims) {
                     case 1:
                         (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_1D;
-                        ret = 0;
+                        ret                                           = 0;
                         break;
                     case 2:
                         (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_2D;
-                        ret = 0;
+                        ret                                           = 0;
                         break;
                     case 3:
                         (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_3D;
-                        ret = 0;
+                        ret                                           = 0;
                         break;
                     default:
                         ret = -1;
                         printf("%s() failed on line %d\n", __func__, __LINE__);
                         break;
                 }
-            } else if(params_in_out->file_pattern == PATTERN_INTERLEAVED) {//CI
-                if(params_in_out->num_dims == 1){
+            }
+            else if (params_in_out->file_pattern == PATTERN_INTERLEAVED) { // CI
+                if (params_in_out->num_dims == 1) {
                     (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_1D;
-                    ret = 0;
-                } else if(params_in_out->num_dims == 2) {
+                    ret                                           = 0;
+                }
+                else if (params_in_out->num_dims == 2) {
                     (*params_in_out).access_pattern.pattern_write = CONTIG_COMPOUND_2D;
-                    ret = 0;
-                } else{
+                    ret                                           = 0;
+                }
+                else {
                     ret = -1;
                     printf("%s() failed on line %d\n", __func__, __LINE__);
                 }
             }
-            else if(params_in_out->file_pattern == PATTERN_STRIDED) {//Strided write 1d
-                if(params_in_out->num_dims == 1) {
+            else if (params_in_out->file_pattern == PATTERN_STRIDED) { // Strided write 1d
+                if (params_in_out->num_dims == 1) {
                     (*params_in_out).access_pattern.pattern_write = CONTIG_CONTIG_STRIDED_1D;
-                    ret = 0;
-                } else{
+                    ret                                           = 0;
+                }
+                else {
                     ret = -1;
                     printf("%s() failed on line %d\n", __func__, __LINE__);
                 }
-            } else{
+            }
+            else {
                 ret = -1;
                 printf("%s() failed on line %d\n", __func__, __LINE__);
             }
-        } else if(params_in_out->mem_pattern == PATTERN_INTERLEAVED) {
-            if(params_in_out->file_pattern == PATTERN_CONTIG) {  //IC
-                if(params_in_out->num_dims == 1){
-                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_1D;
-                    ret = 0;
-                } else if(params_in_out->num_dims == 2) {
-                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_2D;
-                    ret = 0;
-                } else{
-                    ret = -1;
-                    printf("%s() failed on line %d\n", __func__, __LINE__);
-                }
-            } else if (params_in_out->file_pattern == PATTERN_INTERLEAVED) {  //II
+        }
+        else if (params_in_out->mem_pattern == PATTERN_INTERLEAVED) {
+            if (params_in_out->file_pattern == PATTERN_CONTIG) { // IC
                 if (params_in_out->num_dims == 1) {
-                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_1D;
-                    ret = 0;
-                } else if (params_in_out->num_dims == 2) {
-                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_2D;
-                    ret = 0;
-                } else{
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_1D;
+                    ret                                           = 0;
+                }
+                else if (params_in_out->num_dims == 2) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_CONTIG_2D;
+                    ret                                           = 0;
+                }
+                else {
                     ret = -1;
                     printf("%s() failed on line %d\n", __func__, __LINE__);
                 }
             }
-        } else{
+            else if (params_in_out->file_pattern == PATTERN_INTERLEAVED) { // II
+                if (params_in_out->num_dims == 1) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_1D;
+                    ret                                           = 0;
+                }
+                else if (params_in_out->num_dims == 2) {
+                    (*params_in_out).access_pattern.pattern_write = COMPOUND_COMPOUND_2D;
+                    ret                                           = 0;
+                }
+                else {
+                    ret = -1;
+                    printf("%s() failed on line %d\n", __func__, __LINE__);
+                }
+            }
+        }
+        else {
             ret = -1;
             printf("%s() failed on line %d\n", __func__, __LINE__);
         }
-    } else if(params_in_out->io_op == IO_READ) {//file --> mem
-        if(params_in_out->mem_pattern == PATTERN_CONTIG) {
-            if(params_in_out->file_pattern == PATTERN_CONTIG) {
-                switch(params_in_out->num_dims) {
+    }
+    else if (params_in_out->io_op == IO_READ) { // file --> mem
+        if (params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if (params_in_out->file_pattern == PATTERN_CONTIG) {
+                switch (params_in_out->num_dims) {
                     case 1:
                         (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-                        ret = 0;
+                        ret                                          = 0;
                         break;
                     case 2:
                         (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
-                        ret = 0;
+                        ret                                          = 0;
                         break;
                     case 3:
                         (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
-                        ret = 0;
+                        ret                                          = 0;
                         break;
                     default:
                         ret = -1;
                         printf("%s() failed on line %d\n", __func__, __LINE__);
                         break;
                 }
-            } else if(params_in_out->file_pattern == PATTERN_STRIDED) {
-                (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
-                ret = 0;
             }
-        } else{
+            else if (params_in_out->file_pattern == PATTERN_STRIDED) {
+                (*params_in_out).access_pattern.pattern_read = STRIDED_1D;
+                ret                                          = 0;
+            }
+        }
+        else {
             ret = -1;
             printf("%s() failed on line %d\n", __func__, __LINE__);
         }
-    } else {
+    }
+    else {
         ret = -1;
         printf("%s() failed on line %d\n", __func__, __LINE__);
     }
-    if(ret < 0)
+    if (ret < 0)
         printf("%s() failed, unsupported value/patterns.\n", __func__);
     return ret;
 }
 
-char* _parse_val(char* val_in){
-    char* val_str = strdup(val_in);
+char *
+_parse_val(char *val_in)
+{
+    char *val_str = strdup(val_in);
     char *tokens[2];
     char *tok = strtok(val_str, "#");
-    char* val = NULL;
-    val = strdup(tok);
-//    printf("_parse_val: val_in = [%s], val = [%s]\n", val_in, val);
-    if(val_str)
+    char *val = NULL;
+    val       = strdup(tok);
+    //    printf("_parse_val: val_in = [%s], val = [%s]\n", val_in, val);
+    if (val_str)
         free(val_str);
     return val;
 }
 
-int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write) {
+int
+_set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
+{
     if (!params_in_out)
         return 0;
-    char* val = _parse_val(val_in);
+    char *val = _parse_val(val_in);
 
-    if (strcmp(key, "IO_OPERATION") == 0){
-        if (strcmp(val, "READ") == 0){
+    if (strcmp(key, "IO_OPERATION") == 0) {
+        if (strcmp(val, "READ") == 0) {
             params_in_out->io_op = IO_READ;
-        } else if(strcmp(val, "WRITE") == 0) {
+        }
+        else if (strcmp(val, "WRITE") == 0) {
             params_in_out->io_op = IO_WRITE;
-        } else {
+        }
+        else {
             printf("Unknown value for \"IO_OPERATION\": %s\n", val);
             return -1;
         }
-    } else if(strcmp(key, "MEM_PATTERN") == 0) {
-        if (strcmp(val_in, "CONTIG") == 0){
+    }
+    else if (strcmp(key, "MEM_PATTERN") == 0) {
+        if (strcmp(val_in, "CONTIG") == 0) {
             params_in_out->mem_pattern = PATTERN_CONTIG;
-        } else if(strcmp(val_in, "INTERLEAVED") == 0) {
+        }
+        else if (strcmp(val_in, "INTERLEAVED") == 0) {
             params_in_out->mem_pattern = PATTERN_INTERLEAVED;
-        }else if(strcmp(val_in, "STRIDED") == 0) {
+        }
+        else if (strcmp(val_in, "STRIDED") == 0) {
             params_in_out->mem_pattern = PATTERN_STRIDED;
-        } else {
+        }
+        else {
             params_in_out->mem_pattern = PATTERN_INVALID;
         }
-    } else if(strcmp(key, "FILE_PATTERN") == 0) {
-        if (strcmp(val_in, "CONTIG") == 0){
+    }
+    else if (strcmp(key, "FILE_PATTERN") == 0) {
+        if (strcmp(val_in, "CONTIG") == 0) {
             params_in_out->file_pattern = PATTERN_CONTIG;
-        } else if(strcmp(val_in, "INTERLEAVED") == 0) {
+        }
+        else if (strcmp(val_in, "INTERLEAVED") == 0) {
             params_in_out->file_pattern = PATTERN_INTERLEAVED;
-        }else if(strcmp(val_in, "STRIDED") == 0) {
+        }
+        else if (strcmp(val_in, "STRIDED") == 0) {
             params_in_out->file_pattern = PATTERN_STRIDED;
-        } else {
+        }
+        else {
             params_in_out->file_pattern = PATTERN_INVALID;
         }
     }
@@ -627,28 +699,29 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             return -1;
         }
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         (*params_in_out).try_num_particles = num;
-    } else if (strcmp(key, "COLLECTIVE_METADATA") == 0) {
+    }
+    else if (strcmp(key, "COLLECTIVE_METADATA") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).meta_coll = 1;
         else
             (*params_in_out).meta_coll = 0;
-
-    } else if (strcmp(key, "COLLECTIVE_DATA") == 0) {
+    }
+    else if (strcmp(key, "COLLECTIVE_DATA") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).data_coll = 1;
         else
             (*params_in_out).data_coll = 0;
-
-    } else if (strcmp(key, "COMPRESS") == 0) {
+    }
+    else if (strcmp(key, "COMPRESS") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).useCompress = 1;
         else
             (*params_in_out).useCompress = 0;
-
-    } else if (strcmp(key, "TIMESTEPS") == 0) {
+    }
+    else if (strcmp(key, "TIMESTEPS") == 0) {
         int ts_cnt = atoi(val);
         if (ts_cnt >= 1)
             (*params_in_out).cnt_time_step = ts_cnt;
@@ -656,15 +729,16 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("TIMESTEPS must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "DELAYED_CLOSE_TIMESTEPS") == 0) {
+    }
+    else if (strcmp(key, "DELAYED_CLOSE_TIMESTEPS") == 0) {
         int delay_ts_cnt = atoi(val);
-        if(delay_ts_cnt < 0)
+        if (delay_ts_cnt < 0)
             delay_ts_cnt = 0;
         (*params_in_out).cnt_time_step_delay = delay_ts_cnt;
-
-    } else if (strcmp(key, "NUM_PARTICLES") == 0) {// 16M, 8K
+    }
+    else if (strcmp(key, "NUM_PARTICLES") == 0) { // 16M, 8K
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
 
         if (num >= 1)
@@ -673,19 +747,22 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("NUM_PARTICLES must be at least 1.\n");
             return -1;
         }
-    } else if(strcmp(key, "IO_MEM_LIMIT") == 0) {
+    }
+    else if (strcmp(key, "IO_MEM_LIMIT") == 0) {
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
-        if(num >= 0) {
+        if (num >= 0) {
             (*params_in_out).io_mem_limit = num;
-        } else {
+        }
+        else {
             printf("IO_MEM_LIMIT must be at least 0.\n");
             return -1;
         }
-    } else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
+    }
+    else if (strcmp(key, "EMULATED_COMPUTE_TIME_PER_TIMESTEP") == 0) {
         duration time;
-        if(parse_time(val, &time) < 0)
+        if (parse_time(val, &time) < 0)
             return -1;
         if (time.time_num >= 0)
             (*params_in_out).compute_time = time;
@@ -694,17 +771,20 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             return -1;
         }
     }
-    else if(strcmp(key, "READ_OPTION") == 0) {
-        if(val_in[0] == 'F') {//FULL
+    else if (strcmp(key, "READ_OPTION") == 0) {
+        if (val_in[0] == 'F') { // FULL
             (*params_in_out).read_option = READ_FULL;
-        } else if(val_in[0] == 'P') {//PARTIAL
+        }
+        else if (val_in[0] == 'P') { // PARTIAL
             (*params_in_out).read_option = READ_PARTIAL;
-        } else if(val_in[0] == 'S') {//STRIDED
+        }
+        else if (val_in[0] == 'S') { // STRIDED
             (*params_in_out).read_option = READ_STRIDED;
-        } else
+        }
+        else
             (*params_in_out).read_option = READ_OPTION_INVALID;
     }
-    else if(strcmp(key, "NUM_DIMS") == 0){
+    else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
         if (num > 0)
             (*params_in_out).num_dims = num;
@@ -715,7 +795,7 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
     }
     else if (strcmp(key, "DIM_1") == 0) {
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         if (num > 0)
             (*params_in_out).dim_1 = num;
@@ -723,11 +803,12 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("DIM_1 must be at least 1\n");
             return -1;
         }
-    } else if (strcmp(key, "DIM_2") == 0) {
+    }
+    else if (strcmp(key, "DIM_2") == 0) {
         if ((*params_in_out).num_dims == 1)
             return 1;
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         if (num >= 1)
             (*params_in_out).dim_2 = num;
@@ -735,11 +816,12 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("DIM_2 must be at least 1\n");
             return -1;
         }
-    } else if (strcmp(key, "DIM_3") == 0) {
+    }
+    else if (strcmp(key, "DIM_3") == 0) {
         if ((*params_in_out).num_dims == 1 || (*params_in_out).num_dims == 2)
             return 1;
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         if (num >= 1)
             (*params_in_out).dim_3 = num;
@@ -747,9 +829,10 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("DIM_3 must be at least 1\n");
             return -1;
         }
-    } else if (strcmp(key, "CHUNK_DIM_1") == 0) {
+    }
+    else if (strcmp(key, "CHUNK_DIM_1") == 0) {
         unsigned long long dim = 0;
-        if(str_to_ull(val, &dim) < 0)
+        if (str_to_ull(val, &dim) < 0)
             return -1;
         if (dim > 0)
             (*params_in_out).chunk_dim_1 = dim;
@@ -757,11 +840,12 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("CHUNK_DIM_1 must be at least 1\n");
             return -1;
         }
-    } else if (strcmp(key, "CHUNK_DIM_2") == 0) {
+    }
+    else if (strcmp(key, "CHUNK_DIM_2") == 0) {
         if ((*params_in_out).num_dims == 1)
             return 1;
         unsigned long long dim = 0;
-        if(str_to_ull(val, &dim) < 0)
+        if (str_to_ull(val, &dim) < 0)
             return -1;
         if (dim >= 1)
             (*params_in_out).chunk_dim_2 = dim;
@@ -769,11 +853,12 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("CHUNK_DIM_2 must be at least 1.\n");
             return -1;
         }
-    } else if (strcmp(key, "CHUNK_DIM_3") == 0) {
+    }
+    else if (strcmp(key, "CHUNK_DIM_3") == 0) {
         if ((*params_in_out).num_dims == 1 || (*params_in_out).num_dims == 2)
             return 1;
         unsigned long long dim = 0;
-        if(str_to_ull(val, &dim) < 0)
+        if (str_to_ull(val, &dim) < 0)
             return -1;
         if (dim >= 1)
             (*params_in_out).chunk_dim_3 = dim;
@@ -781,90 +866,102 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             printf("CHUNK_DIM_3 must be at least 1.\n");
             return -1;
         }
-    } else if (strcmp(key, "STRIDE_SIZE") == 0) {
+    }
+    else if (strcmp(key, "STRIDE_SIZE") == 0) {
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         (*params_in_out).stride = num;
-    } else if (strcmp(key, "BLOCK_SIZE") == 0) {
+    }
+    else if (strcmp(key, "BLOCK_SIZE") == 0) {
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         (*params_in_out).block_size = num;
-    } else if(strcmp(key, "BLOCK_CNT") == 0) {
+    }
+    else if (strcmp(key, "BLOCK_CNT") == 0) {
         unsigned long long num = 0;
-        if(str_to_ull(val, &num) < 0)
+        if (str_to_ull(val, &num) < 0)
             return -1;
         (*params_in_out).block_cnt = num;
-    } else if (strcmp(key, "CSV_FILE") == 0) {
-        (*params_in_out).useCSV = 1;
+    }
+    else if (strcmp(key, "CSV_FILE") == 0) {
+        (*params_in_out).useCSV   = 1;
         (*params_in_out).csv_path = strdup(val);
-    } else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
+    }
+    else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);
-    } else if (strcmp(key, "ASYNC_MODE") == 0) {
+    }
+    else if (strcmp(key, "ASYNC_MODE") == 0) {
         if (val_in[0] == 'E')
             (*params_in_out).asyncMode = ASYNC_EXPLICIT;
-         else if (val_in[0] == 'I')
+        else if (val_in[0] == 'I')
             (*params_in_out).asyncMode = ASYNC_IMPLICIT;
-         else
+        else
             (*params_in_out).asyncMode = ASYNC_NON;
-    } else if (strcmp(key, "FILE_PER_PROC") == 0) {
+    }
+    else if (strcmp(key, "FILE_PER_PROC") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).file_per_proc = 1;
         else
             (*params_in_out).file_per_proc = 0;
-    } else {
+    }
+    else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
     }
     if ((*params_in_out).useCSV)
         (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
 
-    if(val)
+    if (val)
         free(val);
     return 1;
 }
-void bench_params_init(bench_params* params_out){
-    if(!params_out)
-        params_out = (bench_params*) calloc(1, sizeof(bench_params));
+void
+bench_params_init(bench_params *params_out)
+{
+    if (!params_out)
+        params_out = (bench_params *)calloc(1, sizeof(bench_params));
     (*params_out).pattern_name = NULL;
-    (*params_out).meta_coll = 0;
-    (*params_out).data_coll = 0;
-    (*params_out).asyncMode = ASYNC_NON;
+    (*params_out).meta_coll    = 0;
+    (*params_out).data_coll    = 0;
+    (*params_out).asyncMode    = ASYNC_NON;
 
-    (*params_out).cnt_time_step = 0;
-    (*params_out).cnt_time_step_delay = 0;
-    (*params_out).num_particles = 0; //total number per rank
-    (*params_out).io_mem_limit = 0;
-    (*params_out).try_num_particles = 0; // to read
+    (*params_out).cnt_time_step         = 0;
+    (*params_out).cnt_time_step_delay   = 0;
+    (*params_out).num_particles         = 0; // total number per rank
+    (*params_out).io_mem_limit          = 0;
+    (*params_out).try_num_particles     = 0; // to read
     (*params_out).compute_time.time_num = 0;
-    (*params_out).num_dims = 1;
+    (*params_out).num_dims              = 1;
 
-    (*params_out).stride = 0;
-    (*params_out).block_size = 0;
-    (*params_out).block_cnt = 0;
-    (*params_out).dim_1 = 1;
-    (*params_out).dim_2 = 1;
-    (*params_out).dim_3 = 1;
-    (*params_out).chunk_dim_1 = 1;
-    (*params_out).chunk_dim_2 = 1;
-    (*params_out).chunk_dim_3 = 1;
-    (*params_out).csv_path = NULL;
+    (*params_out).stride        = 0;
+    (*params_out).block_size    = 0;
+    (*params_out).block_cnt     = 0;
+    (*params_out).dim_1         = 1;
+    (*params_out).dim_2         = 1;
+    (*params_out).dim_3         = 1;
+    (*params_out).chunk_dim_1   = 1;
+    (*params_out).chunk_dim_2   = 1;
+    (*params_out).chunk_dim_3   = 1;
+    (*params_out).csv_path      = NULL;
     (*params_out).env_meta_path = NULL;
 
-    (*params_out).csv_path = NULL;
-    (*params_out).csv_fs = NULL;
+    (*params_out).csv_path      = NULL;
+    (*params_out).csv_fs        = NULL;
     (*params_out).env_meta_path = NULL;
     (*params_out).file_per_proc = 0;
 }
-int read_config(const char *file_path, bench_params *params_out, int do_write) {
+int
+read_config(const char *file_path, bench_params *params_out, int do_write)
+{
     char cfg_line[CFG_LINE_LEN_MAX] = "";
 
     if (!params_out)
-        params_out = (bench_params*) calloc(1, sizeof(bench_params));
+        params_out = (bench_params *)calloc(1, sizeof(bench_params));
     else
         memset(params_out, 0, sizeof(bench_params));
-    //Default settings
+    // Default settings
     bench_params_init(params_out);
     (*params_out).data_file_path = strdup(file_path);
 
@@ -872,7 +969,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
 
     int parsed = 1;
 
-    //default values
+    // default values
     (*params_out).useCSV = 0;
     if (do_write)
         (*params_out).io_op = IO_WRITE;
@@ -880,59 +977,59 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
         (*params_out).io_op = IO_READ;
 
     while (fgets(cfg_line, CFG_LINE_LEN_MAX, file) && (parsed == 1)) {
-        if (cfg_line[0] == '#') { //skip comment lines
+        if (cfg_line[0] == '#') { // skip comment lines
             continue;
         }
         char *tokens[2];
         char *tok = strtok(cfg_line, CFG_DELIMS);
         if (tok) {
             tokens[0] = tok;
-            tok = strtok(NULL, CFG_DELIMS);
-            if (tok){
+            tok       = strtok(NULL, CFG_DELIMS);
+            if (tok) {
                 tokens[1] = tok;
             }
             else
                 return -1;
-        } else
+        }
+        else
             return -1;
-//        printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
+        //        printf("key = [%s], val = [%s]\n", tokens[0], tokens[1]);
         parsed = _set_params(tokens[0], tokens[1], params_out, do_write);
     }
     if (parsed < 0)
         return -1;
 
     int ret = _set_io_pattern(params_out);
-    if(ret < 0)
+    if (ret < 0)
         return ret;
 
-    if(params_out->io_mem_limit > 0) {
-        if(params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
-            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified memory bound (%llu), "
-                    "please check IO_MEM_LIMIT in your config file.\n",
-                    params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE, params_out->io_mem_limit);
+    if (params_out->io_mem_limit > 0) {
+        if (params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
+            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified "
+                   "memory bound (%llu), "
+                   "please check IO_MEM_LIMIT in your config file.\n",
+                   params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE,
+                   params_out->io_mem_limit);
             return -1;
         }
     }
     if (params_out->io_op == IO_WRITE) {
-        if(params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
-            if(params_out->stride < 1
-                    || params_out->block_size < 1
-                    || params_out->block_cnt < 1) {
+        if (params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
+            if (params_out->stride < 1 || params_out->block_size < 1 || params_out->block_cnt < 1) {
                 printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
                 return -1;
             }
         }
-    } else if (params_out->io_op == IO_READ) { //read
-        if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
-            if(params_out->num_particles > 1)
+    }
+    else if (params_out->io_op == IO_READ) {                        // read
+        if (params_out->access_pattern.pattern_read == CONTIG_1D) { // read whole file
+            if (params_out->num_particles > 1)
                 params_out->try_num_particles = params_out->num_particles;
             else
                 params_out->num_particles = params_out->try_num_particles;
         }
-        if(params_out->access_pattern.pattern_read == STRIDED_1D) {
-            if(params_out->stride < 1
-                    || params_out->block_size < 1
-                    || params_out->block_cnt < 1) {
+        if (params_out->access_pattern.pattern_read == STRIDED_1D) {
+            if (params_out->stride < 1 || params_out->block_size < 1 || params_out->block_cnt < 1) {
                 printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
                 return -1;
             }
@@ -941,18 +1038,20 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
     return 0;
 }
 
-//print all fields of params
-void print_params(const bench_params *p) {
+// print all fields of params
+void
+print_params(const bench_params *p)
+{
     printf("=======================================\n");
     printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
     printf("Number of particles per rank: %llu\n", p->num_particles);
-    //printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
+    // printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
     int asyncMode = p->asyncMode;
-    #ifndef USE_ASYNC_VOL
+#ifndef USE_ASYNC_VOL
     asyncMode = 0;
-    #endif
+#endif
     printf("Async mode = %d (0: ASYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", asyncMode);
     if (p->meta_coll == 1)
         printf("Collective metadata operations: YES.\n");
@@ -967,11 +1066,13 @@ void print_params(const bench_params *p) {
     printf("    Dim_1: %lu\n", p->dim_1);
     if (p->num_dims >= 2) {
         printf("    Dim_2: %lu\n", p->dim_2);
-    } if (p->num_dims >= 3) {
+    }
+    if (p->num_dims >= 3) {
         printf("    Dim_3: %lu\n", p->dim_3);
     }
 
-    if(p->access_pattern.pattern_read == STRIDED_1D || p->access_pattern.pattern_write ==  CONTIG_CONTIG_STRIDED_1D) {
+    if (p->access_pattern.pattern_read == STRIDED_1D ||
+        p->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
         printf("Strided access settings:\n");
         printf("    Stride size = %ld\n", p->stride);
         printf("    Block size = %ld\n", p->block_size);
@@ -982,7 +1083,8 @@ void print_params(const bench_params *p) {
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
         if (p->num_dims >= 2) {
             printf("    chunk_dim2: %lu\n", p->chunk_dim_2);
-        } else if (p->num_dims >= 3) {
+        }
+        else if (p->num_dims >= 3) {
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
@@ -990,16 +1092,20 @@ void print_params(const bench_params *p) {
     printf("=======================================\n");
 }
 
-void bench_params_free(bench_params *p) {
+void
+bench_params_free(bench_params *p)
+{
     if (!p)
         return;
-    if(p->data_file_path)
+    if (p->data_file_path)
         free(p->data_file_path);
-    if(p->pattern_name)
+    if (p->pattern_name)
         free(p->pattern_name);
 }
 
-int file_create_try(const char *path) {
+int
+file_create_try(const char *path)
+{
     FILE *fs = fopen(path, "w+");
     if (!fs) {
         printf("Failed to create file: %s, Please check permission.\n", path);
@@ -1009,7 +1115,9 @@ int file_create_try(const char *path) {
     return 0;
 }
 
-int file_exist(const char *path) {
+int
+file_exist(const char *path)
+{
     FILE *f = fopen(path, "r");
     if (!f) {
         printf("Failed to open file: %s, Please check if the file exists.\n", path);
@@ -1024,8 +1132,10 @@ int file_exist(const char *path) {
  *      - get val from getrnv(), write to fs.
  * */
 
-int record_env_metadata(FILE *fs, const char *metadata_list_file) {
-    //read list file line, use each line as a key to search env
+int
+record_env_metadata(FILE *fs, const char *metadata_list_file)
+{
+    // read list file line, use each line as a key to search env
     if (!fs)
         return -1;
     FILE *lfs = fopen(metadata_list_file, "r");
@@ -1036,9 +1146,9 @@ int record_env_metadata(FILE *fs, const char *metadata_list_file) {
 
     fprintf(fs, "======================= Metadata =====================\n");
 
-    char line[10 * CFG_LINE_LEN_MAX]; //some env val could be very large, such as PATH
+    char line[10 * CFG_LINE_LEN_MAX]; // some env val could be very large, such as PATH
     while (fgets(line, CFG_LINE_LEN_MAX, lfs)) {
-        if (line[0] == '#') //skip comment lines
+        if (line[0] == '#') // skip comment lines
             continue;
         if (line[0] == '\n')
             continue;
@@ -1048,10 +1158,10 @@ int record_env_metadata(FILE *fs, const char *metadata_list_file) {
         }
 
         char *val = getenv(line);
-        //printf("%s = %s\n", line, val);
+        // printf("%s = %s\n", line, val);
         fprintf(fs, "%s = %s\n", line, val);
 
-        if (!val) { //null
+        if (!val) { // null
             printf("    %s not set.\n", line);
             continue;
         }
@@ -1062,7 +1172,9 @@ int record_env_metadata(FILE *fs, const char *metadata_list_file) {
     return 0;
 }
 
-FILE* csv_init(const char *csv_path, const char *metadata_list_file) { //, const char* metadata_list_file: should be optional.
+FILE *
+csv_init(const char *csv_path, const char *metadata_list_file)
+{ //, const char* metadata_list_file: should be optional.
     FILE *fs = fopen(csv_path, "w+");
 
     if (!fs) {
@@ -1078,13 +1190,17 @@ FILE* csv_init(const char *csv_path, const char *metadata_list_file) { //, const
     return fs;
 }
 
-int csv_output_line(FILE *fs, char *name, char *val_str) {
+int
+csv_output_line(FILE *fs, char *name, char *val_str)
+{
     fprintf(fs, "%s,", name);
     fprintf(fs, " %s\n", val_str);
     return 0;
 }
 
-int argv_print(int argc, char *argv[]) {
+int
+argv_print(int argc, char *argv[])
+{
     if (argc < 1)
         return -1;
     printf("%d arguments provided.\n", argc);
@@ -1094,7 +1210,9 @@ int argv_print(int argc, char *argv[]) {
     return 0;
 }
 
-char* get_file_name_from_path(char *path) {
+char *
+get_file_name_from_path(char *path)
+{
     if (path == NULL)
         return NULL;
 
@@ -1107,7 +1225,9 @@ char* get_file_name_from_path(char *path) {
     return pFileName;
 }
 
-char* substr(char *src, size_t start, size_t len) {
+char *
+substr(char *src, size_t start, size_t len)
+{
     if (start + len > strlen(src)) {
         fprintf(stderr, "%s() error: invalid substring index (start+len > length).\n", __func__);
         return NULL;
@@ -1125,7 +1245,9 @@ char* substr(char *src, size_t start, size_t len) {
     return sub;
 }
 
-char* get_dir_from_path(char *path) {
+char *
+get_dir_from_path(char *path)
+{
     if (path == NULL)
         return NULL;
 
