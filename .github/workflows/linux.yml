@@ -83,11 +83,24 @@ jobs:
           # Run serial tests only
           make check_serial
           
-      - name: Compile/Build H5bench
+      - name: Compile/Build H5bench Sync
+        run: |
+          mkdir build_sync
+          cd build_sync
+          cmake .. -DCMAKE_C_COMPILER=/usr/bin/h5pcc
+          make
+          
+      - name: Compile/Build H5bench ASYNC
         run: |
           mydir="$PWD"
-          mkdir build
-          cd build
+          mkdir build_async
+          cd build_async
           export HDF5_HOME=$mydir/hdf5/install
-          cmake .. -DCMAKE_C_COMPILER=h5pcc
+          export VOL_DIR=$mydir/vol-async
+          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL_DIR/src -L/$VOL_DIR/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
           make
+          
+          
+          
+          
+          
