@@ -74,7 +74,7 @@ jobs:
           
           # Makefile
           tail -n 47 Makefile.summit > Makefile
-          export LD_PRELOAD=$mydir/argobots/lib/libabt.so
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
           make
           
           # Run serial and parallel tests
