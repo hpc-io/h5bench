@@ -98,5 +98,5 @@ jobs:
           cd build_async
           export HDF5_HOME=$mydir/hdf5
           export VOL_DIR=$mydir/vol-async
-          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL_DIR/src -L/$VOL_DIR/src" -DCMAKE_C_COMPILER=$HDF5_HOME/install/bin/h5pcc
+          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL_DIR/src -L/$VOL_DIR/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
           make
