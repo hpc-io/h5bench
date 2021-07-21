@@ -96,6 +96,7 @@ jobs:
         run: |  
           mydir="$PWD"
           export HDF5_HOME=$mydir/hdf5
+          ls $HDF5_HOME/install/bin
           export VOL_DIR=$mydir/vol-async
           export ASYNC_HOME=$mydir/vol-async/src
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
