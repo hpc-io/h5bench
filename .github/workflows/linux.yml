@@ -102,4 +102,4 @@ jobs:
           export DYLD_LIBRARY_PATH=“$HDF5_HOME/install/bin/lib:$ASYNC_HOME”
           mkdir build_async
           cd build_async
-          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL/DIR/src -l/$VOL_DIR/src"   -DCMAKE_C_COMPILER=$HDF5_HOME/install/bin/h5pcc
+          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL/DIR/src -l/$VOL_DIR/src" -DCMAKE_C_COMPILER=$HDF5_HOME/install/bin/h5pcc
