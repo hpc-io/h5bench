@@ -98,7 +98,7 @@ jobs:
           cd build_async
           export HDF5_HOME=$mydir/hdf5
           export VOL_DIR=$mydir/vol-async
-          export ASYNC_HOME=$mydir/vol-async/src
+          export ASYNC_HOME="$mydir/vol-async/src"
           export HDF5_VOL_CONNECTOR=“async under_vol=0;under_info={}”
           export HDF5_PLUGIN_PATH=$ASYNC_HOME
           export DYLD_LIBRARY_PATH=“$HDF5_HOME/install/bin/lib:$ASYNC_HOME”
