@@ -95,14 +95,7 @@ jobs:
       - name: Compile/Build H5bench ASYNC
         run: |  
           mydir="$PWD"
-          export HDF5_HOME=$mydir/hdf5
-          ls $HDF5_HOME/install/bin
-          export VOL_DIR=$mydir/vol-async
-          export ASYNC_HOME=$mydir/vol-async/src
           mkdir build_async
           cd build_async
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$VOL_DIR/src -l/$VOL_DIR/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
-          export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
-          export HDF5_PLUGIN_PATH=$ASYNC_HOME
-          export DYLD_LIBRARY_PATH=$HDF5_HOME/install/bin/lib:$ASYNC_HOME
           make
