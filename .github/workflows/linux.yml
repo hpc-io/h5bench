@@ -93,8 +93,5 @@ jobs:
 
       - name: Compile/Build H5bench ASYNC
         run: |
-          mydir=“$PWD”
-          cd $mydir
+          cd hdf5
           ls -l
-          echo $mydir/hdf5/install/bin/h5pcc
-          ls $mydir/hdf5/install/bin
