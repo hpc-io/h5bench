@@ -10,8 +10,15 @@
 #define COMMONS_ASYNC_ADAPTOR_H_
 #ifndef H5ES_WAIT_FOREVER
 #define H5ES_WAIT_FOREVER INT_MAX
-#ifndef _H5ESpublic_H && H5ESpublic_H
-typedef int H5ES_status_t;// an enum type exists in newer version, this line is just to make compiler happy with older version headers
+
+// An enum type H5ES_status_t exists in version 1.12.x and later 
+// This definition is just to make compiler happy with older version headers
+// In hdf5 1.12.0, header file is defined as _H5ESpublic_H and 
+// in 1.12.1 and later, it's defined as H5ESpublic_H. Checking for both.
+#if defined(_H5ESpublic_H) || defined(H5ESpublic_H)
+//do nothing
+#else
+typedef int H5ES_status_t; 
 #endif
 
 /**
