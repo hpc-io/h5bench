@@ -104,5 +104,6 @@ jobs:
         run: |  
           mydir="$PWD"
           cd build_sync
+          ls -l
           ./h5bench_write $mydir/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
           ./h5bench_read $mydir/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
