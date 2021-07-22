@@ -10,7 +10,7 @@
 #define COMMONS_ASYNC_ADAPTOR_H_
 #ifndef H5ES_WAIT_FOREVER
 #define H5ES_WAIT_FOREVER INT_MAX
-#ifndef _H5ESpublic_H
+#ifndef _H5ESpublic_H && H5ESpublic_H
 typedef int H5ES_status_t;// an enum type exists in newer version, this line is just to make compiler happy with older version headers
 #endif
 
