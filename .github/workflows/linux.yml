@@ -99,3 +99,10 @@ jobs:
           cd build_async
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
           make
+
+      - name: Test H5bench SYNC Read & Write (NON)
+        run: |  
+          mydir="$PWD"
+          cd build_sync
+          ./h5bench_write $mydir/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
+          ./h5bench_read $mydir/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
