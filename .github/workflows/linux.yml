@@ -91,6 +91,8 @@ jobs:
           cd build_sync
           cmake .. -DCMAKE_C_COMPILER=/usr/bin/h5pcc
           make
+          ./h5bench_write $mydir/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
+          ./h5bench_read $mydir/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
 
       - name: Compile/Build H5bench ASYNC
         run: |  
@@ -99,14 +101,3 @@ jobs:
           cd build_async
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
           make
-
-      - name: Test H5bench SYNC Read & Write (NON)
-        run: |  
-          mydir="$PWD"
-          cd build_sync
-          ls -l
-          export HDF5_VOL_CONNECTOR=“async under_vol=0;under_info={}”
-          export HDF5_PLUGIN_PATH=“$mydir/vol-async/src”
-          export DYLD_LIBRARY_PATH=“$mydir/hdf5/install/bin/lib:$mydir/vol-async/src”
-          ./h5bench_write $mydir/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
-          ./h5bench_read $mydir/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
