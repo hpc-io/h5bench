@@ -111,3 +111,9 @@ jobs:
           cd build_async
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
           ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
+          
+      - name: Test H5bench ASYNC Read & Write (IMP)
+        run: |
+          cd build_async
+          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small_IMP.cfg testwrite_IMP.h5
+          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small_IMP.cfg testwrite_IMP.h5
