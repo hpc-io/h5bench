@@ -8,7 +8,8 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM /usr/local/include)#for MPI
 
 # Dependency: HDF5
-set(HDF5_HOME $ENV{HDF5_HOME})
+#set(HDF5_HOME $ENV{HDF5_HOME})
+set(HDF5_HOME /home/runzhou/Downloads/myhdfstuff/hdf5-develop/build/hdf5)
 set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
 message("Detected hdf5 version: ${HDF5_VERSION}")
@@ -33,6 +34,8 @@ if(WITH_ASYNC_VOL)
 endif()
 # =================================================================
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # ===========  Build h5bench_patterns: h5bench_write and h5bench_read ===========
 set(h5bench_write_src h5bench_patterns/h5bench_write.c)
 set(h5bench_read_src h5bench_patterns/h5bench_read.c)
@@ -42,6 +45,18 @@ target_link_libraries(h5bench_write h5bench_util hdf5 z MPI::MPI_C)
 
 add_executable(h5bench_read ${h5bench_read_src})
 target_link_libraries(h5bench_read h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_overwrite ===========
+set(h5bench_overwrite_src h5bench_patterns/h5bench_overwrite.c)
+
+add_executable(h5bench_overwrite ${h5bench_overwrite_src})
+target_link_libraries(h5bench_overwrite h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_append ===========
+# set(h5bench_overwrite_src h5bench_patterns/h5bench_append.c)
+
+# add_executable(h5bench_append ${h5bench_append_src})
+# target_link_libraries(h5bench_append h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)
@@ -88,6 +103,7 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 install(TARGETS 
 	h5bench_write 
 	h5bench_read 
+	h5bench_overwrite
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl

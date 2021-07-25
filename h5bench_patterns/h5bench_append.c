@@ -68,16 +68,99 @@ void print_data(int n) {
             BUF_STRUCT->px[i], BUF_STRUCT->py[i], BUF_STRUCT->pz[i]);
 }
 
-// Create HDF5 file and read data
-void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
+// Append to dataset with hyperslab
+void append_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
         unsigned long* read_time, unsigned long* metadata_time) {
     hid_t dapl;
     unsigned long t1, t2, t3;
+
+    hsize_t dims[3];
+    hsize_t dims_memory[3];
+    hsize_t start[3];
+    hsize_t count[3];
+
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
-    H5Pset_all_coll_metadata_ops(dapl, true);
-    
+
+    int *data_1D_INT, **data_2D_INT, ***data_3D_INT;
+    float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
+
+    if(params.num_dims == 1) {
+        data_1D_INT = malloc(params.dim_1 * sizeof(int));
+        data_1D_FLOAT = malloc(params.dim_1 * sizeof(float));
+    }
+
+    if(params.num_dims == 2) {
+        data_2D_INT = malloc(params.dim_1* sizeof(int*));
+        data_2D_FLOAT = malloc(params.dim_1* sizeof(float*));
+        for (int i = 0; i < params.dim_1; i++) {
+            data_2D_INT[i] = malloc(params.dim_2 * sizeof(int));
+            data_2D_FLOAT[i] = malloc(params.dim_2 * sizeof(float));
+        }
+    }
+
+    if(params.num_dims == 3) {
+        data_3D_INT = malloc(params.dim_1 * sizeof(int**));
+        data_3D_FLOAT = malloc(params.dim_1 * sizeof(float**));
+        for (int i = 0; i < params.dim_1; i++) {
+            data_3D_INT[i] = malloc(params.dim_2 * sizeof(int *));
+            data_3D_FLOAT[i] = malloc(params.dim_2 * sizeof(float *));
+            for(int j = 0; j < params.dim_2; j++) {
+                data_3D_INT[i][j] = malloc(params.dim_3 * sizeof(int));
+                data_3D_FLOAT[i][j] = malloc(params.dim_3 * sizeof(float));
+            }
+        }
+    }
+
+    switch(params.access_pattern.pattern_read){
+        case CONTIG_1D:
+        case STRIDED_1D:
+            for (long i = 0; i < params.dim_1; i++) {
+                data_1D_INT[i] = i;
+                data_1D_FLOAT[i] = (float) i;
+            }
+            break;
+
+        case CONTIG_2D:
+            for (long i = 0; i < params.dim_1; i++) {
+                for (long j = 0; j < params.dim_2; j++) {
+                    data_2D_INT[i][j] = i + j;
+                    data_2D_FLOAT[i][j] = i / (float)(j+1);
+                }
+            }
+            break;
+
+        case CONTIG_3D:
+            for (long i = 0; i < params.dim_1; i++) {
+                for (long j = 0; j < params.dim_2; j++) {
+                    for (long k = 0; k < params.dim_3; k++) {
+                        data_3D_INT[i][j][k] = i+j+k;
+                        data_3D_FLOAT[i][j][k] = i / (float)(j+1) / (float)(k+1);
+                    }
+                }
+            }
+            break;
+        default:
+            printf("Unknown read pattern\n");
+            break;
+    }
+
+    dims[0] = params.dim_1;
+    dims_memory[0] = params.dim_1;
+    start[0] = 0;
+    count[0] = params.dim_1;
+
+    dims[1] = params.dim_2;
+    dims_memory[1] = params.dim_2;
+    start[1] = 0;
+    count[1] = params.dim_2;
+
+    dims[2] = params.dim_3;
+    dims_memory[2] = params.dim_3;
+    start[2] = 0;
+    count[2] = params.dim_3;
 
     t1 = get_time_usec();
+
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
@@ -88,26 +171,83 @@ void read_h5_data(time_step* ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hi
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
 
     t2 = get_time_usec();
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ts->es_data);
-    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ts->es_data);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ts->es_data);
-    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT,   memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT,   memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ts->es_data);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ts->es_data);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ts->es_data);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ts->es_data);
+
+    set_dspace_plist(&dapl, params.data_coll);
+
+    /* For append.*/ 
+    H5Sset_extent_simple(memspace, 1, dims_memory, NULL);
+    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Dset_extent(dset_ids[0], dims);
+    H5Dset_extent(dset_ids[1], dims);
+    H5Dset_extent(dset_ids[2], dims);
+    H5Dset_extent(dset_ids[3], dims);
+    H5Dset_extent(dset_ids[4], dims);
+    H5Dset_extent(dset_ids[5], dims);
+    H5Dset_extent(dset_ids[6], dims);
+    H5Dset_extent(dset_ids[7], dims);
+
+    switch(params.access_pattern.pattern_read){
+        case CONTIG_1D:
+        case STRIDED_1D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_1D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            break;
+
+        case CONTIG_2D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_2D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            break;
+
+        case CONTIG_3D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_3D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            break;
+        default:
+            printf("Unknown read pattern\n");
+            break;
+    }
 
     t3 = get_time_usec();
 
     *read_time = t3 - t2;
     *metadata_time = t2 - t1;
 
-    if (MY_RANK == 0) printf ("  Read 8 variable completed\n");
+    if (MY_RANK == 0) printf ("  Append 8 variable completed\n");
     H5Pclose(dapl);
 }
 
+void set_dspace_plist(hid_t *plist_id_out, int data_collective) {
+    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
+    if (data_collective == 1)
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    else
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
+}
+
+
 int _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t* filespace_in, hid_t* memspace_out){
-    *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, NULL);
+    /* Append to dataset, set dim to H5S_UNLIMITED. */
+    hsize_t fdim[1]={H5S_UNLIMITED}; 
+    *memspace_out =  H5Screate_simple(1, (hsize_t *) &read_elem_cnt, fdim);
+
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *) &FILE_OFFSET, NULL,
             (hsize_t *) &read_elem_cnt, NULL);
     return read_elem_cnt;
@@ -226,7 +366,7 @@ unsigned long set_dataspace(bench_params params, unsigned long long try_read_ele
     return actual_read_cnt;
 }
 
-int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
+int _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
         unsigned long* total_data_size_out, unsigned long* raw_read_time_out, unsigned long* inner_metadata_time){
     *raw_read_time_out = 0;
     *inner_metadata_time = 0;
@@ -271,7 +411,7 @@ int _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, 
 
         if (MY_RANK == 0) printf ("Reading %s ... \n", grp_name);
 
-        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
+        append_h5_data(params, ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
 
         ts->status = TS_DELAY;
 
@@ -358,7 +498,7 @@ int main (int argc, char* argv[]){
 
     hsize_t dims[64] = {0};
 
-    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl);
     hid_t filespace = get_filespace(file_id);
     int dims_cnt = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;
@@ -370,6 +510,11 @@ int main (int argc, char* argv[]){
     } else {
         if(MY_RANK == 0) printf("Failed to read dimensions. \n");
         return 0;
+    }
+
+    if(params.num_dims != dims_cnt) {
+        printf("Number of dimensions to be Append (%d) is inconsist with original dimension: %d\n", params.num_dims, dims_cnt);
+        goto error;
     }
 
     if(dims_cnt > 0){//1D
@@ -410,6 +555,12 @@ int main (int argc, char* argv[]){
         printf ("Number of particles available per rank: %llu \n", NUM_PARTICLES);
     }
 
+
+    if(params.num_particles > NUM_PARTICLES) {
+        printf ("Number of particle per rank exceeds maximum value: %llu \n", NUM_PARTICLES);
+        return -1;
+    }
+
     MPI_Barrier (MPI_COMM_WORLD);
 
 
@@ -429,7 +580,7 @@ int main (int argc, char* argv[]){
 
     unsigned long raw_read_time, metadata_time, local_data_size;
 
-    int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params,
+    int ret = _run_benchmark_modify(file_id, fapl, gapl, filespace, params,
             &local_data_size, &raw_read_time, &metadata_time);
 
     if(ret < 0){
@@ -464,35 +615,35 @@ int main (int argc, char* argv[]){
                 * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size/(1024*1024);
         printf("Total emulated compute time = %llu ms\n"
-                "Total read size = %lu MB\n",
+                "Total modify size = %lu MB\n",
                 total_sleep_time_us/1000, total_size_mb);
 
         float rrt_s = (float)raw_read_time / (1000*1000);
 
         float raw_rate_mbs = total_size_mb / rrt_s;
-        printf("Raw read time = %.3f sec \n", rrt_s);
+        printf("Raw modify time = %.3f sec \n", rrt_s);
 
         float meta_time_ms = (float)metadata_time/1000;
         printf("Metadata time = %.3f ms\n", meta_time_ms);
 
         float oct_s = (float)(t4 - t1) / (1000*1000);
-        printf("Observed read completion time = %.3f sec\n", oct_s);
+        printf("Observed modify completion time = %.3f sec\n", oct_s);
 
-        printf("%s Raw read rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
+        printf("%s Raw modify rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
         double or_mbs = (float)total_size_mb /
                 ((float)(t4 - t1 - total_sleep_time_us)/(1000 * 1000));
-        printf("%s Observed read rate = %.6f MB/sec\n", mode_str, or_mbs);
+        printf("%s Observed modify rate = %.6f MB/sec\n", mode_str, or_mbs);
 
         if(params.useCSV){
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us/(1000*1000));
-            fprintf(params.csv_fs, "Total read size, %lu, MB\n", total_size_mb);
+            fprintf(params.csv_fs, "Total modify size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Metadata_time, %.3f, ms\n", meta_time_ms);
-            fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
+            fprintf(params.csv_fs, "Data modify time, %.3f, sec\n", rrt_s);
+            fprintf(params.csv_fs, "Observed modify completion time, %.3f, sec\n", oct_s);
 
-            fprintf(params.csv_fs, "Raw read rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Observed read rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Raw modify rate, %.3f, MB/sec\n", raw_rate_mbs);
+            fprintf(params.csv_fs, "Observed modify rate, %.3f, MB/sec\n", or_mbs);
             fclose (params.csv_fs);
         }
     }

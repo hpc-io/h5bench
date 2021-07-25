@@ -320,9 +320,18 @@ void set_dspace_plist(hid_t *plist_id_out, int data_collective) {
         H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
 
-int set_select_spaces_default(hid_t *filespace_out, hid_t *memspace_out) {
-    *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
-    *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, NULL);
+int set_select_spaces_default(bench_params params, hid_t *filespace_out, hid_t *memspace_out) {
+
+    // hsize_t fdim[1]={H5S_UNLIMITED};
+    // if (params.useCompress) {
+    //     *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, fdim);
+    //     *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, fdim);   
+    // }
+    // else {
+        *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
+        *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, NULL);
+    // }
+
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t*) &FILE_OFFSET, NULL, (hsize_t*) &NUM_PARTICLES, NULL);
 //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
     return 0;
@@ -341,8 +350,16 @@ unsigned long set_select_spaces_strided(bench_params params, hid_t *filespace_ou
 
     unsigned long actual_elem_cnt = params.block_size * params.block_cnt;
 
-    *memspace_out = H5Screate_simple(1, (hsize_t*) &actual_elem_cnt, NULL);
-    *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
+    // hsize_t fdim[1]={H5S_UNLIMITED};
+    // if (params.useCompress) {
+    //     *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, fdim);
+    //     *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, fdim);   
+    // }
+    // else {
+        *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
+        *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, NULL);
+    // }
+
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t*) &FILE_OFFSET, //start-offset
             (hsize_t*) &params.stride, //stride
             (hsize_t*) &params.block_cnt, //block cnt
@@ -562,7 +579,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
     unsigned long t_prep_start = get_time_usec();
     switch (params.access_pattern.pattern_write) {
         case CONTIG_CONTIG_1D:
-            set_select_spaces_default(filespace_out, memspace_out);
+            set_select_spaces_default(params, filespace_out, memspace_out);
             data = (void*) prepare_data_contig_1D(particle_cnt, data_size);
             dset_cnt = 8;
             break;
@@ -584,7 +601,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case CONTIG_COMPOUND_1D:
-            set_select_spaces_default(filespace_out, memspace_out);
+            set_select_spaces_default(params, filespace_out, memspace_out);
             data = (void*) prepare_data_contig_1D(particle_cnt, data_size);
             dset_cnt = 1;
             break;
@@ -596,7 +613,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case COMPOUND_CONTIG_1D:
-            set_select_spaces_default(filespace_out, memspace_out);
+            set_select_spaces_default(params, filespace_out, memspace_out);
             data = (void*) prepare_data_interleaved(particle_cnt, data_size);
             dset_cnt = 8;
             break;
@@ -608,7 +625,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case COMPOUND_COMPOUND_1D:
-            set_select_spaces_default(filespace_out, memspace_out);
+            set_select_spaces_default(params, filespace_out, memspace_out);
             data = (void*) prepare_data_interleaved(particle_cnt, data_size);
             dset_cnt = 1;
             break;
