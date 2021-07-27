@@ -37,5 +37,6 @@ test:
       - echo "Test h5bench SYNC"
       - cd ${H5BENCH_BUILD_PATH}
       - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
+      - export MPICH_MAX_THREAD_SAFETY=multiple
       - srun -n 2 ./h5bench_write ../h5bench_patterns/sample_config/sample_write_cc1d_small.cfg file.h5
       - srun -n 2 ./h5bench_read ../h5bench_patterns/sample_config/sample_read_cc1d_small.cfg file.h5
