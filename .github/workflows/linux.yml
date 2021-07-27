@@ -32,7 +32,7 @@ jobs:
           # vol-async
           git clone --recursive https://github.com/hpc-io/vol-async.git
           
-      - name: Installation Vol-Async
+      - name: Install VOL-Async
         run: |
           mydir="$PWD"
           export HDF5_DIR=$mydir/hdf5/install
@@ -59,7 +59,7 @@ jobs:
           tail -n 48 Makefile.summit > Makefile
           make
           
-      - name: Compile and Test Vol-Async
+      - name: Compile and Test VOL-Async
         run: |
           # Compile vol-async tests
           mydir="$PWD"
@@ -85,14 +85,14 @@ jobs:
           # Run serial tests only
           make check_serial
           
-      - name: Compile/Build H5bench Sync
+      - name: Build h5bench SYNC
         run: |
           mkdir build_sync
           cd build_sync
           cmake .. -DCMAKE_C_COMPILER=/usr/bin/h5pcc
           make
 
-      - name: Compile/Build H5bench ASYNC
+      - name: Build h5bench ASYNC
         run: |  
           mydir="$PWD"
           mkdir build_async
@@ -100,25 +100,25 @@ jobs:
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
           make
           
-      - name: Test H5bench SYNC Read & Write (NON)
+      - name: Test h5bench SYNC Read & Write (NON)
         run: |
           cd build_sync
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
           ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
           
-      - name: Test H5bench ASYNC Read & Write (NON)
+      - name: Test h5bench ASYNC Read & Write (NON)
         run: |
           cd build_async
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
           ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
           
-      - name: Test H5bench ASYNC Read & Write (IMP)
+      - name: Test h5bench ASYNC Read & Write (IMP)
         run: |
           cd build_async
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small_IMP.cfg testwrite_IMP.h5
           ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small_IMP.cfg testwrite_IMP.h5
           
-      - name: Test H5bench ASYNC Read & Write (EXP)
+      - name: Test h5bench ASYNC Read & Write (EXP)
         run: |
           cd build_async
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small_EXP.cfg testwrite_EXP.h5
