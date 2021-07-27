@@ -885,10 +885,10 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
     if (meta_collective == 1) {
         if (MY_RANK == 0)
             printf("Collective write: enabled.\n");
-        #if H5_VERSION_GE(1,10,0)
+#if H5_VERSION_GE(1, 10, 0)
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
-        #endif
+#endif
     }
     else {
         if (MY_RANK == 0)
