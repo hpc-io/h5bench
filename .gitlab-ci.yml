@@ -16,8 +16,8 @@ build:
       - echo "Build h5bench"
       - module swap PrgEnv-intel PrgEnv-gnu 
       - module list
-      - mkdir build_sync
-      - cd build_sync
+      - mkdir ${H5BENCH_BUILD_PATH}
+      - cd ${H5BENCH_BUILD_PATH}
       - cmake -DCMAKE_C_COMPILER=$HDF5_DIR/bin/h5pcc -DCMAKE_CXX_COMPILER=$HDF5_DIR/bin/h5pcc ${H5BENCH_BUILD_PATH}
       - make
       - make install
