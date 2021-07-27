@@ -1,0 +1,34 @@
+variables:
+    HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
+
+stages:
+    - build
+    - test
+
+build:
+    stage: build
+    tags:
+      - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+    script:
+      - echo "Build h5bench"
+      - module swap PrgEnv-intel PrgEnv-gnu 
+      - module list
+      - mkdir build_sync
+      - cd build_sync
+      - cmake .. -DCMAKE_C_COMPILER=$HDF5_DIR/bin/h5pcc
+      - make
+      
+test:
+  stage: test
+  tags:
+    - cori
+  variables:
+      SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+    script:
+      - echo "Test h5bench SYNC"
+      - cd build_sync
+      - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
+      - ./h5bench_write ../h5bench_patterns/sample_config/sample_write_cc1d_small.cfg file.h5
+      - ./h5bench_read ../h5bench_patterns/sample_config/sample_read_cc1d_small.cfg file.h5
