@@ -391,7 +391,7 @@ main(int argc, char *argv[])
             printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
-    
+
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
