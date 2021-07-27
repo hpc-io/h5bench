@@ -93,7 +93,7 @@ jobs:
           make
 
       - name: Build h5bench ASYNC
-        run: |  
+        run: |
           mydir="$PWD"
           mkdir build_async
           cd build_async
@@ -103,23 +103,23 @@ jobs:
       - name: Test h5bench SYNC Read & Write (NON)
         run: |
           cd build_sync
-          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
-          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
+          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
+          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
           
       - name: Test h5bench ASYNC Read & Write (NON)
         run: |
           cd build_async
-          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small.cfg testwrite.h5
-          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small.cfg testwrite.h5
+          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
+          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
           
       - name: Test h5bench ASYNC Read & Write (IMP)
         run: |
           cd build_async
-          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small_IMP.cfg testwrite_IMP.h5
-          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small_IMP.cfg testwrite_IMP.h5
+          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small_IMP.cfg file_IMP.h5
+          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small_IMP.cfg file_IMP.h5
           
       - name: Test h5bench ASYNC Read & Write (EXP)
         run: |
           cd build_async
-          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_write_cc1d_small_EXP.cfg testwrite_EXP.h5
-          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_read_cc1d_small_EXP.cfg testwrite_EXP.h5
+          ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small_EXP.cfg file_EXP.h5
+          ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small_EXP.cfg file_EXP.h5

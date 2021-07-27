@@ -385,13 +385,7 @@ main(int argc, char *argv[])
             printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
         return 0;
     }
-
-    if (params.io_op != IO_READ) {
-        if (MY_RANK == 0)
-            printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
-        return 0;
-    }
-
+    
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
