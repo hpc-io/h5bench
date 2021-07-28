@@ -15,7 +15,7 @@ message("Detected hdf5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
-#Dependency: Async
+# Dependency: VOL Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
 option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
