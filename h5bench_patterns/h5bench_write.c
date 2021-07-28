@@ -885,8 +885,10 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
     if (meta_collective == 1) {
         if (MY_RANK == 0)
             printf("Collective write: enabled.\n");
+#if H5_VERSION_GE(1, 10, 0)
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
+#endif
     }
     else {
         if (MY_RANK == 0)
@@ -961,12 +963,6 @@ main(int argc, char *argv[])
     if (read_config(cfg_file_path, &params, do_write) < 0) {
         if (MY_RANK == 0)
             printf("Config file read failed. check path: %s\n", cfg_file_path);
-        return 0;
-    }
-
-    if (params.io_op != IO_WRITE) {
-        if (MY_RANK == 0)
-            printf("Make sure the configuration file has IO_OPERATION=WRITE defined\n");
         return 0;
     }
 

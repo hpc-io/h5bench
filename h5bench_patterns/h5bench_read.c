@@ -77,7 +77,9 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     hid_t         dapl;
     unsigned long t1, t2, t3;
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
+#if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(dapl, true);
+#endif
 
     t1          = get_time_usec();
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
@@ -341,10 +343,14 @@ set_pl(hid_t *fapl, hid_t *gapl)
 {
     *fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+#if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(*fapl, true);
     H5Pset_coll_metadata_write(*fapl, true);
+#endif
     *gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(*gapl, true);
+#endif
 }
 
 void
@@ -383,12 +389,6 @@ main(int argc, char *argv[])
     if (NUM_TIMESTEPS <= 0) {
         if (MY_RANK == 0)
             printf("Usage: ./%s /path/to/file #timestep [# mega particles]\n", argv[0]);
-        return 0;
-    }
-
-    if (params.io_op != IO_READ) {
-        if (MY_RANK == 0)
-            printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
         return 0;
     }
 
