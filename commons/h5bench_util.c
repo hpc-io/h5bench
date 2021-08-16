@@ -535,7 +535,8 @@ int _set_io_pattern(bench_params *params_in_out) {
             ret = -1;
             printf("%s() failed on line %d\n", __func__, __LINE__);
         }
-    } else if(params_in_out->io_op == IO_READ) {//file --> mem
+    } else if((params_in_out->io_op == IO_READ) || (params_in_out->io_op == IO_OVERWRITE) 
+      || (params_in_out->io_op == IO_APPEND)) {//file --> mem
         if(params_in_out->mem_pattern == PATTERN_CONTIG) {
             if(params_in_out->file_pattern == PATTERN_CONTIG) {
                 switch(params_in_out->num_dims) {
@@ -595,6 +596,10 @@ int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_wri
             params_in_out->io_op = IO_READ;
         } else if(strcmp(val, "WRITE") == 0) {
             params_in_out->io_op = IO_WRITE;
+        } else if(strcmp(val, "OVERWRITE") == 0) {
+            params_in_out->io_op = IO_OVERWRITE;
+        } else if(strcmp(val, "APPEND") == 0) {
+            params_in_out->io_op = IO_APPEND;
         } else {
             printf("Unknown value for \"IO_OPERATION\": %s\n", val);
             return -1;
@@ -922,7 +927,8 @@ int read_config(const char *file_path, bench_params *params_out, int do_write) {
                 return -1;
             }
         }
-    } else if (params_out->io_op == IO_READ) { //read
+    } else if ((params_out->io_op == IO_READ) || (params_out->io_op == IO_OVERWRITE) 
+    || (params_out->io_op == IO_APPEND)) { //read-based operations
         if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
             if(params_out->num_particles > 1)
                 params_out->try_num_particles = params_out->num_particles;

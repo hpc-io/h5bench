@@ -144,10 +144,11 @@ void append_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dset_i
             break;
     }
 
-    dims[0] = params.dim_1;
+    dims[0] = 2 * params.dim_1;
     dims_memory[0] = params.dim_1;
-    start[0] = 0;
+    start[0] = params.dim_1;
     count[0] = params.dim_1;
+
 
     dims[1] = params.dim_2;
     dims_memory[1] = params.dim_2;
@@ -175,8 +176,7 @@ void append_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dset_i
     set_dspace_plist(&dapl, params.data_coll);
 
     /* For append.*/ 
-    H5Sset_extent_simple(memspace, 1, dims_memory, NULL);
-    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sset_extent_simple(memspace, params.num_dims, dims_memory, NULL);
     H5Dset_extent(dset_ids[0], dims);
     H5Dset_extent(dset_ids[1], dims);
     H5Dset_extent(dset_ids[2], dims);
@@ -185,6 +185,8 @@ void append_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dset_i
     H5Dset_extent(dset_ids[5], dims);
     H5Dset_extent(dset_ids[6], dims);
     H5Dset_extent(dset_ids[7], dims);
+    filespace = H5Dget_space(dset_ids[0]);
+    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
 
     switch(params.access_pattern.pattern_read){
         case CONTIG_1D:
@@ -488,8 +490,8 @@ int main (int argc, char* argv[]){
         return 0;
     }
 
-    if (params.io_op != IO_READ) {
-        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
+    if (params.io_op != IO_APPEND) {
+        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=APPEND defined\n");
         return 0;
     }
 

@@ -322,8 +322,11 @@ void set_dspace_plist(hid_t *plist_id_out, int data_collective) {
 
 int set_select_spaces_default(bench_params params, hid_t *filespace_out, hid_t *memspace_out) {
 
-        *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
-        *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, NULL);
+    if (params.useCompress) {
+        hsize_t fdim[1]={H5S_UNLIMITED};
+        *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, fdim);
+        *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, fdim);   
+    }
 
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t*) &FILE_OFFSET, NULL, (hsize_t*) &NUM_PARTICLES, NULL);
 //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
@@ -343,8 +346,11 @@ unsigned long set_select_spaces_strided(bench_params params, hid_t *filespace_ou
 
     unsigned long actual_elem_cnt = params.block_size * params.block_cnt;
 
-    *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, NULL);
-    *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, NULL);
+    if (params.useCompress) {
+        hsize_t fdim[1]={H5S_UNLIMITED};
+        *filespace_out = H5Screate_simple(1, (hsize_t*) &TOTAL_PARTICLES, fdim);
+        *memspace_out = H5Screate_simple(1, (hsize_t*) &NUM_PARTICLES, fdim);   
+    }
 
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t*) &FILE_OFFSET, //start-offset
             (hsize_t*) &params.stride, //stride
@@ -353,7 +359,7 @@ unsigned long set_select_spaces_strided(bench_params params, hid_t *filespace_ou
     return actual_elem_cnt;
 }
 
-int set_select_space_2D_array(hid_t *filespace_out, hid_t *memspace_out, unsigned long dim_1, unsigned long dim_2) { //dim_1 * dim_2 === NUM_PARTICLES
+int set_select_space_2D_array(bench_params params, hid_t *filespace_out, hid_t *memspace_out, unsigned long dim_1, unsigned long dim_2) { //dim_1 * dim_2 === NUM_PARTICLES
     hsize_t mem_dims[2], file_dims[2];
     mem_dims[0] = (hsize_t) dim_1;
     mem_dims[1] = (hsize_t) dim_2;
@@ -366,8 +372,12 @@ int set_select_space_2D_array(hid_t *filespace_out, hid_t *memspace_out, unsigne
     count[0] = dim_1;
     count[1] = dim_2;
 
-    *filespace_out = H5Screate_simple(2, file_dims, NULL);
-    *memspace_out = H5Screate_simple(2, mem_dims, NULL);
+    if (params.useCompress) {
+        hsize_t fdim[1]={H5S_UNLIMITED};
+        *filespace_out = H5Screate_simple(2, file_dims, fdim);
+        *memspace_out = H5Screate_simple(2, mem_dims, fdim);   
+    }
+
     if (MY_RANK == 0)
         printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n", dim_1, dim_2,
                 file_starts[0], file_starts[1], count[0], count[1]);
@@ -375,7 +385,7 @@ int set_select_space_2D_array(hid_t *filespace_out, hid_t *memspace_out, unsigne
     return 0;
 }
 
-int set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, unsigned long dim_1, unsigned long dim_2,
+int set_select_space_multi_3D_array(bench_params params, hid_t *filespace_out, hid_t *memspace_out, unsigned long dim_1, unsigned long dim_2,
         unsigned long dim_3) {
     hsize_t mem_dims[3];
     hsize_t file_dims[3];
@@ -393,8 +403,11 @@ int set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, u
     file_range[1] = dim_2;
     file_range[2] = dim_3;
 
-    *filespace_out = H5Screate_simple(3, file_dims, NULL);
-    *memspace_out = H5Screate_simple(3, mem_dims, NULL);
+    if (params.useCompress) {
+        hsize_t fdim[1]={H5S_UNLIMITED};
+        *filespace_out = H5Screate_simple(3, file_dims, fdim);
+        *memspace_out = H5Screate_simple(3, mem_dims, fdim);   
+    }
 
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
     return 0;
@@ -571,7 +584,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case CONTIG_CONTIG_2D:
-            set_select_space_2D_array(filespace_out, memspace_out, params.dim_1, params.dim_2);
+            set_select_space_2D_array(params, filespace_out, memspace_out, params.dim_1, params.dim_2);
             data = (void*) prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, data_size);
             dset_cnt = 8;
             break;
@@ -593,7 +606,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case CONTIG_COMPOUND_2D:
-            set_select_space_2D_array(filespace_out, memspace_out, params.dim_1, params.dim_2);
+            set_select_space_2D_array(params, filespace_out, memspace_out, params.dim_1, params.dim_2);
             data = (void*) prepare_data_contig_2D(particle_cnt, params.dim_1, params.dim_2, data_size);
             dset_cnt = 1;
             break;
@@ -605,7 +618,7 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case COMPOUND_CONTIG_2D:
-            set_select_space_2D_array(filespace_out, memspace_out, params.dim_1, params.dim_2);
+            set_select_space_2D_array(params, filespace_out, memspace_out, params.dim_1, params.dim_2);
             data = (void*) prepare_data_interleaved(particle_cnt, data_size);
             dset_cnt = 8;
             break;
@@ -617,13 +630,13 @@ void* _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_o
             break;
 
         case COMPOUND_COMPOUND_2D:
-            set_select_space_2D_array(filespace_out, memspace_out, params.dim_1, params.dim_2);
+            set_select_space_2D_array(params, filespace_out, memspace_out, params.dim_1, params.dim_2);
             data = (void*) prepare_data_interleaved(particle_cnt, data_size);
             dset_cnt = 1;
             break;
 
         case CONTIG_CONTIG_3D:
-            set_select_space_multi_3D_array(filespace_out, memspace_out, params.dim_1, params.dim_2, params.dim_3);
+            set_select_space_multi_3D_array(params, filespace_out, memspace_out, params.dim_1, params.dim_2, params.dim_3);
             data = (void*) prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3, data_size);
             dset_cnt = 8;
             break;
@@ -898,6 +911,10 @@ int main(int argc, char *argv[]) {
 
     if (params.useCompress)
         params.data_coll = 1;
+    else {
+        printf("Make sure the configuration file has COMPRESS=YES \n");
+        return 0;
+    }
 
     if (MY_RANK == 0)
         print_params(&params);

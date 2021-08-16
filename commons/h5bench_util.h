@@ -78,6 +78,8 @@ typedef enum io_operation {
     IO_INVALID,
     IO_READ,
     IO_WRITE,
+    IO_OVERWRITE,
+    IO_APPEND,
 }io_operation;
 
 typedef enum read_option {

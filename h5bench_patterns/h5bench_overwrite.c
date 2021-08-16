@@ -76,8 +76,6 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
 
     hsize_t dims[3];
     hsize_t dims_memory[3];
-    hsize_t start[3];
-    hsize_t count[3];
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 
@@ -116,7 +114,7 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
         case STRIDED_1D:
             for (long i = 0; i < params.dim_1; i++) {
                 data_1D_INT[i] = i;
-                data_1D_FLOAT[i] = (float) i;
+                data_1D_FLOAT[i] = (float) i * 0.1;
             }
             break;
 
@@ -124,7 +122,7 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
             for (long i = 0; i < params.dim_1; i++) {
                 for (long j = 0; j < params.dim_2; j++) {
                     data_2D_INT[i][j] = i + j;
-                    data_2D_FLOAT[i][j] = i / (float)(j+1);
+                    data_2D_FLOAT[i][j] = i / (float)(j+1) * 0.1;
                 }
             }
             break;
@@ -134,7 +132,7 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
                 for (long j = 0; j < params.dim_2; j++) {
                     for (long k = 0; k < params.dim_3; k++) {
                         data_3D_INT[i][j][k] = i+j+k;
-                        data_3D_FLOAT[i][j][k] = i / (float)(j+1) / (float)(k+1);
+                        data_3D_FLOAT[i][j][k] = i / (float)(j+1) / (float)(k+1) * 0.1;
                     }
                 }
             }
@@ -146,18 +144,12 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
 
     dims[0] = params.dim_1;
     dims_memory[0] = params.dim_1;
-    start[0] = 0;
-    count[0] = params.dim_1;
 
     dims[1] = params.dim_2;
     dims_memory[1] = params.dim_2;
-    start[1] = 0;
-    count[1] = params.dim_2;
 
     dims[2] = params.dim_3;
     dims_memory[2] = params.dim_3;
-    start[2] = 0;
-    count[2] = params.dim_3;
 
     t1 = get_time_usec();
 
@@ -220,6 +212,34 @@ void overwrite_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dse
 
     if (MY_RANK == 0) printf ("  Overwrite 8 variable completed\n");
     H5Pclose(dapl);
+
+    if(params.num_dims == 1) {
+        free(data_1D_INT);
+        free(data_1D_FLOAT);
+    }
+
+    if(params.num_dims == 2) {
+        for (int i = 0; i < params.dim_1; i++) {
+            free(data_2D_INT[i]);
+            free(data_2D_FLOAT[i]);
+        }
+        free(data_2D_INT);
+        free(data_2D_FLOAT);
+    }
+
+    if(params.num_dims == 3) {
+        for (int i = 0; i < params.dim_1; i++) {
+            for(int j = 0; j < params.dim_2; j++) {
+                free(data_3D_INT[i][j]);
+                free(data_3D_FLOAT[i][j]);
+            }
+            free(data_3D_INT[i]);
+            free(data_3D_FLOAT[i]);
+        }
+        free(data_3D_INT);
+        free(data_3D_FLOAT);
+    }
+
 }
 
 void set_dspace_plist(hid_t *plist_id_out, int data_collective) {
@@ -475,7 +495,7 @@ int main (int argc, char* argv[]){
         return 0;
     }
 
-    if (params.io_op != IO_READ) {
+    if (params.io_op != IO_OVERWRITE) {
         if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
         return 0;
     }
