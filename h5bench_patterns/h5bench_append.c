@@ -234,6 +234,34 @@ void append_h5_data(bench_params params, time_step* ts, hid_t loc, hid_t *dset_i
 
     if (MY_RANK == 0) printf ("  Append 8 variable completed\n");
     H5Pclose(dapl);
+    
+    if(params.num_dims == 1) {
+        free(data_1D_INT);
+        free(data_1D_FLOAT);
+    }
+
+    if(params.num_dims == 2) {
+        for (int i = 0; i < params.dim_1; i++) {
+            free(data_2D_INT[i]);
+            free(data_2D_FLOAT[i]);
+        }
+        free(data_2D_INT);
+        free(data_2D_FLOAT);
+    }
+
+    if(params.num_dims == 3) {
+        for (int i = 0; i < params.dim_1; i++) {
+            for(int j = 0; j < params.dim_2; j++) {
+                free(data_3D_INT[i][j]);
+                free(data_3D_FLOAT[i][j]);
+            }
+            free(data_3D_INT[i]);
+            free(data_3D_FLOAT[i]);
+        }
+        free(data_3D_INT);
+        free(data_3D_FLOAT);
+    }
+
 }
 
 void set_dspace_plist(hid_t *plist_id_out, int data_collective) {
