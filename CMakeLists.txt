@@ -22,6 +22,13 @@ if(WITH_ASYNC_VOL)
 	add_definitions(-DUSE_ASYNC_VOL)
 endif()
 
+# Dependency: VOL Cache
+set(CACHE_HOME $ENV{CACHE_HOME})
+option(WITH_CACHE_VOL "" OFF)
+if (WITH_CACHE_VOL)
+   add_definitions(-DUSE_CACHE_VOL)
+endif()
+
 # =========== Utilility libs ==============
 set(h5bench_util_src
     commons/h5bench_util.c
@@ -30,6 +37,9 @@ set(h5bench_util_src
 add_library(h5bench_util ${h5bench_util_src})
 if(WITH_ASYNC_VOL)
 	target_link_libraries(h5bench_util asynchdf5 h5async)
+endif()
+if(WITH_CACHE_VOL)
+	target_link_libraries(h5bench_util cache_new_h5api)
 endif()
 # =================================================================
 

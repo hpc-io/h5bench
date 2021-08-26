@@ -48,7 +48,9 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
-
+#ifdef USE_CACHE_VOL
+#include "cache_new_h5api.h"
+#endif
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -463,7 +465,6 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
     unsigned t2 = get_time_usec();
-
     ierr =
         H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
     ierr =
@@ -756,7 +757,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
-
+#ifdef USE_CACHE_VOL
+	H5Fcache_async_op_pause(file_id); 
+#endif
         switch (pattern) {
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
@@ -792,7 +795,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             default:
                 break;
         }
-
+#ifdef USE_CACHE_VOL
+	H5Fcache_async_op_start(file_id); 
+#endif
         ts->status = TS_DELAY;
 
         if (params.cnt_time_step_delay == 0) {
