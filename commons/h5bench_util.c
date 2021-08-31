@@ -23,6 +23,10 @@
 #include "async_adaptor.h"
 #endif
 
+#ifdef USE_CACHE_VOL
+#include "cache_new_h5api.h"
+#endif
+
 #include "h5bench_util.h"
 
 int str_to_ull(char *str_in, unsigned long long *num_out);
@@ -70,8 +74,12 @@ async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
 #ifdef USE_ASYNC_VOL
     unsigned cap = 0;
     H5Pget_vol_cap_flags(fapl, &cap);
+#ifdef USE_CACHE_VOL
+    H5Fcache_async_op_start(file_id); 
+#else
     if (H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
+#endif
 #endif
     h5bench_sleep(sleep_time);
 }
