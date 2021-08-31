@@ -71,12 +71,11 @@ h5bench_sleep(duration sleep_time)
 void
 async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
 {
+#ifndef USE_CACHE_VOL
 #ifdef USE_ASYNC_VOL
     unsigned cap = 0;
     H5Pget_vol_cap_flags(fapl, &cap);
-#ifdef USE_CACHE_VOL
     H5Fcache_async_op_start(file_id);
-#else
     if (H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
 #endif
