@@ -75,7 +75,7 @@ async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
     unsigned cap = 0;
     H5Pget_vol_cap_flags(fapl, &cap);
 #ifdef USE_CACHE_VOL
-    H5Fcache_async_op_start(file_id); 
+    H5Fcache_async_op_start(file_id);
 #else
     if (H5VL_CAP_FLAG_ASYNC & cap)
         H5Fstart(file_id, fapl);
