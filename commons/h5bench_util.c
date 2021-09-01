@@ -185,8 +185,8 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     unsigned long t1, t2;
     unsigned long meta_time = 0;
 
-    if (mon->mode == ASYNC_NON)
-        return 0;
+    //if (mon->mode == ASYNC_NON)
+    //return 0; /* even for ASYNC_MON, we still need to clse the datasets. */
 
     for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
