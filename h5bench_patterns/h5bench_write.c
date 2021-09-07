@@ -818,7 +818,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             }
         }
 
-        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
+        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
         *data_time_total += (data_time_exp + data_time_imp);
     } // end for timestep_cnt
 
