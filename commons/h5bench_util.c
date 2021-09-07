@@ -259,6 +259,7 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
     int           dset_cnt = 8;
 
     if (mon->mode == ASYNC_NON) {
+        t1 = get_time_usec();
         for (int i = 0; i < mon->time_step_cnt; i++) {
             ts_run = &(mon->time_steps[i]);
             if (mon->time_steps[i].status == TS_DELAY) {
@@ -268,6 +269,8 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
                 H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
             }
         }
+	t2 = get_time_usec();
+	meta_time += (t2 - t1);
         return 0;
     }
 
