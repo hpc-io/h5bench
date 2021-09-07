@@ -11,23 +11,23 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
-#define CUDA_RUNTIME_API_CALL(apiFuncCall)                               \
-{                                                                        \
-  cudaError_t _status = apiFuncCall;                                     \
-  if (_status != cudaSuccess) {                                          \
-    fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", \
-      __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));    \
-    exit(-1);                                                            \
-  }                                                                      \
-}
+#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                                                   \
+    {                                                                                                        \
+        cudaError_t _status = apiFuncCall;                                                                   \
+        if (_status != cudaSuccess) {                                                                        \
+            fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n", __FILE__, __LINE__,         \
+                    #apiFuncCall, cudaGetErrorString(_status));                                              \
+            exit(-1);                                                                                        \
+        }                                                                                                    \
+    }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  void kernel_call(float *d_x, float *d_y, float *d_z, float *d_px, float *d_py, float *d_pz, int *d_id_1, float *d_id_2, long particle_cnt, volatile int *kernel_flag, cudaStream_t stream_id);
+void kernel_call(float *d_x, float *d_y, float *d_z, float *d_px, float *d_py, float *d_pz, int *d_id_1,
+                 float *d_id_2, long particle_cnt, volatile int *kernel_flag, cudaStream_t stream_id);
 
 #ifdef __cplusplus
 }
 #endif
-
