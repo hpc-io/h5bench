@@ -269,8 +269,8 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
                 H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
             }
         }
-	t2 = get_time_usec();
-	meta_time += (t2 - t1);
+        t2 = get_time_usec();
+        meta_time += (t2 - t1);
         return 0;
     }
 
