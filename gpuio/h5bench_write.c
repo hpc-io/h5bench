@@ -749,7 +749,7 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 int
 _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t filespace, hid_t memspace,
                      void *data, unsigned long data_size, unsigned long *total_data_size_out,
-                     unsigned long *data_time_total, unsigned long *metadata_time_total)
+                     unsigned long *data_time_total, unsigned long *metadata_time_total, unsigned long *h2d_time_total, unsigned long *d2h_time_total)
 {
     unsigned long long data_preparation_time;
 
@@ -757,6 +757,8 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     int           timestep_cnt = params.cnt_time_step;
     *metadata_time_total       = 0;
     *data_time_total           = 0;
+    *h2d_time_total            = 0;
+    *d2h_time_total            = 0;
     char  grp_name[128];
     int   grp_cnt = 0, dset_cnt = 0;
     hid_t plist_id; //, filespace, memspace;
@@ -784,7 +786,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
     timestep_es_id_set();
 
-    unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
+    unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4, t5, t6, t7, t8;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
     unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
@@ -812,6 +814,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             printf("H2D %s ... \n", grp_name);
 
         // Metamemory
+        t5 = get_time_usec();
         mm[0]->fn->copy(mm[0], H2D);
         mm[1]->fn->copy(mm[1], H2D);
         mm[2]->fn->copy(mm[2], H2D);
@@ -820,6 +823,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         mm[5]->fn->copy(mm[5], H2D);
         mm[6]->fn->copy(mm[6], H2D);
         mm[7]->fn->copy(mm[7], H2D);
+        t6 = get_time_usec();
 
         // TODO: compute here??
 
@@ -827,6 +831,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             printf("D2H %s ... \n", grp_name);
 
         // Metamemory
+        t7 = get_time_usec();
         mm[0]->fn->copy(mm[0], D2H);
         mm[1]->fn->copy(mm[1], D2H);
         mm[2]->fn->copy(mm[2], D2H);
@@ -835,6 +840,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         mm[5]->fn->copy(mm[5], D2H);
         mm[6]->fn->copy(mm[6], D2H);
         mm[7]->fn->copy(mm[7], D2H);
+        t8 = get_time_usec();
 
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
@@ -895,6 +901,8 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             }
         }
 
+        *h2d_time_total += (t6-t5);
+        *d2h_time_total += (t8-t7);
         *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
         *data_time_total += (data_time_exp + data_time_imp);
     } // end for timestep_cnt
@@ -1112,8 +1120,9 @@ main(int argc, char *argv[])
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, inner_metadata_time, local_data_size;
+    unsigned long raw_h2d_time, raw_d2h_time;
     int           stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
-                                    &local_data_size, &raw_write_time, &inner_metadata_time);
+                                    &local_data_size, &raw_write_time, &inner_metadata_time, &raw_h2d_time, &raw_d2h_time);
 
     if (stat < 0) {
         if (MY_RANK == 0)
@@ -1157,6 +1166,14 @@ main(int argc, char *argv[])
                total_sleep_time_us / (1000), total_size_mb);
 
         // printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
+        float h2d_s        = (float)raw_h2d_time/ (1000 * 1000);
+        float raw_h2d_rate_mbs = (float)total_size_mb / h2d_s;
+        printf("Raw h2d time = %.3f sec\n", h2d_s);
+
+        float d2h_s        = (float)raw_d2h_time / (1000 * 1000);
+        float raw_d2h_rate_mbs = (float)total_size_mb / d2h_s;
+        printf("Raw d2h time = %.3f sec\n", d2h_s);
+
         float rwt_s        = (float)raw_write_time / (1000 * 1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
@@ -1177,6 +1194,8 @@ main(int argc, char *argv[])
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
         printf("Observed completion time = %.3f sec\n", oct_s);
 
+        printf("%s Raw h2d rate = %.3f MB/sec \n", mode_str, raw_h2d_rate_mbs);
+        printf("%s Raw d2h rate = %.3f MB/sec \n", mode_str, raw_d2h_rate_mbs);
         printf("%s Raw write rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
 
         float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
@@ -1196,6 +1215,10 @@ main(int argc, char *argv[])
                 fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
+            fprintf(params.csv_fs, "Raw_h2d_time, %.3f, sec\n", h2d_s);
+            fprintf(params.csv_fs, "Raw_h2d_rate, %.3f, MB/sec\n", raw_h2d_rate_mbs);
+            fprintf(params.csv_fs, "Raw_d2h_time, %.3f, sec\n", d2h_s);
+            fprintf(params.csv_fs, "Raw_d2h_rate, %.3f, MB/sec\n", raw_d2h_rate_mbs);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
             fprintf(params.csv_fs, "Core_metadata_time, %.3f, ms\n", meta_time_ms);
