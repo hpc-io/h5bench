@@ -63,7 +63,7 @@ typedef struct compress_info {
 } compress_info;
 
 // MetaMemory
-metamem** mm;
+metamem **mm;
 
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;
@@ -193,14 +193,14 @@ prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long *data_size
     mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
     mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    data_out->x     = (float *)mm[0]->host_ptr->ptr;
-    data_out->y     = (float *)mm[1]->host_ptr->ptr;
-    data_out->z     = (float *)mm[2]->host_ptr->ptr;
-    data_out->px    = (float *)mm[3]->host_ptr->ptr;
-    data_out->py    = (float *)mm[4]->host_ptr->ptr;
-    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
-    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
-    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
+    data_out->x    = (float *)mm[0]->host_ptr->ptr;
+    data_out->y    = (float *)mm[1]->host_ptr->ptr;
+    data_out->z    = (float *)mm[2]->host_ptr->ptr;
+    data_out->px   = (float *)mm[3]->host_ptr->ptr;
+    data_out->py   = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz   = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1 = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2 = (float *)mm[7]->host_ptr->ptr;
 
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
@@ -248,14 +248,14 @@ prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, 
     mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
     mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    data_out->x     = (float *)mm[0]->host_ptr->ptr;
-    data_out->y     = (float *)mm[1]->host_ptr->ptr;
-    data_out->z     = (float *)mm[2]->host_ptr->ptr;
-    data_out->px    = (float *)mm[3]->host_ptr->ptr;
-    data_out->py    = (float *)mm[4]->host_ptr->ptr;
-    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
-    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
-    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
+    data_out->x    = (float *)mm[0]->host_ptr->ptr;
+    data_out->y    = (float *)mm[1]->host_ptr->ptr;
+    data_out->z    = (float *)mm[2]->host_ptr->ptr;
+    data_out->px   = (float *)mm[3]->host_ptr->ptr;
+    data_out->py   = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz   = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1 = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2 = (float *)mm[7]->host_ptr->ptr;
 
     long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
@@ -305,16 +305,16 @@ prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, 
     mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
     mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    data_out->x     = (float *)mm[0]->host_ptr->ptr;
-    data_out->y     = (float *)mm[1]->host_ptr->ptr;
-    data_out->z     = (float *)mm[2]->host_ptr->ptr;
-    data_out->px    = (float *)mm[3]->host_ptr->ptr;
-    data_out->py    = (float *)mm[4]->host_ptr->ptr;
-    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
-    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
-    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
+    data_out->x    = (float *)mm[0]->host_ptr->ptr;
+    data_out->y    = (float *)mm[1]->host_ptr->ptr;
+    data_out->z    = (float *)mm[2]->host_ptr->ptr;
+    data_out->px   = (float *)mm[3]->host_ptr->ptr;
+    data_out->py   = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz   = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1 = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2 = (float *)mm[7]->host_ptr->ptr;
 
-    long idx                 = 0;
+    long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
         for (long i2 = 0; i2 < dim_2; i2++) {
             for (long i3 = 0; i3 < dim_3; i3++) {
@@ -345,25 +345,25 @@ data_free(write_pattern mode, void *data)
         case CONTIG_COMPOUND_2D:
         case CONTIG_CONTIG_2D:
         case CONTIG_CONTIG_3D:
-          // MetaMemory
-          mm[0]->fn->free(mm[0]);
-          mm[1]->fn->free(mm[1]);
-          mm[2]->fn->free(mm[2]);
-          mm[3]->fn->free(mm[3]);
-          mm[4]->fn->free(mm[4]);
-          mm[5]->fn->free(mm[5]);
-          mm[6]->fn->free(mm[6]);
-          mm[7]->fn->free(mm[7]);
+            // MetaMemory
+            mm[0]->fn->free(mm[0]);
+            mm[1]->fn->free(mm[1]);
+            mm[2]->fn->free(mm[2]);
+            mm[3]->fn->free(mm[3]);
+            mm[4]->fn->free(mm[4]);
+            mm[5]->fn->free(mm[5]);
+            mm[6]->fn->free(mm[6]);
+            mm[7]->fn->free(mm[7]);
 
-          metamem_shutdown(mm[0]);
-          metamem_shutdown(mm[1]);
-          metamem_shutdown(mm[2]);
-          metamem_shutdown(mm[3]);
-          metamem_shutdown(mm[4]);
-          metamem_shutdown(mm[5]);
-          metamem_shutdown(mm[6]);
-          metamem_shutdown(mm[7]);
-          break;
+            metamem_shutdown(mm[0]);
+            metamem_shutdown(mm[1]);
+            metamem_shutdown(mm[2]);
+            metamem_shutdown(mm[3]);
+            metamem_shutdown(mm[4]);
+            metamem_shutdown(mm[5]);
+            metamem_shutdown(mm[6]);
+            metamem_shutdown(mm[7]);
+            break;
         case COMPOUND_CONTIG_1D:
         case COMPOUND_CONTIG_2D:
         case COMPOUND_COMPOUND_1D:
@@ -657,10 +657,9 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
     void *data = NULL;
 
     // MetaMemory
-    mm = (metamem**)malloc(8*sizeof(metamem*));
-    for(int i = 0; i < 8; i++)
-    {
-      mm[i] = metamem_init(METAMEM_CUDA);
+    mm = (metamem **)malloc(8 * sizeof(metamem *));
+    for (int i = 0; i < 8; i++) {
+        mm[i] = metamem_init(METAMEM_CUDA);
     }
 
     make_compound_type_separates();
@@ -808,7 +807,6 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
         t1         = get_time_usec();
         meta_time3 = (t1 - t0);
-
 
         if (MY_RANK == 0)
             printf("H2D %s ... \n", grp_name);
