@@ -749,7 +749,8 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 int
 _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t filespace, hid_t memspace,
                      void *data, unsigned long data_size, unsigned long *total_data_size_out,
-                     unsigned long *data_time_total, unsigned long *metadata_time_total, unsigned long *h2d_time_total, unsigned long *d2h_time_total)
+                     unsigned long *data_time_total, unsigned long *metadata_time_total,
+                     unsigned long *h2d_time_total, unsigned long *d2h_time_total)
 {
     unsigned long long data_preparation_time;
 
@@ -901,8 +902,8 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             }
         }
 
-        *h2d_time_total += (t6-t5);
-        *d2h_time_total += (t8-t7);
+        *h2d_time_total += (t6 - t5);
+        *d2h_time_total += (t8 - t7);
         *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
         *data_time_total += (data_time_exp + data_time_imp);
     } // end for timestep_cnt
@@ -1121,8 +1122,9 @@ main(int argc, char *argv[])
 
     unsigned long raw_write_time, inner_metadata_time, local_data_size;
     unsigned long raw_h2d_time, raw_d2h_time;
-    int           stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
-                                    &local_data_size, &raw_write_time, &inner_metadata_time, &raw_h2d_time, &raw_d2h_time);
+    int           stat =
+        _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size, &local_data_size,
+                             &raw_write_time, &inner_metadata_time, &raw_h2d_time, &raw_d2h_time);
 
     if (stat < 0) {
         if (MY_RANK == 0)
@@ -1166,11 +1168,11 @@ main(int argc, char *argv[])
                total_sleep_time_us / (1000), total_size_mb);
 
         // printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
-        float h2d_s        = (float)raw_h2d_time/ (1000 * 1000);
+        float h2d_s            = (float)raw_h2d_time / (1000 * 1000);
         float raw_h2d_rate_mbs = (float)total_size_mb / h2d_s;
         printf("Raw h2d time = %.3f sec\n", h2d_s);
 
-        float d2h_s        = (float)raw_d2h_time / (1000 * 1000);
+        float d2h_s            = (float)raw_d2h_time / (1000 * 1000);
         float raw_d2h_rate_mbs = (float)total_size_mb / d2h_s;
         printf("Raw d2h time = %.3f sec\n", d2h_s);
 
