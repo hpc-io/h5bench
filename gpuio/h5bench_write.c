@@ -35,7 +35,6 @@
 // Created:	in 2011
 // Modified:	01/06/2014 --> Removed all H5Part calls and using HDF5 calls
 //          	02/19/2019 --> Add option to write multiple timesteps of data - Tang
-//          	07/2020 --> Add GPU transfers, computation - John Ravi
 //
 
 #include <hdf5.h>
@@ -48,31 +47,24 @@
 #include <sys/time.h>
 #include <time.h>
 #include "../commons/h5bench_util.h"
-
-#include "h5deepmem/h5deepmem.h"
-#include "h5deepmem/h5mem.h"
-#include "h5deepmem/h5xfer.h"
-
-#ifdef HDF5_USE_CUDA
-#include <cuda_runtime.h>
-#include "gpu_kernels/cuda_kernel.h"
-#endif
-
 #include "../commons/async_adaptor.h"
 
-//#ifdef USE_ASYNC_VOL
-//#include <H5VLconnector.h>
-//#include <h5_async_lib.h>
-//#endif
+#include "metamemory/include/metamem_api.h"
+#include "metamemory/include/metamem_pch.h"
 
 #define DIM_MAX 3
 
 herr_t ierr;
+
 typedef struct compress_info {
     int     USE_COMPRESS;
     hid_t   dcpl_id;
     hsize_t chunk_dims[DIM_MAX];
 } compress_info;
+
+// MetaMemory
+metamem** mm;
+
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;
 compress_info COMPRESS_INFO; // Using parallel compressing: need to set chunk dimensions for dcpl.
@@ -83,15 +75,11 @@ int           X_DIM = 64;
 int           Y_DIM = 64;
 int           Z_DIM = 64;
 hid_t         ES_ID, ES_META_CREATE, ES_META_CLOSE, ES_DATA;
-// Factors for filling data.
-const int       X_RAND = 191;
-const int       Y_RAND = 1009;
-const int       Z_RAND = 3701;
-int             gpu_id = -1;
-h5deepmem_api_t device_api;
-h5mem_type_t    host_mem_type;
-h5mem_type_t    device_mem_type;
-int             device_aware_hdf5 = -1;
+
+// Factors for filling data
+const int X_RAND = 191;
+const int Y_RAND = 1009;
+const int Z_RAND = 3701;
 
 hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
@@ -110,26 +98,6 @@ typedef struct Particle {
     float id_2;
 } particle;
 
-typedef struct deepmem_data_md {
-    unsigned long long particle_cnt;
-    unsigned long long dim_1, dim_2, dim_3;
-
-    h5deepmem *dmem_x, *dmem_y, *dmem_z;
-    h5deepmem *dmem_px, *dmem_py, *dmem_pz;
-    h5deepmem *dmem_id_1;
-    h5deepmem *dmem_id_2;
-
-    float *x, *y, *z;
-    float *px, *py, *pz;
-    int *  id_1;
-    float *id_2;
-
-    float *d_x, *d_y, *d_z;
-    float *d_px, *d_py, *d_pz;
-    int *  d_id_1;
-    float *d_id_2;
-} deepmem_data_contig_md;
-
 void
 timestep_es_id_set()
 {
@@ -140,6 +108,10 @@ timestep_es_id_set()
 
 mem_monitor *MEM_MONITOR;
 
+/**
+ * Create a compound HDF5 type to represent the particle.
+ * @return The compound HDF5 type.
+ */
 hid_t
 make_compound_type()
 {
@@ -189,8 +161,6 @@ make_compound_type_separates()
 particle *
 prepare_data_interleaved(long particle_cnt, unsigned long *data_size_out)
 {
-    fprintf(stderr, "not implemented %s:%d\n", __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
     particle *data_out = (particle *)malloc(particle_cnt * sizeof(particle));
 
     for (long i = 0; i < particle_cnt; i++) {
@@ -207,54 +177,35 @@ prepare_data_interleaved(long particle_cnt, unsigned long *data_size_out)
     return data_out;
 }
 
-deepmem_data_contig_md *
-prepare_data_contig_1D(bench_params params, unsigned long long particle_cnt, unsigned long *data_size_out)
+data_contig_md *
+prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long *data_size_out)
 {
-    deepmem_data_contig_md *data_out = (deepmem_data_contig_md *)malloc(sizeof(deepmem_data_contig_md));
-    data_out->particle_cnt           = particle_cnt;
+    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
+    data_out->particle_cnt   = particle_cnt;
 
-    // allocate data
-    data_out->dmem_x =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_y =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_z =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_px =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_py =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_pz =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_1 =
-        h5deepmem_alloc(particle_cnt, sizeof(int), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_2 =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
+    // MetaMemory
+    mm[0]->fn->alloc(mm[0], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[1]->fn->alloc(mm[1], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[2]->fn->alloc(mm[2], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[3]->fn->alloc(mm[3], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[4]->fn->alloc(mm[4], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[5]->fn->alloc(mm[5], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    // make it easier for host code to init the data
-    data_out->x    = ((float *)(data_out->dmem_x->host_ptr->ptr));
-    data_out->y    = ((float *)(data_out->dmem_y->host_ptr->ptr));
-    data_out->z    = ((float *)(data_out->dmem_z->host_ptr->ptr));
-    data_out->px   = ((float *)(data_out->dmem_px->host_ptr->ptr));
-    data_out->py   = ((float *)(data_out->dmem_py->host_ptr->ptr));
-    data_out->pz   = ((float *)(data_out->dmem_pz->host_ptr->ptr));
-    data_out->id_1 = ((int *)(data_out->dmem_id_1->host_ptr->ptr));
-    data_out->id_2 = ((float *)(data_out->dmem_id_2->host_ptr->ptr));
-
-    // make it easier to access device mem pointers
-    data_out->d_x    = ((float *)(data_out->dmem_x->device_ptr->ptr));
-    data_out->d_y    = ((float *)(data_out->dmem_y->device_ptr->ptr));
-    data_out->d_z    = ((float *)(data_out->dmem_z->device_ptr->ptr));
-    data_out->d_px   = ((float *)(data_out->dmem_px->device_ptr->ptr));
-    data_out->d_py   = ((float *)(data_out->dmem_py->device_ptr->ptr));
-    data_out->d_pz   = ((float *)(data_out->dmem_pz->device_ptr->ptr));
-    data_out->d_id_1 = ((int *)(data_out->dmem_id_1->device_ptr->ptr));
-    data_out->d_id_2 = ((float *)(data_out->dmem_id_2->device_ptr->ptr));
+    data_out->x     = (float *)mm[0]->host_ptr->ptr;
+    data_out->y     = (float *)mm[1]->host_ptr->ptr;
+    data_out->z     = (float *)mm[2]->host_ptr->ptr;
+    data_out->px    = (float *)mm[3]->host_ptr->ptr;
+    data_out->py    = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
 
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
     data_out->dim_3 = 1;
-    // init data
+
     for (long i = 0; i < particle_cnt; i++) {
         data_out->id_1[i] = i;
         data_out->id_2[i] = (float)(i * 2);
@@ -265,76 +216,46 @@ prepare_data_contig_1D(bench_params params, unsigned long long particle_cnt, uns
         data_out->z[i]    = ((float)data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
         data_out->pz[i]   = (data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
     }
-
-    // put data on device memory
-    data_out->dmem_x->fn->copy(data_out->dmem_x, H2D);
-    data_out->dmem_y->fn->copy(data_out->dmem_y, H2D);
-    data_out->dmem_z->fn->copy(data_out->dmem_z, H2D);
-    data_out->dmem_px->fn->copy(data_out->dmem_px, H2D);
-    data_out->dmem_py->fn->copy(data_out->dmem_py, H2D);
-    data_out->dmem_pz->fn->copy(data_out->dmem_pz, H2D);
-    data_out->dmem_id_1->fn->copy(data_out->dmem_id_1, H2D);
-    data_out->dmem_id_2->fn->copy(data_out->dmem_id_2, H2D);
-
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
 }
 
-deepmem_data_contig_md *
+data_contig_md *
 prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, unsigned long *data_size_out)
 {
     if (particle_cnt != dim_1 * dim_2) {
         if (MY_RANK == 0)
-            printf("Invalid dimension definition: dim_1(%llu) * dim_2(%ld) = %llu, must equal num_particles "
+            printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) = %ld, must equal num_particles "
                    "(%llu) per rank.\n",
                    dim_1, dim_2, dim_1 * dim_2, particle_cnt);
         return NULL;
     }
     assert(particle_cnt == dim_1 * dim_2);
-    deepmem_data_contig_md *data_out = (deepmem_data_contig_md *)malloc(sizeof(deepmem_data_contig_md));
-    data_out->particle_cnt           = particle_cnt;
-    data_out->dim_1                  = dim_1;
-    data_out->dim_2                  = dim_2;
-    data_out->dim_3                  = 1;
+    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
+    data_out->particle_cnt   = particle_cnt;
+    data_out->dim_1          = dim_1;
+    data_out->dim_2          = dim_2;
+    data_out->dim_3          = 1;
 
-    // allocate data
-    data_out->dmem_x =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_y =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_z =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_px =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_py =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_pz =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_1 =
-        h5deepmem_alloc(particle_cnt, sizeof(int), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_2 =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
+    // MetaMemory
+    mm[0]->fn->alloc(mm[0], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[1]->fn->alloc(mm[1], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[2]->fn->alloc(mm[2], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[3]->fn->alloc(mm[3], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[4]->fn->alloc(mm[4], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[5]->fn->alloc(mm[5], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    // make it easier for host code to init the data
-    data_out->x    = ((float *)(data_out->dmem_x->host_ptr->ptr));
-    data_out->y    = ((float *)(data_out->dmem_y->host_ptr->ptr));
-    data_out->z    = ((float *)(data_out->dmem_z->host_ptr->ptr));
-    data_out->px   = ((float *)(data_out->dmem_px->host_ptr->ptr));
-    data_out->py   = ((float *)(data_out->dmem_py->host_ptr->ptr));
-    data_out->pz   = ((float *)(data_out->dmem_pz->host_ptr->ptr));
-    data_out->id_1 = ((int *)(data_out->dmem_id_1->host_ptr->ptr));
-    data_out->id_2 = ((float *)(data_out->dmem_id_2->host_ptr->ptr));
-
-    // make it easier to access device mem pointers
-    data_out->d_x    = ((float *)(data_out->dmem_x->device_ptr->ptr));
-    data_out->d_y    = ((float *)(data_out->dmem_y->device_ptr->ptr));
-    data_out->d_z    = ((float *)(data_out->dmem_z->device_ptr->ptr));
-    data_out->d_px   = ((float *)(data_out->dmem_px->device_ptr->ptr));
-    data_out->d_py   = ((float *)(data_out->dmem_py->device_ptr->ptr));
-    data_out->d_pz   = ((float *)(data_out->dmem_pz->device_ptr->ptr));
-    data_out->d_id_1 = ((int *)(data_out->dmem_id_1->device_ptr->ptr));
-    data_out->d_id_2 = ((float *)(data_out->dmem_id_2->device_ptr->ptr));
+    data_out->x     = (float *)mm[0]->host_ptr->ptr;
+    data_out->y     = (float *)mm[1]->host_ptr->ptr;
+    data_out->z     = (float *)mm[2]->host_ptr->ptr;
+    data_out->px    = (float *)mm[3]->host_ptr->ptr;
+    data_out->py    = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
 
     long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
@@ -350,80 +271,50 @@ prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, 
             idx++;
         }
     }
-
-    // put data on device memory
-    data_out->dmem_x->fn->copy(data_out->dmem_x, H2D);
-    data_out->dmem_y->fn->copy(data_out->dmem_y, H2D);
-    data_out->dmem_z->fn->copy(data_out->dmem_z, H2D);
-    data_out->dmem_px->fn->copy(data_out->dmem_px, H2D);
-    data_out->dmem_py->fn->copy(data_out->dmem_py, H2D);
-    data_out->dmem_pz->fn->copy(data_out->dmem_pz, H2D);
-    data_out->dmem_id_1->fn->copy(data_out->dmem_id_1, H2D);
-    data_out->dmem_id_2->fn->copy(data_out->dmem_id_2, H2D);
-
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
 }
 
-deepmem_data_contig_md *
+data_contig_md *
 prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, long dim_3,
                        unsigned long *data_size_out)
 {
     if (particle_cnt != dim_1 * dim_2 * dim_3) {
         if (MY_RANK == 0)
             printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) = %ld,"
-                   " must equal num_particles (%ld) per rank.\n",
+                   " must equal num_particles (%llu) per rank.\n",
                    dim_1, dim_2, dim_3, dim_1 * dim_2 * dim_3, particle_cnt);
         return NULL;
     }
 
     assert(particle_cnt == dim_1 * dim_2 * dim_3);
-    deepmem_data_contig_md *data_out = (deepmem_data_contig_md *)malloc(sizeof(deepmem_data_contig_md));
-    data_out->particle_cnt           = particle_cnt;
-    data_out->dim_1                  = dim_1;
-    data_out->dim_2                  = dim_2;
-    data_out->dim_3                  = dim_3;
+    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
+    data_out->particle_cnt   = particle_cnt;
+    data_out->dim_1          = dim_1;
+    data_out->dim_2          = dim_2;
+    data_out->dim_3          = dim_3;
 
-    // allocate data
-    data_out->dmem_x =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_y =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_z =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_px =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_py =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_pz =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_1 =
-        h5deepmem_alloc(particle_cnt, sizeof(int), device_api, host_mem_type, device_mem_type);
-    data_out->dmem_id_2 =
-        h5deepmem_alloc(particle_cnt, sizeof(float), device_api, host_mem_type, device_mem_type);
+    // MetaMemory
+    mm[0]->fn->alloc(mm[0], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[1]->fn->alloc(mm[1], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[2]->fn->alloc(mm[2], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[3]->fn->alloc(mm[3], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[4]->fn->alloc(mm[4], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[5]->fn->alloc(mm[5], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[6]->fn->alloc(mm[6], particle_cnt, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
+    mm[7]->fn->alloc(mm[7], particle_cnt, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    // make it easier for host code to init the data
-    data_out->x    = ((float *)(data_out->dmem_x->host_ptr->ptr));
-    data_out->y    = ((float *)(data_out->dmem_y->host_ptr->ptr));
-    data_out->z    = ((float *)(data_out->dmem_z->host_ptr->ptr));
-    data_out->px   = ((float *)(data_out->dmem_px->host_ptr->ptr));
-    data_out->py   = ((float *)(data_out->dmem_py->host_ptr->ptr));
-    data_out->pz   = ((float *)(data_out->dmem_pz->host_ptr->ptr));
-    data_out->id_1 = ((int *)(data_out->dmem_id_1->host_ptr->ptr));
-    data_out->id_2 = ((float *)(data_out->dmem_id_2->host_ptr->ptr));
+    data_out->x     = (float *)mm[0]->host_ptr->ptr;
+    data_out->y     = (float *)mm[1]->host_ptr->ptr;
+    data_out->z     = (float *)mm[2]->host_ptr->ptr;
+    data_out->px    = (float *)mm[3]->host_ptr->ptr;
+    data_out->py    = (float *)mm[4]->host_ptr->ptr;
+    data_out->pz    = (float *)mm[5]->host_ptr->ptr;
+    data_out->id_1  = (int *)mm[6]->host_ptr->ptr;
+    data_out->id_2  = (float *)mm[7]->host_ptr->ptr;
 
-    // make it easier to access device mem pointers
-    data_out->d_x    = ((float *)(data_out->dmem_x->device_ptr->ptr));
-    data_out->d_y    = ((float *)(data_out->dmem_y->device_ptr->ptr));
-    data_out->d_z    = ((float *)(data_out->dmem_z->device_ptr->ptr));
-    data_out->d_px   = ((float *)(data_out->dmem_px->device_ptr->ptr));
-    data_out->d_py   = ((float *)(data_out->dmem_py->device_ptr->ptr));
-    data_out->d_pz   = ((float *)(data_out->dmem_pz->device_ptr->ptr));
-    data_out->d_id_1 = ((int *)(data_out->dmem_id_1->device_ptr->ptr));
-    data_out->d_id_2 = ((float *)(data_out->dmem_id_2->device_ptr->ptr));
-
-    long idx = 0;
+    long idx                 = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
         for (long i2 = 0; i2 < dim_2; i2++) {
             for (long i3 = 0; i3 < dim_3; i3++) {
@@ -440,17 +331,6 @@ prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, 
             }
         }
     }
-
-    // put data on device memory
-    data_out->dmem_x->fn->copy(data_out->dmem_x, H2D);
-    data_out->dmem_y->fn->copy(data_out->dmem_y, H2D);
-    data_out->dmem_z->fn->copy(data_out->dmem_z, H2D);
-    data_out->dmem_px->fn->copy(data_out->dmem_px, H2D);
-    data_out->dmem_py->fn->copy(data_out->dmem_py, H2D);
-    data_out->dmem_pz->fn->copy(data_out->dmem_pz, H2D);
-    data_out->dmem_id_1->fn->copy(data_out->dmem_id_1, H2D);
-    data_out->dmem_id_2->fn->copy(data_out->dmem_id_2, H2D);
-
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
     return data_out;
 }
@@ -465,17 +345,25 @@ data_free(write_pattern mode, void *data)
         case CONTIG_COMPOUND_2D:
         case CONTIG_CONTIG_2D:
         case CONTIG_CONTIG_3D:
-            ((deepmem_data_contig_md *)data)->dmem_x->fn->free(((deepmem_data_contig_md *)data)->dmem_x);
-            ((deepmem_data_contig_md *)data)->dmem_y->fn->free(((deepmem_data_contig_md *)data)->dmem_y);
-            ((deepmem_data_contig_md *)data)->dmem_z->fn->free(((deepmem_data_contig_md *)data)->dmem_z);
-            ((deepmem_data_contig_md *)data)->dmem_px->fn->free(((deepmem_data_contig_md *)data)->dmem_px);
-            ((deepmem_data_contig_md *)data)->dmem_py->fn->free(((deepmem_data_contig_md *)data)->dmem_py);
-            ((deepmem_data_contig_md *)data)->dmem_pz->fn->free(((deepmem_data_contig_md *)data)->dmem_pz);
-            ((deepmem_data_contig_md *)data)
-                ->dmem_id_1->fn->free(((deepmem_data_contig_md *)data)->dmem_id_1);
-            ((deepmem_data_contig_md *)data)
-                ->dmem_id_2->fn->free(((deepmem_data_contig_md *)data)->dmem_id_2);
-            break;
+          // MetaMemory
+          mm[0]->fn->free(mm[0]);
+          mm[1]->fn->free(mm[1]);
+          mm[2]->fn->free(mm[2]);
+          mm[3]->fn->free(mm[3]);
+          mm[4]->fn->free(mm[4]);
+          mm[5]->fn->free(mm[5]);
+          mm[6]->fn->free(mm[6]);
+          mm[7]->fn->free(mm[7]);
+
+          metamem_shutdown(mm[0]);
+          metamem_shutdown(mm[1]);
+          metamem_shutdown(mm[2]);
+          metamem_shutdown(mm[3]);
+          metamem_shutdown(mm[4]);
+          metamem_shutdown(mm[5]);
+          metamem_shutdown(mm[6]);
+          metamem_shutdown(mm[7]);
+          break;
         case COMPOUND_CONTIG_1D:
         case COMPOUND_CONTIG_2D:
         case COMPOUND_COMPOUND_1D:
@@ -537,8 +425,8 @@ int
 set_select_space_2D_array(hid_t *filespace_out, hid_t *memspace_out, unsigned long dim_1, unsigned long dim_2)
 { // dim_1 * dim_2 === NUM_PARTICLES
     hsize_t mem_dims[2], file_dims[2];
-    mem_dims[0] = (hsize_t)dim_1;
-    mem_dims[1] = (hsize_t)dim_2;
+    mem_dims[0]  = (hsize_t)dim_1;
+    mem_dims[1]  = (hsize_t)dim_2;
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
@@ -589,8 +477,8 @@ set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, unsig
  */
 void
 data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
-                                  hid_t plist_id, deepmem_data_contig_md *data_in,
-                                  unsigned long *metadata_time, unsigned long *data_time)
+                                  hid_t plist_id, data_contig_md *data_in, unsigned long *metadata_time,
+                                  unsigned long *data_time)
 {
     assert(data_in && data_in->x);
     hid_t dcpl;
@@ -600,7 +488,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
         dcpl = H5P_DEFAULT;
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
-            printf("Parallel compressed: chunk_dim1 = %lu, chunk_dim2 = %lu\n", COMPRESS_INFO.chunk_dims[0],
+            printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
                    COMPRESS_INFO.chunk_dims[1]);
     }
 
@@ -624,57 +512,22 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
                                   ts->es_meta_create);
     unsigned t2 = get_time_usec();
 
-    // TODO: check if HDF5 is gpu-enabled {vol-cache with gpu plugin or GDS VFD}
-    // data_dtohcopy_contig_contig_MD_array((deepmem_data_contig_md*)data_in);
-
-    if (device_aware_hdf5 == 1) {
-        // pass device pointers directly to hdf5
-        ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_x,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_y,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_z,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_px,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_py,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_pz,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->d_id_1,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->d_id_2,
-                              ts->es_data);
-    }
-    else {
-        // get data from device memory
-        data_in->dmem_x->fn->copy(data_in->dmem_x, D2H);
-        data_in->dmem_y->fn->copy(data_in->dmem_y, D2H);
-        data_in->dmem_z->fn->copy(data_in->dmem_z, D2H);
-        data_in->dmem_px->fn->copy(data_in->dmem_px, D2H);
-        data_in->dmem_py->fn->copy(data_in->dmem_py, D2H);
-        data_in->dmem_pz->fn->copy(data_in->dmem_pz, D2H);
-        data_in->dmem_id_1->fn->copy(data_in->dmem_id_1, D2H);
-        data_in->dmem_id_2->fn->copy(data_in->dmem_id_2, D2H);
-
-        ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
-                              ts->es_data);
-        ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
-                              ts->es_data);
-    }
-
+    ierr =
+        H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
+    ierr =
+        H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
+    ierr =
+        H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
+    ierr        = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
+                          ts->es_data);
+    ierr        = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
+                          ts->es_data);
+    ierr        = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
+                          ts->es_data);
+    ierr        = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
+                          ts->es_data);
+    ierr        = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
+                          ts->es_data);
     unsigned t3 = get_time_usec();
 
     *metadata_time = t2 - t1;
@@ -684,8 +537,8 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
 void
 data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
-                                 hid_t plist_id, deepmem_data_contig_md *data_in,
-                                 unsigned long *metadata_time, unsigned long *data_time)
+                                 hid_t plist_id, data_contig_md *data_in, unsigned long *metadata_time,
+                                 unsigned long *data_time)
 {
     assert(data_in && data_in->x);
     hid_t dcpl;
@@ -803,18 +656,27 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 {
     void *data = NULL;
 
+    // MetaMemory
+    mm = (metamem**)malloc(8*sizeof(metamem*));
+    for(int i = 0; i < 8; i++)
+    {
+      mm[i] = metamem_init(METAMEM_CUDA);
+    }
+
     make_compound_type_separates();
     make_compound_type();
     hid_t filespace, memspace;
-    *data_preparation_time          = 0;
-    unsigned long long particle_cnt = params.num_particles;
-    unsigned long actual_elem_cnt = 0; // only for set_select_spaces_strided()
-    int           dset_cnt        = 0;
-    unsigned long t_prep_start = get_time_usec();
+    *data_preparation_time = 0;
+
+    //    unsigned long data_size;
+    unsigned long long particle_cnt    = params.num_particles;
+    unsigned long      actual_elem_cnt = 0; // only for set_select_spaces_strided()
+    int                dset_cnt        = 0;
+    unsigned long      t_prep_start    = get_time_usec();
     switch (params.access_pattern.pattern_write) {
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(filespace_out, memspace_out);
-            data     = (void *)prepare_data_contig_1D(params, particle_cnt, data_size);
+            data     = (void *)prepare_data_contig_1D(particle_cnt, data_size);
             dset_cnt = 8;
             break;
 
@@ -830,13 +692,13 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
                 printf("Strided write setting error.\n");
                 return NULL;
             }
-            data     = (void *)prepare_data_contig_1D(params, actual_elem_cnt, data_size);
+            data     = (void *)prepare_data_contig_1D(actual_elem_cnt, data_size);
             dset_cnt = 8;
             break;
 
         case CONTIG_COMPOUND_1D:
             set_select_spaces_default(filespace_out, memspace_out);
-            data     = (void *)prepare_data_contig_1D(params, particle_cnt, data_size);
+            data     = (void *)prepare_data_contig_1D(particle_cnt, data_size);
             dset_cnt = 1;
             break;
 
@@ -914,11 +776,6 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         return -1;
     }
 
-#ifdef HDF5_USE_CUDA
-    volatile int *kernel_flag;
-    CUDA_RUNTIME_API_CALL(cudaMallocManaged((void **)&kernel_flag, sizeof(int), cudaMemAttachGlobal));
-#endif
-
     MEM_MONITOR = mem_monitor_new(timestep_cnt, ASYNC_MODE, data_size, params.io_mem_limit);
 
     if (!MEM_MONITOR) {
@@ -952,34 +809,52 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         t1         = get_time_usec();
         meta_time3 = (t1 - t0);
 
+
+        if (MY_RANK == 0)
+            printf("H2D %s ... \n", grp_name);
+
+        // Metamemory
+        mm[0]->fn->copy(mm[0], H2D);
+        mm[1]->fn->copy(mm[1], H2D);
+        mm[2]->fn->copy(mm[2], H2D);
+        mm[3]->fn->copy(mm[3], H2D);
+        mm[4]->fn->copy(mm[4], H2D);
+        mm[5]->fn->copy(mm[5], H2D);
+        mm[6]->fn->copy(mm[6], H2D);
+        mm[7]->fn->copy(mm[7], H2D);
+
+        // TODO: compute here??
+
+        if (MY_RANK == 0)
+            printf("D2H %s ... \n", grp_name);
+
+        // Metamemory
+        mm[0]->fn->copy(mm[0], D2H);
+        mm[1]->fn->copy(mm[1], D2H);
+        mm[2]->fn->copy(mm[2], D2H);
+        mm[3]->fn->copy(mm[3], D2H);
+        mm[4]->fn->copy(mm[4], D2H);
+        mm[5]->fn->copy(mm[5], D2H);
+        mm[6]->fn->copy(mm[6], D2H);
+        mm[7]->fn->copy(mm[7], D2H);
+
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
 
-#ifdef HDF5_USE_CUDA
-        *kernel_flag = 0;
-        kernel_call((((deepmem_data_contig_md *)data)->d_x), (((deepmem_data_contig_md *)data)->d_y),
-                    (((deepmem_data_contig_md *)data)->d_z), (((deepmem_data_contig_md *)data)->d_px),
-                    (((deepmem_data_contig_md *)data)->d_py), (((deepmem_data_contig_md *)data)->d_pz),
-                    (((deepmem_data_contig_md *)data)->d_id_1), (((deepmem_data_contig_md *)data)->d_id_2),
-                    ((deepmem_data_contig_md *)data)->particle_cnt, kernel_flag, (cudaStream_t)0);
-        *kernel_flag = 1;
-        CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
-#endif
         switch (pattern) {
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
             case CONTIG_CONTIG_3D:
             case CONTIG_CONTIG_STRIDED_1D:
                 data_write_contig_contig_MD_array(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                                                  (deepmem_data_contig_md *)data, &meta_time4,
-                                                  &data_time_exp);
+                                                  (data_contig_md *)data, &meta_time4, &data_time_exp);
                 dset_cnt = 8;
                 break;
 
             case CONTIG_COMPOUND_1D:
             case CONTIG_COMPOUND_2D:
                 data_write_contig_to_interleaved(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id,
-                                                 (deepmem_data_contig_md *)data, &meta_time4, &data_time_exp);
+                                                 (data_contig_md *)data, &meta_time4, &data_time_exp);
                 dset_cnt = 1;
                 break;
 
@@ -1094,8 +969,10 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
     if (meta_collective == 1) {
         if (MY_RANK == 0)
             printf("Collective write: enabled.\n");
+#if H5_VERSION_GE(1, 10, 0)
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
+#endif
     }
     else {
         if (MY_RANK == 0)
@@ -1181,69 +1058,10 @@ main(int argc, char *argv[])
 
     set_globals(&params);
 
-    if (params.device_api == CUDA) {
-#ifdef HDF5_USE_CUDA
-        int devCount;
-        CUDA_RUNTIME_API_CALL(cudaGetDeviceCount(&devCount));
-        // printf("CUDA Device Query...\n");
-        // printf("There are %d CUDA devices.\n", devCount);
-        // printf("mpi_rank: %d\n", MY_RANK);
-        // fflush(stdout);
-        int   local_rank;
-        char *str;
-        // int gpu_id = -1;
-
-        if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
-            local_rank = atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
-            gpu_id     = local_rank;
-        }
-        else {
-            printf("OMPI_COMM_WORLD_LOCAL_RANK is NULL\n");
-            gpu_id = 0;
-        }
-
-        gpu_id %= devCount; // there are only devCount
-        CUDA_RUNTIME_API_CALL(cudaSetDevice(gpu_id));
-        device_api = DEEPMEM_CUDA;
-#else
-        fprintf(stderr, "CUDA Device API not enabled\n");
-        exit(EXIT_FAILURE);
-#endif
-    }
-    else if (params.device_api == HIP) {
-        device_api = DEEPMEM_HIP;
-    }
-    else if (params.device_api == OneAPI) {
-        device_api = DEEPMEM_OneAPI;
-    }
-    else {
-        fprintf(stderr, "DEVICE_API not supported\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (params.host_mem_type == MEMORY_PAGEABLE && params.device_mem_type == MEMORY_DEVICE) {
-        host_mem_type   = H5MEM_CPU_PAGEABLE;
-        device_mem_type = H5MEM_GPU;
-    }
-    else if (params.host_mem_type == MEMORY_PINNED && params.device_mem_type == MEMORY_DEVICE) {
-        host_mem_type   = H5MEM_CPU_PINNED;
-        device_mem_type = H5MEM_GPU;
-    }
-    else if (params.host_mem_type == MEMORY_MANAGED && params.device_mem_type == MEMORY_MANAGED) {
-        host_mem_type   = H5MEM_CPU_GPU_MANAGED;
-        device_mem_type = H5MEM_CPU_GPU_MANAGED;
-    }
-    else {
-        fprintf(stderr, "HOST_MEM_TYPE and DEVICE_MEM_TYPE combination not supported\n");
-        exit(EXIT_FAILURE);
-    }
-
-    device_aware_hdf5 = params.device_aware_hdf5;
-
     NUM_TIMESTEPS = params.cnt_time_step;
 
     if (MY_RANK == 0)
-        printf("Start benchmark: h5bench_vpicio, Number of particles per rank: %llu M\n",
+        printf("Start benchmark: h5bench_write, Number of particles per rank: %llu M\n",
                NUM_PARTICLES / (1024 * 1024));
 
     unsigned long total_write_size =
@@ -1316,18 +1134,21 @@ main(int argc, char *argv[])
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
-    H5Fclose(file_id);
-    //    H5Fclose_async(file_id, 0);
+    H5Fclose_async(file_id, 0);
     unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
+#ifdef USE_ASYNC_VOL
         if (params.asyncMode == ASYNC_EXPLICIT)
             mode_str = "Async";
         else
             mode_str = "Sync";
+#else
+        mode_str = "Sync";
+#endif
         printf("\n==================  Performance results  =================\n");
 
         unsigned long long total_sleep_time_us =
@@ -1337,7 +1158,7 @@ main(int argc, char *argv[])
                "Total write size = %lu MB\n",
                total_sleep_time_us / (1000), total_size_mb);
 
-        //        printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
+        // printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
         float rwt_s        = (float)raw_write_time / (1000 * 1000);
         float raw_rate_mbs = (float)total_size_mb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
@@ -1367,11 +1188,15 @@ main(int argc, char *argv[])
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            if (params.meta_coll == 1)
+            if (params.data_coll == 1)
                 fprintf(params.csv_fs, "CollectiveWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %d, sec\n", total_sleep_time_us / (1000));
+            if (params.meta_coll == 1)
+                fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
+            else
+                fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);

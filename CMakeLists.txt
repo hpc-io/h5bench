@@ -61,6 +61,37 @@ set(meta_stress_src
 add_executable(h5bench_hdf5_iotest ${meta_stress_src})
 target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
+# ===========  GPUIO test: h5bench_write_cuda ===========
+set(METAMEM_CUDA_SUPPORT OFF)
+
+find_package(CUDAToolkit)
+if(CUDAToolkit_FOUND)
+  enable_language(CUDA)
+  set(METAMEM_CUDA_SUPPORT ON)
+endif(CUDAToolkit_FOUND)
+
+message(STATUS "METAMEM_CUDA_SUPPORT=" ${METAMEM_CUDA_SUPPORT})
+
+if(METAMEM_CUDA_SUPPORT)
+  file (GLOB METAMEM_API_CUDA_SRCS
+    ./gpuio/metamemory/include/*.h
+    ./gpuio/metamemory/src/*.c
+    ./gpuio/metamemory/src/cuda/*.c
+  )
+
+  add_library(cuda_metamemapi SHARED ${METAMEM_API_CUDA_SRCS})
+  set_target_properties(cuda_metamemapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
+  target_include_directories(cuda_metamemapi PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  target_include_directories(cuda_metamemapi PRIVATE ./gpuio/metamemory/include/)
+
+  # cuda tests
+  add_executable(h5bench_gpuio_write gpuio/h5bench_write.c)
+  target_include_directories(h5bench_gpuio_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  target_link_libraries(h5bench_gpuio_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart cuda_metamemapi)
+endif(METAMEM_CUDA_SUPPORT)
+# =================================================================
+
+
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
 #message("============== Build without USE_DEV_VL ==============")
 #add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
