@@ -63,6 +63,7 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # ===========  GPUIO test: h5bench_write_cuda ===========
 set(METAMEM_CUDA_SUPPORT OFF)
+set(METAMEM_HIP_SUPPORT OFF)
 
 find_package(CUDAToolkit)
 if(CUDAToolkit_FOUND)
@@ -84,13 +85,47 @@ if(METAMEM_CUDA_SUPPORT)
   target_include_directories(cuda_metamemapi PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
   target_include_directories(cuda_metamemapi PRIVATE ./gpuio/metamemory/include/)
 
-  # cuda tests
-  add_executable(h5bench_gpuio_write gpuio/h5bench_write.c)
-  target_include_directories(h5bench_gpuio_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-  target_link_libraries(h5bench_gpuio_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart cuda_metamemapi)
+  add_executable(h5bench_cuda_write gpuio/h5bench_write.c)
+  target_include_directories(h5bench_cuda_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  set_target_properties(h5bench_cuda_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
+  target_link_libraries(h5bench_cuda_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart cuda_metamemapi)
 endif(METAMEM_CUDA_SUPPORT)
-# =================================================================
 
+
+# Search for rocm in common locations
+list(APPEND CMAKE_PREFIX_PATH /opt/rocm/hip /opt/rocm)
+
+# Find hip
+find_package(HIP)
+if(HIP_VERSION)
+  set(METAMEM_HIP_SUPPORT ON)
+  set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+  set(CMAKE_CXX_LINKER   ${HIP_HIPCC_EXECUTABLE})
+endif(HIP_VERSION)
+
+message(STATUS "METAMEM_HIP_SUPPORT=" ${METAMEM_HIP_SUPPORT})
+
+if(METAMEM_HIP_SUPPORT)
+  file (GLOB METAMEM_API_HIP_SRCS
+    ./gpuio/metamemory/include/*.h
+    ./gpuio/metamemory/src/*.c
+    ./gpuio/metamemory/src/hip/*.c
+  )
+
+  set(ORIGINAL_CMAKE_C_COMPILER ${CMAKE_C_COMPILER})
+  set(CMAKE_C_COMPILER amdclang) # TODO: hardcoded c compiler for now..
+  add_library(hip_metamemapi SHARED ${METAMEM_API_HIP_SRCS})
+  set_target_properties(hip_metamemapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
+  target_include_directories(hip_metamemapi PRIVATE ${HIP_ROOT_DIR}/include)
+  target_include_directories(hip_metamemapi PRIVATE ./gpuio/metamemory/include/)
+  target_link_libraries(hip_metamemapi hip::host)
+
+  set(CMAKE_C_COMPILER ${ORIGINAL_CMAKE_C_COMPILER})
+  add_executable(h5bench_hip_write gpuio/h5bench_write.c)
+  set_target_properties(h5bench_hip_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
+  target_link_libraries(h5bench_hip_write h5bench_util hdf5 z MPI::MPI_C hip::host hip_metamemapi)
+endif(METAMEM_HIP_SUPPORT)
+# =================================================================
 
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
 #message("============== Build without USE_DEV_VL ==============")
