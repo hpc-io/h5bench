@@ -662,7 +662,7 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 #if defined(METAMEM_USE_CUDA)
         mm[i] = metamem_init(METAMEM_CUDA);
 #elif defined(METAMEM_USE_HIP)
-        mm[i] = metamem_init(METAMEM_HIP);
+        mm[i]    = metamem_init(METAMEM_HIP);
 #else
         mm[i] = metamem_init(METAMEM_POSIX);
 #endif
@@ -1032,8 +1032,8 @@ main(int argc, char *argv[])
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
 
-    // FIXME: default mpi on AMD platform did not seem to support MPI_THREAD_MULTIPLE. We need this for async io
-    // assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided); 
+    // FIXME: default mpi on AMD platform did not seem to support MPI_THREAD_MULTIPLE. We need this for async
+    // io assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
