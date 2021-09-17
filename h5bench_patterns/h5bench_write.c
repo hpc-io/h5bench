@@ -812,7 +812,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 #ifdef USE_CACHE_VOL
         if (ts_index != timestep_cnt) { // I still want sleep after the last ts for Cache VOL
 #else
-	if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
+        if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
 #endif
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
