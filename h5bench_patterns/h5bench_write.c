@@ -809,11 +809,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             t4         = get_time_usec();
             meta_time5 += (t4 - t3);
         }
-#ifdef USE_CACHE_VOL
-        if (ts_index != timestep_cnt) { // I still want sleep after the last ts for Cache VOL
-#else
         if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
-#endif
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing... \n");
@@ -1074,7 +1070,6 @@ main(int argc, char *argv[])
         mode_str = "Sync";
 #endif
         printf("\n==================  Performance results  =================\n");
-
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_mb = NUM_RANKS * local_data_size / (1024 * 1024);
