@@ -809,8 +809,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             t4         = get_time_usec();
             meta_time5 += (t4 - t3);
         }
-
-        if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
+#ifdef USE_CACHE_VOL
+        if (ts_index != timestep_cnt) { // I still want sleep after the last ts for Cache VOL
+#else
+	if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
+#endif
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing... \n");
