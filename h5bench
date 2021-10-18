@@ -138,10 +138,12 @@ class H5bench:
     def prepare_vol(self, vol):
         """Prepare the environment variables for the VOL."""
         if vol is not None:
-            self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
-            self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
-            self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
-            
+            if 'library' in vol:
+                self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
+                self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
+            if 'path' in vol:
+                self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
+
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
 
     def enable_vol(self, vol):
