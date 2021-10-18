@@ -93,6 +93,9 @@ class H5bench:
 
         self.prepare(setup['directory'])
 
+        self.vol_environment = os.environ.copy()
+        self.prepare_vol(setup['vol'])
+
         benchmarks = setup['benchmarks']
 
         for benchmark in benchmarks:
@@ -107,9 +110,9 @@ class H5bench:
             self.prepare_parallel(setup['mpi'])
 
             if name == 'write':
-                self.run_pattern(id, name, benchmark[name])
+                self.run_pattern(id, name, benchmark[name], setup['vol'])
             elif name == 'read':
-                self.run_pattern(id, name, benchmark[name])
+                self.run_pattern(id, name, benchmark[name], setup['vol'])
             elif name == 'exerciser':
                 self.run_exerciser(id, benchmark[name])
             elif name == 'metadata':
@@ -132,8 +135,43 @@ class H5bench:
 
             self.mpi = ''
 
-    def run_pattern(self, id, operation, setup):
+    def prepare_vol(self, vol):
+        """Prepare the environment variables for the VOL."""
+        if vol is not None:
+            self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
+            self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
+            self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
+            
+            self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
+
+    def enable_vol(self, vol):
+        """Enable VOL by setting the connector."""
+        self.vol_environment['HDF5_VOL_CONNECTOR'] = vol['connector']
+
+    def disable_vol(self, vol):
+        """Disable VOL by setting the connector."""
+        del self.vol_environment['HDF5_VOL_CONNECTOR']
+
+    def reset_vol(self):
+        """Reset the environment variables for the VOL."""
+        if self.vol_environment is not None:
+            if 'LD_LIBRARY_PATH' in self.vol_environment:
+                del self.vol_environment['LD_LIBRARY_PATH']
+            if 'DYLD_LIBRARY_PATH' in self.vol_environment:
+                del self.vol_environment['DYLD_LIBRARY_PATH']
+            if 'HDF5_PLUGIN_PATH' in self.vol_environment:
+                del self.vol_environment['HDF5_PLUGIN_PATH']
+            if 'HDF5_VOL_CONNECTOR' in self.vol_environment:
+                del self.vol_environment['HDF5_VOL_CONNECTOR']
+
+            if 'ABT_THREAD_STACKSIZE' in self.vol_environment:
+                del self.vol_environment['ABT_THREAD_STACKSIZE']
+
+
+    def run_pattern(self, id, operation, setup, vol):
         """Run the h5bench_patterns (write/read) benchmarks."""
+        self.enable_vol(vol)
+
         try:
             start = time.time()
 
@@ -174,7 +212,7 @@ class H5bench:
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
             
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
-                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file)
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
             
                 if s.returncode == 0:
@@ -184,9 +222,11 @@ class H5bench:
 
             end = time.time()
 
-            self.logger.info('Runtime: {} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
+
+        self.disable_vol(vol)
 
     def run_exerciser(self, id, setup):
         """Run the exerciser benchmark."""
@@ -216,7 +256,7 @@ class H5bench:
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
             
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
-                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file)
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
             
                 if s.returncode == 0:
@@ -226,7 +266,7 @@ class H5bench:
 
             end = time.time()
 
-            self.logger.info('Runtime: {} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
@@ -268,7 +308,7 @@ class H5bench:
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
             
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
-                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file)
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
                         
                 if s.returncode == 0:
@@ -278,7 +318,7 @@ class H5bench:
 
             end = time.time()
 
-            self.logger.info('Runtime: {} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
