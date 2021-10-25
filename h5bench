@@ -31,7 +31,6 @@ class H5bench:
         self.check_parallel()
 
         self.configure_log(debug)
-
         self.setup = setup
         self.abort = abort
 
@@ -74,22 +73,55 @@ class H5bench:
 
             self.logger.addHandler(console)        
 
-    def prepare(self, directory):
+    def prepare(self, setup):
         """Create a temporary directory to store all the results of the benchmark."""
-        self.directory = directory
+        self.directory = setup['directory']
 
         try:
             # Create a temporary directory to store all configurations
-            os.mkdir(directory)
+            os.mkdir(self.directory)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
-            self.logger.warning('Base directory already exists: {}'.format(directory))
+            self.logger.warning('Base directory already exists: {}'.format(self.directory))
 
             pass
         except Exception as e:
-            self.logger.debug('Unable to create {}: {}'.format(directory, e))
+            self.logger.debug('Unable to create {}: {}'.format(self.directory, e))
+
+        # Check for Lustre support to set the data stripping configuration
+        command = 'lfs getstripe {}'.format(self.directory)
+
+        arguments = shlex.split(command)
+
+        s = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sOutput, sError = s.communicate()
+            
+        if s.returncode == 0:
+            self.logger.info('Lustre support detected')
+
+            if 'file-system' in setup:
+                if 'lustre' in setup['file-system']:
+                    command = 'lfs setstripe'
+
+                    if 'stripe-size' in setup['file-system']['lustre']:
+                        command += ' -S {}'.format(setup['file-system']['lustre']['stripe-size'])
+
+                    if 'stripe-count' in setup['file-system']['lustre']:
+                        command += ' -c {}'.format(setup['file-system']['lustre']['stripe-count'])
+
+                    command += ' {}'.format(self.directory)
+
+                    self.logger.debug('Lustre stripping configuration: {}'.format(command))
+
+                    arguments = shlex.split(command)
+
+                    s = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    sOutput, sError = s.communicate()
+
+        else:
+            self.logger.info('Lustre support not detected')
 
     def run(self):
         """Run all the benchmarks/kernels."""
@@ -103,7 +135,7 @@ class H5bench:
 
             exit(-1)
 
-        self.prepare(setup['directory'])
+        self.prepare(setup)
 
         self.vol_environment = os.environ.copy()
         self.prepare_vol(setup['vol'])
@@ -316,6 +348,8 @@ class H5bench:
 
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
+                f.write('[DEFAULT]\n')
+
                 for key in configuration:
                     # Make sure the CSV file is generated in the temporary path
                     if key == 'csv-file':
@@ -325,11 +359,10 @@ class H5bench:
 
                 f.write('hdf5-file = {}\n'.format(file))
 
-            command = '{} {} {} {}'.format(
+            command = '{} {} {}'.format(
                 self.mpi,
                 self.H5BENCH_METADATA,
-                configuration_file,
-                file
+                configuration_file
             )
 
             self.logger.info(command)

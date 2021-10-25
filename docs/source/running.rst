@@ -202,6 +202,36 @@ You can refer to this sample of a complete `configuration.json` file that define
 
 For a description of all the options available in each benchmark, please refer to their entries in the documentation.
 
+When the `--debug` option is enabled, you can expect an output similar to:
+
+.. code-block::
+
+   2021-10-25 16:31:24,866 h5bench - INFO - Starting h5bench Suite
+   2021-10-25 16:31:24,889 h5bench - INFO - Lustre support detected
+   2021-10-25 16:31:24,889 h5bench - DEBUG - Lustre stripping configuration: lfs setstripe -S 1M -c 4 full-teste
+   2021-10-25 16:31:24,903 h5bench - INFO - h5bench [write] - Starting
+   2021-10-25 16:31:24,903 h5bench - INFO - h5bench [write] - DIR: full-teste/504fc233/
+   2021-10-25 16:31:24,904 h5bench - INFO - Parallel setup: srun --cpu_bind=cores -n 4
+   2021-10-25 16:31:24,908 h5bench - INFO - srun --cpu_bind=cores -n 4 build/h5bench_write full-teste/504fc233/h5bench.cfg full-teste/test.h5
+   2021-10-25 16:31:41,670 h5bench - INFO - SUCCESS
+   2021-10-25 16:31:41,754 h5bench - INFO - Runtime: 16.8505464 seconds (elapsed time, includes allocation wait time)
+   2021-10-25 16:31:41,755 h5bench - INFO - h5bench [write] - Complete
+   2021-10-25 16:31:41,755 h5bench - INFO - h5bench [exerciser] - Starting
+   2021-10-25 16:31:41,755 h5bench - INFO - h5bench [exerciser] - DIR: full-teste/247659d1/
+   2021-10-25 16:31:41,755 h5bench - INFO - Parallel setup: srun --cpu_bind=cores -n 4
+   2021-10-25 16:31:41,756 h5bench - INFO - srun --cpu_bind=cores -n 4 build/h5bench_exerciser --numdims 2  --minels 8 8  --nsizes 3  --bufmult 2 2  --dimranks 8 4 
+   2021-10-25 16:31:49,174 h5bench - INFO - SUCCESS
+   2021-10-25 16:31:49,174 h5bench - INFO - Finishing h5bench Suite
+
+Cori
+^^^^
+
+In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads, make sure you define:
+
+.. code-block::
+
+   export MPICH_MAX_THREAD_SAFETY="multiple" 
+
 -----------------------------------
 Manual Execution
 -----------------------------------
