@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -24,7 +24,7 @@ class H5bench:
     H5BENCH_EXERCISER = 'build/h5bench_exerciser'
     H5BENCH_METADATA = 'build/h5bench_hdf5_iotest'
 
-    def __init__(self, setup, debug):
+    def __init__(self, setup, abort, debug):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
@@ -33,6 +33,7 @@ class H5bench:
         self.configure_log(debug)
 
         self.setup = setup
+        self.abort = abort
 
     def check_parallel(self):
         p = psutil.Process(os.getppid())
@@ -242,6 +243,11 @@ class H5bench:
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
             end = time.time()
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
@@ -285,6 +291,11 @@ class H5bench:
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
 
             end = time.time()
 
@@ -338,6 +349,11 @@ class H5bench:
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
             end = time.time()
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
@@ -356,6 +372,13 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    '--abort-on-failure',
+    action='store_true',
+    dest='abort',
+    help='Stop h5bench if a benchmark failed'
+)
+
+PARSER.add_argument(
     '--debug',
     action='store_true',
     dest='debug',
@@ -364,5 +387,5 @@ PARSER.add_argument(
 
 ARGS = PARSER.parse_args()
 
-BENCH = H5bench(ARGS.setup, ARGS.debug)
+BENCH = H5bench(ARGS.setup, ARGS.debug, ARGS.abort)
 BENCH.run()
