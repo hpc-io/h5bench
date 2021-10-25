@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
 import os
 import sys
@@ -6,6 +6,7 @@ import json
 import time
 import uuid
 import shlex
+import psutil
 import pprint
 import errno
 import argparse
@@ -27,13 +28,23 @@ class H5bench:
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
+        self.check_parallel()
+
         self.configure_log(debug)
 
         self.setup = setup
 
+    def check_parallel(self):
+        p = psutil.Process(os.getppid())
+
+        if len(p.cmdline()) > 1:
+            print('You should not call MPI directly when running h5bench. Please, update your configuration file or manually launch each benchmark.')
+
+            exit()
+
     def configure_log(self, debug):
         """Configure the logging system."""
-        self.logger = logging.getLogger('H5BENCH')
+        self.logger = logging.getLogger('h5bench')
 
         if debug:
             self.logger.setLevel(logging.DEBUG)
@@ -126,14 +137,21 @@ class H5bench:
 
     def prepare_parallel(self, mpi):
         """Prepare the MPI launch command."""
-        if mpi['command'] in ['mpirun', 'mpiexec']:
-            self.mpi = '{} -np {}'.format(mpi['command'], mpi['ranks'])
-        elif mpi['command'] == 'srun':
-            self.mpi = '{} --cpu_bind=cores -n {}'.format(mpi['command'], mpi['ranks'])
+        if 'configuration' in mpi:
+            self.mpi = '{} {}'.format(mpi['command'], mpi['configuration'])
         else:
-            self.logger.warning('Unknown MPI launcher selected!')
+            if mpi['command'] in ['mpirun', 'mpiexec']:
+                self.mpi = '{} -np {}'.format(mpi['command'], mpi['ranks'])
+            elif mpi['command'] == 'srun':
+                self.mpi = '{} --cpu_bind=cores -n {}'.format(mpi['command'], mpi['ranks'])
+            else:
+                self.logger.warning('Unknown MPI launcher selected!')
 
-            self.mpi = ''
+                self.mpi = ''
+
+                return
+
+        self.logger.info('Parallel setup: {}'.format(self.mpi))
 
     def prepare_vol(self, vol):
         """Prepare the environment variables for the VOL."""
@@ -148,11 +166,13 @@ class H5bench:
 
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
-        self.vol_environment['HDF5_VOL_CONNECTOR'] = vol['connector']
+        if 'connector' in vol:
+            self.vol_environment['HDF5_VOL_CONNECTOR'] = vol['connector']
 
     def disable_vol(self, vol):
         """Disable VOL by setting the connector."""
-        del self.vol_environment['HDF5_VOL_CONNECTOR']
+        if 'HDF5_VOL_CONNECTOR' in self.vol_environment:
+            del self.vol_environment['HDF5_VOL_CONNECTOR']
 
     def reset_vol(self):
         """Reset the environment variables for the VOL."""
@@ -220,7 +240,7 @@ class H5bench:
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
-                    self.logger.error('Return: %s', s.returncode)
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
             end = time.time()
 
@@ -264,7 +284,7 @@ class H5bench:
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
-                    self.logger.error('Return: %s', s.returncode)
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
             end = time.time()
 
@@ -316,7 +336,7 @@ class H5bench:
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
-                    self.logger.error('Return: %s', s.returncode)
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
             end = time.time()
 
@@ -330,10 +350,8 @@ PARSER = argparse.ArgumentParser(
 )
 
 PARSER.add_argument(
-    '--setup',
+    'setup',
     action='store',
-    dest='setup',
-    required=True,
     help='JSON file with the benchmarks to run'
 )
 

@@ -1,7 +1,8 @@
 {
     "mpi": {
         "command": "mpirun",
-        "ranks": "4"
+        "ranks": "4",
+        "configuration": "-np 8 --oversubscribe"
     },
     "vol": {
         "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
@@ -34,6 +35,50 @@
                     "DIM_3": "1",
                     "ASYNC_MODE": "NON",
                     "CSV_FILE": "output.csv"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
                 }
             }
         },
