@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import json
 import time
 import uuid
 import shlex
 import psutil
-import pprint
 import errno
 import argparse
 import collections
