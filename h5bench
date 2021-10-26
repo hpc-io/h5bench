@@ -40,7 +40,7 @@ class H5bench:
         shell = os.environ['SHELL']
 
         if command[0] != shell:
-            print('You should not call MPI directly when running h5bench. Please, update your configuration file or manually launch each benchmark.')
+            print('You should not call MPI directly when running h5bench.')
 
             exit(-1)
 
@@ -54,7 +54,9 @@ class H5bench:
             self.logger.setLevel(logging.INFO)
 
         # Defines the format of the logger
-        formatter = logging.Formatter('%(asctime)s %(module)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s %(module)s - %(levelname)s - %(message)s'
+        )
 
         # Configure the log rotation
         handler = logging.handlers.RotatingFileHandler(
@@ -70,13 +72,12 @@ class H5bench:
 
         if debug:
             console = logging.StreamHandler()
-            
             console.setFormatter(formatter)
 
-            self.logger.addHandler(console)        
+            self.logger.addHandler(console)
 
     def prepare(self, setup):
-        """Create a temporary directory to store all the results of the benchmark."""
+        """Create a directory to store all the results of the benchmark."""
         self.directory = setup['directory']
 
         try:
@@ -100,7 +101,7 @@ class H5bench:
 
             s = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             sOutput, sError = s.communicate()
-                
+
             if s.returncode == 0:
                 self.logger.info('Lustre support detected')
 
@@ -125,7 +126,7 @@ class H5bench:
 
             else:
                 self.logger.info('Lustre support not detected')
-        except Exception as e:
+        except Exception:
             self.logger.info('Lustre support not detected')
 
     def validate_json(self, setup):
@@ -166,8 +167,8 @@ class H5bench:
 
         for benchmark in benchmarks:
             name = next(iter(benchmark))
-            id =  str(uuid.uuid4()).split('-')[0]
-            
+            id = str(uuid.uuid4()).split('-')[0]
+
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
@@ -244,7 +245,6 @@ class H5bench:
             if 'ABT_THREAD_STACKSIZE' in self.vol_environment:
                 del self.vol_environment['ABT_THREAD_STACKSIZE']
 
-
     def run_pattern(self, id, operation, setup, vol):
         """Run the h5bench_patterns (write/read) benchmarks."""
         self.enable_vol(vol)
@@ -287,11 +287,11 @@ class H5bench:
 
             stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
-            
+
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
-            
+
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
@@ -336,11 +336,11 @@ class H5bench:
 
             stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
-            
+
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
-            
+
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
@@ -394,11 +394,11 @@ class H5bench:
 
             stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
             stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
-            
+
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
-                        
+
                 if s.returncode == 0:
                     self.logger.info('SUCCESS')
                 else:
