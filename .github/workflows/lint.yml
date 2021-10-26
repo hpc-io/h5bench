@@ -18,6 +18,6 @@ jobs:
         with:
           checkName: "Python Lint"
           path: h5bench
-          config: flake8.ini
+          config: .github/flake8.ini
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
