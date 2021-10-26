@@ -36,11 +36,15 @@ class H5bench:
 
     def check_parallel(self):
         p = psutil.Process(os.getppid())
+        command = p.cmdline()
 
-        if len(p.cmdline()) > 1:
+        # Get user defined shell
+        shell = os.environ['SHELL']
+
+        if command[0] != shell:
             print('You should not call MPI directly when running h5bench. Please, update your configuration file or manually launch each benchmark.')
 
-            exit()
+            exit(-1)
 
     def configure_log(self, debug):
         """Configure the logging system."""
@@ -126,6 +130,22 @@ class H5bench:
         except Exception as e:
             self.logger.info('Lustre support not detected')
 
+    def validate_json(self, setup):
+        """Make sure JSON contains all the necessary properties."""
+        properties = [
+            'mpi',
+            'vol',
+            'file-system',
+            'directory',
+            'benchmarks'
+        ]
+
+        for p in properties:
+            if p not in setup:
+                self.logger.critical('JSON configuration file is invalid: "{}" property is missing'.format(p))
+
+                exit(-1)
+
     def run(self):
         """Run all the benchmarks/kernels."""
         self.logger.info('Starting h5bench Suite')
@@ -138,6 +158,7 @@ class H5bench:
 
             exit(-1)
 
+        self.validate_json(setup)
         self.prepare(setup)
 
         self.vol_environment = os.environ.copy()
