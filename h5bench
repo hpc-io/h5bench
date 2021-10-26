@@ -152,7 +152,7 @@ class H5bench:
         try:
             with open(self.setup) as file:
                 setup = json.load(file, object_pairs_hook=collections.OrderedDict)
-        except Exception as e:
+        except Exception:
             self.logger.critical('Unable to find and parse the input configuration file')
 
             exit(-1)
