@@ -1,9 +1,8 @@
 name: lint
 
 on:
+  workflow_dispatch:
   push:
-    paths:
-      - h5bench
 
 jobs:
   flake8:
