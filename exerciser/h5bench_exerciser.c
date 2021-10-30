@@ -127,7 +127,7 @@ main(int argc, char *argv[])
     hsize_t memStride_dbl = 1;
     hsize_t memCount_dbl  = 1;
 
-    /* Parse Inpu Args */
+    /* Parse Input Args */
     char *file_prefix = argv[0];
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--metacoll") == 0)
