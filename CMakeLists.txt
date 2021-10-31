@@ -82,6 +82,15 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 #	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
 #endif()
 
+# ===========  Build AMReX ===========
+set(AMReX_HDF5 YES)
+set(AMReX_PARTICLES YES)
+add_subdirectory(amrex)
+
+set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
+add_executable(h5bench_amrex ${amrex_src})
+target_link_libraries(h5bench_amrex hdf5 z m amrex MPI::MPI_C)
+
 # =================================================================
 
 # =========== Install binaries ===========
