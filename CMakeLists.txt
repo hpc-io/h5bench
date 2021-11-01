@@ -82,9 +82,17 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 #	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
 #endif()
 
+configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+
 # =================================================================
 
 # =========== Install binaries ===========
+install(
+	FILES
+	h5bench
+	PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+	DESTINATION bin
+)
 install(TARGETS 
 	h5bench_write 
 	h5bench_read 
@@ -92,3 +100,4 @@ install(TARGETS
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl
 	DESTINATION bin)
+
