@@ -1,4 +1,4 @@
-name: linux 
+name: HDF5 develop 
 
 on:
   pull_request:
