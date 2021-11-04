@@ -46,7 +46,7 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make && make install
+          make -j 8 && make install
           
           # Compile Argobots
           cd $ABT_DIR

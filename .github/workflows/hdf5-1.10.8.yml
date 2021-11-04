@@ -1,4 +1,4 @@
-name: HDF5 develop 
+name: HDF5 1.10.8 
 
 on:
   pull_request:
@@ -26,8 +26,10 @@ jobs:
           sudo apt-get install libhdf5-mpi-dev
           
           # hdf5
-          git clone https://github.com/HDFGroup/hdf5.git
-
+          wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_10_8.tar.gz
+          tar zxvf hdf5-1_10_8.tar.gz
+          mv hdf5-hdf5-1_10_8 hdf5
+          
           # vol-async
           git clone --recursive https://github.com/hpc-io/vol-async.git
           
@@ -44,7 +46,7 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 8 && make install
+          make && make install
           
           # Compile Argobots
           cd $ABT_DIR
