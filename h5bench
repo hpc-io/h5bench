@@ -434,7 +434,7 @@ class H5bench:
             self.logger.info(os.getcwd())
             configuration = setup['configuration']
 
-            configuration_file = 'amrex.ini'.format(self.directory, id)
+            configuration_file = 'amrex.ini'
 
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
