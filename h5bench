@@ -427,19 +427,21 @@ class H5bench:
         try:
             start = time.time()
 
-            # TODO: check where the file is going to be stored
-            # Define the output file (should be a .h5 file)
-            file = '{}/{}'.format(self.directory, setup['file'])
+            # AMReX does not allow to provide a path prefix, so we will change to that directory
+            cwd = os.getcwd()
+
+            os.chdir('{}/{}'.format(self.directory, id))
+            self.logger.info(os.getcwd())
             configuration = setup['configuration']
 
-            configuration_file = '{}/{}/amrex.ini'.format(self.directory, id)
+            configuration_file = 'amrex.ini'.format(self.directory, id)
 
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
                 for key in configuration:
                     f.write('{} = {}\n'.format(key, configuration[key]))
 
-            command = '{} {} {}'.format(
+            command = '{} ../../{} {}'.format(
                 self.mpi,
                 self.H5BENCH_AMREX,
                 configuration_file
@@ -450,8 +452,8 @@ class H5bench:
             # Make sure the command line is in the correct format
             arguments = shlex.split(command)
 
-            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
-            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+            stdout_file_name = 'stdout'
+            stderr_file_name = 'stderr'
 
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
@@ -468,6 +470,9 @@ class H5bench:
                         exit(-1)
 
             end = time.time()
+
+            # Return to the main directory
+            os.chdir(cwd)
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
