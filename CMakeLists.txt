@@ -20,6 +20,8 @@ set(ASYNC_HOME $ENV{ASYNC_HOME})
 option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
 	add_definitions(-DUSE_ASYNC_VOL)
+	include_directories(${ASYNC_HOME})
+	link_directories(${ASYNC_HOME})
 endif()
 
 # =========== Utilility libs ==============
@@ -82,6 +84,35 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 #	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
 #endif()
 
+# ===========  Build OpenPMD ===========
+set(openPMD_USE_MPI ON)
+set(openPMD_USE_HDF5 ON)
+set(openPMD_USE_ADIOS1 OFF)
+set(openPMD_USE_ADIOS2 OFF)
+set(openPMD_USE_JSON OFF)
+set(openPMD_USE_PYTHON OFF)
+set(openPMD_INSTALL OFF)
+set(openPMD_BUILD_TESTING OFF)
+set(openPMD_BUILD_EXAMPLES OFF)
+set(openPMD_BUILD_CLI_TOOLS OFF)
+
+add_subdirectory(openpmd)
+
+add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
+target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_write PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+add_executable(h5bench_openpmd_read openpmd/examples/8b_benchmark_read_parallel.cpp)
+target_link_libraries(h5bench_openpmd_read openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_read PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 
 # =================================================================
@@ -98,6 +129,9 @@ install(TARGETS
 	h5bench_read 
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
+	h5bench_openpmd_write
+	h5bench_openpmd_read
 	#h5bench_vl_stream_hl
-	DESTINATION bin)
+	DESTINATION bin
+)
 
