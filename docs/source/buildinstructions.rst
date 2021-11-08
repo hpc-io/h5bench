@@ -88,13 +88,11 @@ There are some variants available as described bellow:
 	CMakePackage:   h5bench
 
 	Description:
-	    H5bench is a suite of parallel I/O benchmarks or kernels representing
-	    I/O patterns that are commonly used in HDF5 applications on high
-	    performance computing systems.
+	    A benchmark suite for measuring HDF5 performance.
 
-	Homepage: https://h5bench.readthedocs.io/en/latest/
+	Homepage: https://github.com/hpc-io/h5bench
 
-	Maintainers: @houjun @sbyna @jeanbez
+	Maintainers: @jeanbez @sbyna
 
 	Externally Detectable: 
 	    False
@@ -103,29 +101,34 @@ There are some variants available as described bellow:
 	    None
 
 	Preferred version:  
-	    master    [git] https://github.com/hpc-io/h5bench.git on branch master
+	    1.1        https://github.com/hpc-io/h5bench/archive/refs/tags/1.1.tar.gz
 
 	Safe versions:  
-	    master    [git] https://github.com/hpc-io/h5bench.git on branch master
+	    develop    [git] https://github.com/hpc-io/h5bench.git on branch develop
+	    master     [git] https://github.com/hpc-io/h5bench.git on branch master
+	    1.1        https://github.com/hpc-io/h5bench/archive/refs/tags/1.1.tar.gz
+	    1.0        https://github.com/hpc-io/h5bench/archive/refs/tags/1.0.tar.gz
+
+	Deprecated versions:  
+	    None
 
 	Variants:
-	    Name [Default]                 Allowed values          Description
-	    ===========================    ====================    ==================================
+	    Name [Default]                 When    Allowed values          Description
+	    ===========================    ====    ====================    ==================================
 
-	    async [off]                    on, off                 Build and run H5bench Async
-	    build_type [RelWithDebInfo]    Debug, Release,         CMake build type
-					   RelWithDebInfo,         
-					   MinSizeRel              
-	    ipo [off]                      on, off                 CMake interprocedural optimization
+	    build_type [RelWithDebInfo]    --      Debug, Release,         CMake build type
+						   RelWithDebInfo,         
+						   MinSizeRel              
+	    ipo [off]                      --      on, off                 CMake interprocedural optimization
 
 	Installation Phases:
 	    cmake    build    install
 
 	Build Dependencies:
-	    cmake  hdf5  mpi  vol-async
+	    cmake  hdf5  mpi
 
 	Link Dependencies:
-	    cmake  hdf5  mpi  vol-async
+	    hdf5  mpi
 
 	Run Dependencies:
 	    None
