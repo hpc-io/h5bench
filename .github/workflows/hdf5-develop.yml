@@ -1,8 +1,7 @@
-name: linux 
+name: HDF5 develop 
 
 on:
   pull_request:
-    branches: [ master ]
 
   # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -30,7 +29,7 @@ jobs:
           
           # hdf5
           git clone https://github.com/HDFGroup/hdf5.git
-          
+
           # vol-async
           git clone --recursive https://github.com/hpc-io/vol-async.git
           
@@ -47,7 +46,7 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make && make install
+          make -j 8 && make install
           
           # Compile Argobots
           cd $ABT_DIR
