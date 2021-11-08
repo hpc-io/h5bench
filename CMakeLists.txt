@@ -87,7 +87,7 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 # ===========  Build AMReX ===========
 set(AMReX_HDF5 YES)
 set(AMReX_PARTICLES YES)
-#set(AMReX_MPI_THREAD_MULTIPLE YES)
+set(AMReX_MPI_THREAD_MULTIPLE YES)
 add_subdirectory(amrex)
 
 set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
