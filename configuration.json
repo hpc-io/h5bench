@@ -5,8 +5,8 @@
         "configuration": "-np 8 --oversubscribe"
     },
     "vol": {
-        "library": "/Users/jlbez/Documents/repositories/vol-async/src:/Users/jlbez/Documents/repositories/argobots/install/lib:/Users/jlbez/Documents/repositories/hdf5-install/install:",
-        "path": "/Users/jlbez/Documents/repositories/vol-async/src",
+        "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
+        "path": "/vol-async/src",
         "connector": "async under_vol=0;under_info={}"
     },
     "file-system": {
