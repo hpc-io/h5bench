@@ -70,3 +70,65 @@ Necessary environment variable setting:
 
 
 And all the binaries will be built to the build/directory.
+
+-----------------------------------
+Build with Spack
+-----------------------------------
+
+You can also use Spack to install h5bench. However, notice that the current versions in Spack do not have support for the HDF5 VOL async/cache connectors yet.
+
+.. code-block:: bash
+
+	spack install h5bench
+
+There are some variants available as described bellow:
+
+.. code-block:: bash
+
+	CMakePackage:   h5bench
+
+	Description:
+	    H5bench is a suite of parallel I/O benchmarks or kernels representing
+	    I/O patterns that are commonly used in HDF5 applications on high
+	    performance computing systems.
+
+	Homepage: https://h5bench.readthedocs.io/en/latest/
+
+	Maintainers: @houjun @sbyna @jeanbez
+
+	Externally Detectable: 
+	    False
+
+	Tags: 
+	    None
+
+	Preferred version:  
+	    master    [git] https://github.com/hpc-io/h5bench.git on branch master
+
+	Safe versions:  
+	    master    [git] https://github.com/hpc-io/h5bench.git on branch master
+
+	Variants:
+	    Name [Default]                 Allowed values          Description
+	    ===========================    ====================    ==================================
+
+	    async [off]                    on, off                 Build and run H5bench Async
+	    build_type [RelWithDebInfo]    Debug, Release,         CMake build type
+					   RelWithDebInfo,         
+					   MinSizeRel              
+	    ipo [off]                      on, off                 CMake interprocedural optimization
+
+	Installation Phases:
+	    cmake    build    install
+
+	Build Dependencies:
+	    cmake  hdf5  mpi  vol-async
+
+	Link Dependencies:
+	    cmake  hdf5  mpi  vol-async
+
+	Run Dependencies:
+	    None
+
+	Virtual Packages: 
+	    None
