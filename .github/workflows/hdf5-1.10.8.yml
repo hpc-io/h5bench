@@ -1,4 +1,4 @@
-name: HDF5 1.10.8 
+name: HDF5 1.10.8
 
 on:
   pull_request:
@@ -36,17 +36,24 @@ jobs:
 
       - name: Install HDF5 1.10.8
         run: |
+          mydir="$PWD"
+          export HDF5_DIR=$mydir/hdf5/install
+          
+          mkdir $HDF5_DIR
+          # Compile HDF5
           cd hdf5
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
-          ./configure --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 16 && make install
+          CC=mpicc ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          make -j 16
+          make install
           
       - name: Build h5bench
         run: |
+          export HDF5_HOME=$PWD/hdf5/install
           mkdir build_sync
           cd build_sync
-          cmake ..
+          CC=mpicc cmake ..
           make
           
       - name: Test h5bench SYNC Read & Write (NON)
