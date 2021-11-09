@@ -98,6 +98,9 @@ jobs:
         run: |
           mydir="$PWD"
           export HDF5_HOME=$mydir/hdf5/install
+          export VOL_DIR=$mydir/vol-async
+          export ABT_DIR=$mydir/vol-async/argobots
+          export ASYNC_DIR=$mydir/vol-async/src
           mkdir build_async
           cd build_async
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
