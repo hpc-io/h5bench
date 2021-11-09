@@ -25,7 +25,6 @@ jobs:
           sudo apt-get install zlib1g-dev
           sudo apt-get install python3
           sudo apt-get install libopenmpi-dev
-          sudo apt-get install libhdf5-mpi-dev
           
           # hdf5
           git clone https://github.com/HDFGroup/hdf5.git
@@ -89,17 +88,19 @@ jobs:
       - name: Build h5bench SYNC
         run: |
           mydir="$PWD"
+          export HDF5_HOME=$mydir/hdf5/install
           mkdir build_sync
           cd build_sync
-          cmake .. -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
+          cmake ..
           make
 
       - name: Build h5bench ASYNC
         run: |
           mydir="$PWD"
+          export HDF5_HOME=$mydir/hdf5/install
           mkdir build_async
           cd build_async
-          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
+          cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src"
           make
           
       - name: Test h5bench SYNC Read & Write (NON)
