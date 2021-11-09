@@ -45,13 +45,13 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 8 && make install
+          make -j 16 && make install
           
           # Compile Argobots
           cd $ABT_DIR
           ./autogen.sh
           ./configure --prefix=$ABT_DIR
-          make && make install
+          make -j 8 && make install
           
           # Compile Asynchronous VOL connector
           cd $VOL_DIR
@@ -78,7 +78,7 @@ jobs:
           # Makefile
           tail -n 47 Makefile.summit > Makefile
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
-          make
+          make -j 8
           
           # Run serial and parallel tests
           make check
