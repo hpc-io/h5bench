@@ -427,21 +427,19 @@ class H5bench:
         try:
             start = time.time()
 
-            # AMReX does not allow to provide a path prefix, so we will change to that directory
-            cwd = os.getcwd()
-
-            os.chdir('{}/{}'.format(self.directory, id))
-            self.logger.info(os.getcwd())
+            file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
 
-            configuration_file = 'amrex.ini'
+            configuration_file = '{}/{}/amrex.ini'.format(self.directory, id)
 
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
                 for key in configuration:
                     f.write('{} = {}\n'.format(key, configuration[key]))
 
-            command = '{} ../../{} {}'.format(
+                f.write('directory = {}\n'.format(file))
+
+            command = '{} {} {}'.format(
                 self.mpi,
                 self.H5BENCH_AMREX,
                 configuration_file
@@ -470,9 +468,6 @@ class H5bench:
                         exit(-1)
 
             end = time.time()
-
-            # Return to the main directory
-            os.chdir(cwd)
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
