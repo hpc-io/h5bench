@@ -1073,36 +1073,34 @@ main(int argc, char *argv[])
         printf("\n==================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        unsigned long total_size_mb = NUM_RANKS * local_data_size / (1024 * 1024);
+        unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
         printf("Total emulated compute time %llu ms\n"
-               "Total write size = %lu MB\n",
-               total_sleep_time_us / (1000), total_size_mb);
+               "Total write size = %lu GB\n",
+               total_sleep_time_us / (1000 * 1000), total_size_gb);
 
-        // printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
         float rwt_s        = (float)raw_write_time / (1000 * 1000);
-        float raw_rate_mbs = (float)total_size_mb / rwt_s;
+        float raw_rate_gbs = (float)total_size_gb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
 
-        float meta_time_ms = (float)inner_metadata_time / 1000;
-        //((t3 - t2) - (raw_write_time + sleep_time * (NUM_TIMESTEPS - 1) * 1000 * 1000)) / 1000;
-        printf("Metadata time = %.3f ms\n", meta_time_ms);
+        float meta_time_s = (float)inner_metadata_time / (1000 * 1000);
+        printf("Metadata time = %.3f sec\n", meta_time_s);
 
-        float fcreate_time_ms = (float)(tfopen_end - tfopen_start) / 1000;
-        printf("H5Fcreate() takes %.3f ms\n", fcreate_time_ms);
+        float fcreate_time_s = (float)(tfopen_end - tfopen_start);
+        printf("H5Fcreate() takes %.3f sec\n", fcreate_time_s);
 
-        float flush_time_ms = (float)(tflush_end - tflush_start) / 1000;
-        printf("H5Fflush() takes %.3f ms\n", flush_time_ms);
+        float flush_time_s = (float)(tflush_end - tflush_start);
+        printf("H5Fflush() takes %.3f sec\n", flush_time_s);
 
-        float fclose_time_ms = (float)(tfclose_end - tfclose_start) / 1000;
-        printf("H5Fclose() takes %.3f ms\n", fclose_time_ms);
+        float fclose_time_s = (float)(tfclose_end - tfclose_start);
+        printf("H5Fclose() takes %.3f sec\n", fclose_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
         printf("Observed completion time = %.3f sec\n", oct_s);
 
-        printf("%s Raw write rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
+        printf("%s Raw write rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
 
-        float or_mbs = (float)total_size_mb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed write rate = %.3f MB/sec\n", mode_str, or_mbs);
+        float or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
+        printf("%s Observed write rate = %.3f GB/sec\n", mode_str, or_gbs);
 
         printf("===========================================================\n");
 
@@ -1116,12 +1114,13 @@ main(int argc, char *argv[])
                 fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000));
-            fprintf(params.csv_fs, "Total_write_size, %lu, MB\n", total_size_mb);
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
+                    total_sleep_time_us / (1000 * 1000));
+            fprintf(params.csv_fs, "Total_write_size, %lu, GB\n", total_size_gb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
-            fprintf(params.csv_fs, "Raw_write_rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Core_metadata_time, %.3f, ms\n", meta_time_ms);
-            fprintf(params.csv_fs, "Observed_write_rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Raw_write_rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Core_metadata_time, %.3f, sec\n", meta_time_s);
+            fprintf(params.csv_fs, "Observed_write_rate, %.3f, GB/sec\n", or_gbs);
             fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose(params.csv_fs);
         }

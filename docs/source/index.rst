@@ -13,6 +13,7 @@ H5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
    :caption: Getting Started
 
    buildinstructions
+   running
 
 .. toctree::
    :maxdepth: 2

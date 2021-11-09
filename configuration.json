@@ -1,0 +1,159 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "-np 8 --oversubscribe"
+    },
+    "vol": {
+        "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
+        "path": "/vol-async/src",
+        "connector": "async under_vol=0;under_info={}"
+    },
+    "file-system": {
+        "lustre": {
+            "stripe-size": "1M",
+            "stripe-count": "4"
+        }
+    },
+    "directory": "full-teste",
+    "benchmarks": [
+        {
+            "write": {
+                "file": "test.h5",
+                "configuration": {
+                    "MEM_PATTERN": "CONTIG",
+                    "FILE_PATTERN": "CONTIG",
+                    "NUM_PARTICLES": "16 M",
+                    "TIMESTEPS": "5",
+                    "DELAYED_CLOSE_TIMESTEPS": "2",
+                    "COLLECTIVE_DATA": "NO",
+                    "COLLECTIVE_METADATA": "NO",
+                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                    "NUM_DIMS": "1",
+                    "DIM_1": "16777216",
+                    "DIM_2": "1",
+                    "DIM_3": "1",
+                    "ASYNC_MODE": "NON",
+                    "CSV_FILE": "output.csv"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "exerciser": {
+                "configuration": {
+                    "numdims": "2",
+                    "minels": "8 8",
+                    "nsizes": "3",
+                    "bufmult": "2 2",
+                    "dimranks": "8 4"
+                }
+            }
+        },
+        {
+            "read": {
+                "file": "test.h5",
+                "configuration": {
+                    "MEM_PATTERN": "CONTIG",
+                    "FILE_PATTERN": "CONTIG",
+                    "NUM_PARTICLES": "16 M",
+                    "TIMESTEPS": "5",
+                    "DELAYED_CLOSE_TIMESTEPS": "2",
+                    "COLLECTIVE_DATA": "NO",
+                    "COLLECTIVE_METADATA": "NO",
+                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                    "NUM_DIMS": "1",
+                    "DIM_1": "16777216",
+                    "DIM_2": "1",
+                    "DIM_3": "1",
+                    "ASYNC_MODE": "NON",
+                    "CSV_FILE": "output.csv"
+                }
+            }
+        },
+        {
+            "write": {
+                "file": "test-two.h5",
+                "configuration": {
+                    "MEM_PATTERN": "CONTIG",
+                    "FILE_PATTERN": "CONTIG",
+                    "NUM_PARTICLES": "2 M",
+                    "TIMESTEPS": "20",
+                    "DELAYED_CLOSE_TIMESTEPS": "2",
+                    "COLLECTIVE_DATA": "NO",
+                    "COLLECTIVE_METADATA": "NO",
+                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                    "NUM_DIMS": "1",
+                    "DIM_1": "16777216",
+                    "DIM_2": "1",
+                    "DIM_3": "1",
+                    "ASYNC_MODE": "NON",
+                    "CSV_FILE": "output.csv"
+                }
+            }
+        },
+        {
+            "metadata": {
+                "file": "hdf5_iotest.h5",
+                "configuration": {
+                    "version": "0",
+                    "steps": "20",
+                    "arrays": "500",
+                    "rows": "100",
+                    "columns": "200",
+                    "process-rows": "2",
+                    "process-columns": "2",
+                    "scaling": "weak",
+                    "dataset-rank": "4",
+                    "slowest-dimension": "step",
+                    "layout": "contiguous",
+                    "mpi-io": "independent",       
+                    "csv-file": "hdf5_iotest.csv"
+                }
+            }
+        }
+    ]
+}
