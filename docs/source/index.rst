@@ -10,13 +10,19 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 These are the benchmarks and kernels currently available in h5bench:
 
++-----------------+---------------------+------+-----------+
 | Benchmark       | Name                | SYNC | ASYNC VOL |
-|-----------------|---------------------|:----:|:---------:|
++-----------------+---------------------+------+-----------+
 | VPIC (write)    | h5bench_write       |  [x] |    [x]    |
++-----------------+---------------------+------+-----------+
 | VPIC (read)     | h5bench_read        |  [x] |    [x]    |
++-----------------+---------------------+------+-----------+
 | Metadata Stress | h5bench_hdf5_iotest |  [x] |    [ ]    |
++-----------------+---------------------+------+-----------+
 | Exerciser       | h5bench_exerciser   |  [x] |    [ ]    |
++-----------------+---------------------+------+-----------+
 | AMReX           | h5bench_amrex       |  [x] |    [x]    |
++-----------------+---------------------+------+-----------+
 
 .. toctree::
    :maxdepth: 2
