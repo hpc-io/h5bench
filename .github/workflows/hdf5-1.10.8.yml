@@ -1,4 +1,4 @@
-name: HDF5 1.10.8 
+name: HDF5 1.10.8
 
 on:
   pull_request:
@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
 
       - name: Dependencies
         run: |
@@ -23,21 +25,35 @@ jobs:
           sudo apt-get install zlib1g-dev
           sudo apt-get install python3
           sudo apt-get install libopenmpi-dev
-          sudo apt-get install libhdf5-mpi-dev
           
           # hdf5
           wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_10_8.tar.gz
           tar zxvf hdf5-1_10_8.tar.gz
           mv hdf5-hdf5-1_10_8 hdf5
-          
+
           # vol-async
           git clone --recursive https://github.com/hpc-io/vol-async.git
 
-      - name: Build h5bench SYNC
+      - name: Install HDF5 1.10.8
         run: |
+          mydir="$PWD"
+          export HDF5_DIR=$mydir/hdf5/install
+          
+          mkdir $HDF5_DIR
+          # Compile HDF5
+          cd hdf5
+          export HDF5_LIBTOOL=/usr/bin/libtoolize
+          ./autogen.sh
+          CC=mpicc ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          make -j 16
+          make install
+          
+      - name: Build h5bench
+        run: |
+          export HDF5_HOME=$PWD/hdf5/install
           mkdir build_sync
           cd build_sync
-          cmake .. -DCMAKE_C_COMPILER=/usr/bin/h5pcc
+          CC=mpicc cmake ..
           make
           
       - name: Test h5bench SYNC Read & Write (NON)
