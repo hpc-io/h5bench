@@ -10,33 +10,22 @@ Configuration
 
 You can configure the AMReX HDF5 benchmark with the following options. Notice that if you use the ``configuration.json`` approach to define the runs for ``h5bench``, we will automatically generate the final configuration file based on the options you provide in the JSON file. For standalone usage of this benchmark, you can check the input format at the end of this document and refer to its documentation.
 
-+---------------------+-----------------------------------------------------------------------------+
-| **Parameter**       | **Description**                                                             |
-+---------------------+-----------------------------------------------------------------------------+
-| ``ncells``          | Domain size                                                                 |
-+---------------------+-----------------------------------------------------------------------------+
-| ``max_grid_size``   | The maximum allowable size of each subdomain (used for parallel decomposal) |
-+---------------------+-----------------------------------------------------------------------------+
-| ``nlevs``           | Number of levels                                                            |
-+---------------------+-----------------------------------------------------------------------------+
-| ``ncomp``           | Number of components in the multifabs                                       |
-+---------------------+-----------------------------------------------------------------------------+
-| ``nppc``            | Number of particles per cell                                                |
-+---------------------+-----------------------------------------------------------------------------+
-| ``nplotfile``       | Number of plot files to write                                               |
-+---------------------+-----------------------------------------------------------------------------+
-| ``nparticlefile``   | Number of particle files to write                                           |
-+---------------------+-----------------------------------------------------------------------------+
-| ``sleeptime``       | Time to sleep before each write                                             |
-+---------------------+-----------------------------------------------------------------------------+
-| ``restart_check``   | Whether to check the correctness of checkpoint/restart                      |
-+---------------------+-----------------------------------------------------------------------------+
-| ``grids_from_file`` | Enable AMReX to read grids from file                                        |
-+---------------------+-----------------------------------------------------------------------------+
-| ``ref_ratio_file``  | Refinement ratios for different AMReX refinement levels                     |
-+---------------------+-----------------------------------------------------------------------------+
-| ``hdf5compression`` | Define the HDF5 compression algorithm to use                                |
-+---------------------+-----------------------------------------------------------------------------+
+====================== ==============================================================================
+**Parameter**          **Description**                                                             
+====================== ==============================================================================
+``ncells``             Domain size                                                                 
+``max_grid_size``      The maximum allowable size of each subdomain (used for parallel decomposal) 
+``nlevs``              Number of levels                                                            
+``ncomp``              Number of components in the multifabs                                       
+``nppc``               Number of particles per cell                                                
+``nplotfile``          Number of plot files to write                                               
+``nparticlefile``      Number of particle files to write                                           
+``sleeptime``          Time to sleep before each write                                             
+``restart_check``      Whether to check the correctness of checkpoint/restart                      
+``grids_from_file``    Enable AMReX to read grids from file                                        
+``ref_ratio_file``     Refinement ratios for different AMReX refinement levels                     
+``hdf5compression``    Define the HDF5 compression algorithm to use                                
+====================== ==============================================================================
 
 JSON Configuration (recomended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -128,6 +117,3 @@ For standalone usage of this benchmark, this is the observed input configuration
     # hdf5compression=ZFP_ACCURACY#0.001
 
     directory = .
-
-
-

@@ -10,19 +10,15 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 These are the benchmarks and kernels currently available in h5bench:
 
-+-----------------+-------------------------+----------------------+------------------------+
-| **Benchmark**   | **Name**                | **SYNC**             | **ASYNC VOL**          |
-+-----------------+-------------------------+----------------------+------------------------+
-| VPIC (write)    | ``h5bench_write``       | |:white_check_mark:| | |:white_check_mark:|   |
-+-----------------+-------------------------+----------------------+------------------------+
-| VPIC (read)     | ``h5bench_read``        | |:white_check_mark:| | |:white_check_mark:|   |
-+-----------------+-------------------------+----------------------+------------------------+
-| Metadata Stress | ``h5bench_hdf5_iotest`` | |:white_check_mark:| | |:white_large_square:| |
-+-----------------+-------------------------+----------------------+------------------------+
-| Exerciser       | ``h5bench_exerciser``   | |:white_check_mark:| | |:white_large_square:| |
-+-----------------+-------------------------+----------------------+------------------------+
-| AMReX           | ``h5bench_amrex``       | |:white_check_mark:| | |:white_check_mark:|   |
-+-----------------+-------------------------+----------------------+------------------------+
+==================== ======================== ==================== ========================
+**Benchmark**        **Name**                 **SYNC**             **ASYNC VOL**          
+==================== ======================== ==================== ========================
+VPIC (write)         ``h5bench_write``        |:white_check_mark:| |:white_check_mark:|   
+BDCATS-IO (read)     ``h5bench_read``         |:white_check_mark:| |:white_check_mark:|   
+Metadata Stress      ``h5bench_hdf5_iotest``  |:white_check_mark:| |:white_large_square:| 
+Exerciser            ``h5bench_exerciser``    |:white_check_mark:| |:white_large_square:| 
+AMReX                ``h5bench_amrex``        |:white_check_mark:| |:white_check_mark:|   
+==================== ======================== ==================== ========================
 
 .. toctree::
    :maxdepth: 2
@@ -46,11 +42,3 @@ These are the benchmarks and kernels currently available in h5bench:
 
    copyright
    license
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
