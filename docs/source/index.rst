@@ -10,19 +10,19 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 These are the benchmarks and kernels currently available in h5bench:
 
-+-----------------+---------------------+------+-----------+
-| Benchmark       | Name                | SYNC | ASYNC VOL |
-+-----------------+---------------------+------+-----------+
-| VPIC (write)    | h5bench_write       |  [x] |    [x]    |
-+-----------------+---------------------+------+-----------+
-| VPIC (read)     | h5bench_read        |  [x] |    [x]    |
-+-----------------+---------------------+------+-----------+
-| Metadata Stress | h5bench_hdf5_iotest |  [x] |    [ ]    |
-+-----------------+---------------------+------+-----------+
-| Exerciser       | h5bench_exerciser   |  [x] |    [ ]    |
-+-----------------+---------------------+------+-----------+
-| AMReX           | h5bench_amrex       |  [x] |    [x]    |
-+-----------------+---------------------+------+-----------+
++-----------------+-------------------------+----------------------+------------------------+
+| **Benchmark**   | **Name**                | **SYNC**             | **ASYNC VOL**          |
++-----------------+-------------------------+----------------------+------------------------+
+| VPIC (write)    | ``h5bench_write``       | |:white_check_mark:| | |:white_check_mark:|   |
++-----------------+-------------------------+----------------------+------------------------+
+| VPIC (read)     | ``h5bench_read``        | |:white_check_mark:| | |:white_check_mark:|   |
++-----------------+-------------------------+----------------------+------------------------+
+| Metadata Stress | ``h5bench_hdf5_iotest`` | |:white_check_mark:| | |:white_large_square:| |
++-----------------+-------------------------+----------------------+------------------------+
+| Exerciser       | ``h5bench_exerciser``   | |:white_check_mark:| | |:white_large_square:| |
++-----------------+-------------------------+----------------------+------------------------+
+| AMReX           | ``h5bench_amrex``       | |:white_check_mark:| | |:white_check_mark:|   |
++-----------------+-------------------------+----------------------+------------------------+
 
 .. toctree::
    :maxdepth: 2
@@ -33,10 +33,12 @@ These are the benchmarks and kernels currently available in h5bench:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Resources
+   :caption: Benchmarks
 
-   suiteusage
+   vpic
+   metadata
    exerciser
+   amrex
 
 .. toctree::
    :maxdepth: 2

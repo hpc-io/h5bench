@@ -67,7 +67,7 @@ Because some benchmarks inside h5bench do not have support for VOL connectors ye
       "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
       "path": "/vol-async/src",
       "connector": "async under_vol=0;under_info={}"
-   },
+   }
 
 You should provide the absolute path for all the libraries required by the VOL connector using the `library` property, the `path` of the VOL connector, and the configuration in `connector`. The provided example depicts how to configure the HDF5 VOL async connector.
 
@@ -197,7 +197,7 @@ For the `exerciser` benchmark, you need to provide the required runtime options 
 
 You can refer to this sample of a complete `configuration.json` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
 
-.. literalinclude:: ../../../configuration.json
+.. literalinclude:: ../../configuration.json
    :language: json
 
 For a description of all the options available in each benchmark, please refer to their entries in the documentation.
