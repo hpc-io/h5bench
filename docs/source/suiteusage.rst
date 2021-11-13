@@ -5,12 +5,15 @@ Benchmark Suite Usage
 h5bench_patterns benchmark
 -------------------------------------
 
-Major refactoring is in progress, this document may be out of date. Both h5bench_write and h5bench_read take config and data file path as command line arguments.
+Major refactoring is in progress, this document may be out of date. All of h5bench_write, h5bench_read, h5bench_write_unlimited, h5bench_overwrite and h5bench_append take config and data file path as command line arguments.
 
 .. code-block:: bash
 
 	./h5bench_write my_config.cfg my_data.h5
 	./h5bench_read my_config.cfg my_data.h5
+	./h5bench_write_unlimited my_config.cfg my_data.h5
+	./h5bench_overwrite my_config.cfg my_data.h5
+	./h5bench_append my_config.cfg my_data.h5
 
 This set of benchmarks contains an I/O kernel developed based on a particle physics simulation's I/O pattern (VPIC-IO for writing data in a HDF5 file) and on a big data clustering algorithm (BDCATS-IO for reading the HDF5 file VPIC-IO wrote).
 
@@ -18,7 +21,7 @@ This set of benchmarks contains an I/O kernel developed based on a particle phys
 Settings in the Configuration File
 -------------------------------------
 
-The h5bench_write and h5bench_read take parameters in a plain text config file. The content format is **strict**. Unsupported formats :
+The h5bench_write, h5bench_read, h5bench_write_unlimited, h5bench_overwrite and h5bench_appendtake parameters in a plain text config file. The content format is **strict**. Unsupported formats :
 
 * Blank/empty lines, including ending lines.
 * Comment symbol(#) follows value immediately:
@@ -87,7 +90,7 @@ A template of config file can be found basic_io/sample_config/template.cfg:
 General Settings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **IO_OPERATION**: required, chose from **READ** and **WRITE**.
+* **IO_OPERATION**: required, chose from **READ**, **WRITE**, **WRITE_UNLIMITED**, **OVERWRITE** and **APPEND**
 * **MEM_PATTERN**: required, chose from **CONTIG, INTERLEAVED** and **STRIDED**
 * **FILE_PATTERN**: required, chose from **CONTIG**, and **STRIDED**
 * **NUM_PARTICLES**: required, the number of particles that each rank needs to process, can be in exact numbers (12345) or in units (format like 16 K, 128 M and 256 G are supported, format like 16K, 128M, 256G is NOT supported).
@@ -235,6 +238,44 @@ Supported Read Patterns (h5bench_read): IO_OPERATION=READ
 
 
 
+Supported Unlimited Write Patterns (h5bench_write_unlimited): IO_OPERATION=WRITE. This is a bootstrap for Append.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+1 pattern for 1D, 2D and 3D write (NUM_DIMS=1 or NUM_DIMS=2 or NUM_DIMS=3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, COMPRESS=YES
+
+
+
+Supported Append Patterns (h5bench_append): IO_OPERATION=APPEND. Read the dataset and extend the dataset by doubling it at the end of the first dimension.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+1 pattern for 1D, 2D and 3D write (NUM_DIMS=1 or NUM_DIMS=2 or NUM_DIMS=3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG, COLLECTIVE_DATA=YES
+
+
+Supported Overwrite Patterns (h5bench_overwrite): IO_OPERATION=OVERWRITE. Overwrite every dataset in a given file. Dimension parameters have to be consistent with the given file's dimension parameters.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+1 pattern for 1D overwrite (NUM_DIMS=1 or NUM_DIMS=2 or NUM_DIMS=3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+	MEM_PATTERN=CONTIG, FILE_PATTERN=CONTIG
+
+
+
 
 Sample Settings
 ------------------------------------------------------------------------
@@ -273,10 +314,10 @@ For more examples, please find the config files and template.cfg in basic_io/sam
 
 
 
-To Run the h5bench_write and h5bench_read
+To Run the h5bench_write, h5bench_read, h5bench_write_unlimited, h5bench_append and h5bench_overwrite
 ------------------------------------------------------------------------
 
-Both h5bench_write and h5bench_read use the same command line arguments:
+All of them use the same command line arguments:
 
 Single process run:
 
@@ -344,7 +385,47 @@ Sample output of h5bench_read:
 	Raw read rate = 2132.200 MB/sec
 	Observed read rate = 2353.605225 MB/sec
 
+Sample output of h5bench_write_unlimited:
 
+.. code-block:: none
+
+	==================  Performance results  =================
+	Total emulated compute time 4000 ms
+	Total write size = 2 MB
+	Raw write time = 6.464 sec
+	Metadata time = 994.788 ms
+	H5Fcreate() takes 6.111 ms
+	H5Fflush() takes 203.762 ms
+	H5Fclose() takes 39.520 ms
+	Observed completion time = 11.710 sec
+	Sync Raw write rate = 0.309 MB/sec 
+	Sync Observed write rate = 0.259 MB/sec
+
+Sample output of h5bench_append:
+
+.. code-block:: none
+
+	=================  Performance results  =================
+	Total emulated compute time = 4000 ms
+	Total modify size = 2 MB
+	Raw modify time = 7.466 sec 
+	Metadata time = 18.080 ms
+	Observed modify completion time = 11.507 sec
+	Sync Raw modify rate = 0.268 MB/sec 
+	Sync Observed modify rate = 0.266425 MB/sec
+
+Sample output of h5bench_overwrite:
+
+.. code-block:: none
+
+	=================  Performance results  =================
+	Total emulated compute time = 4000 ms
+	Total modify size = 24 MB
+	Raw modify time = 0.008 sec 
+	Metadata time = 4.497 ms
+	Observed modify completion time = 4.026 sec
+	Sync Raw modify rate = 3004.507 MB/sec 
+	Sync Observed modify rate = 915.646118 MB/sec
 
 
 ------------------------------------------------------------
@@ -396,5 +477,4 @@ Example runs:
 
 	./h5bench_vl_stream_hl here.dat FIXED 1000
 	./h5bench_vl_stream_hl here.dat VLEN 1000
-
 
