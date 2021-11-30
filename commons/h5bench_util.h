@@ -21,6 +21,26 @@
 #define PARTICLE_SIZE    (7 * sizeof(float) + sizeof(int))
 typedef enum async_mode { ASYNC_NON, ASYNC_EXPLICIT, ASYNC_IMPLICIT } async_mode;
 
+// An enum type H5ES_status_t exists in version 1.12.x and later
+// This definition is just to make compiler happy with older version headers
+// In hdf5 1.12.0, header file is defined as _H5ESpublic_H and
+// in 1.12.1 and later, it's defined as H5ESpublic_H. Checking for both.
+#if defined(_H5ESpublic_H) || defined(H5ESpublic_H)
+// do nothing
+#else
+typedef int H5ES_status_t;
+#endif
+
+#ifndef H5ES_WAIT_FOREVER
+#define H5ES_WAIT_FOREVER INT_MAX
+
+static herr_t
+H5ESwait(hid_t es_id, uint64_t timeout, size_t *num_in_progress, hbool_t *status)
+{
+    return 0;
+}
+#endif
+
 typedef enum num_unit {
     UNIT_INVALID,
     UNIT_K,

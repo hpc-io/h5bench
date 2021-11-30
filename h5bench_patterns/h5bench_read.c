@@ -45,7 +45,6 @@
 #include <string.h>
 #include <assert.h>
 #include "../commons/h5bench_util.h"
-#include "../commons/async_adaptor.h"
 
 // Global Variables and dimensions
 long long  NUM_PARTICLES = 0, FILE_OFFSET = 0;
@@ -81,7 +80,9 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     H5Pset_all_coll_metadata_ops(dapl, true);
 #endif
 
-    t1          = get_time_usec();
+    t1 = get_time_usec();
+
+#ifdef USE_ASYNC_VOL
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
@@ -90,24 +91,38 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[5] = H5Dopen_async(loc, "px", dapl, ts->es_meta_create);
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
+#else
+    dset_ids[0] = H5Dopen(loc, "x", dapl);
+    dset_ids[1] = H5Dopen(loc, "y", dapl);
+    dset_ids[2] = H5Dopen(loc, "z", dapl);
+    dset_ids[3] = H5Dopen(loc, "id_1", dapl);
+    dset_ids[4] = H5Dopen(loc, "id_2", dapl);
+    dset_ids[5] = H5Dopen(loc, "px", dapl);
+    dset_ids[6] = H5Dopen(loc, "py", dapl);
+    dset_ids[7] = H5Dopen(loc, "pz", dapl);
+#endif
 
-    t2   = get_time_usec();
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz,
-                         ts->es_data);
+    t2 = get_time_usec();
+
+#ifdef USE_ASYNC_VOL
+    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ts->es_data);
+    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ts->es_data);
+    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ts->es_data);
+    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ts->es_data);
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ts->es_data);
+    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ts->es_data);
+    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ts->es_data);
+    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ts->es_data);
+#else
+    ierr = H5Dread(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x);
+    ierr = H5Dread(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y);
+    ierr = H5Dread(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z);
+    ierr = H5Dread(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1);
+    ierr = H5Dread(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2);
+    ierr = H5Dread(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px);
+    ierr = H5Dread(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py);
+    ierr = H5Dread(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz);
+#endif
 
     t3 = get_time_usec();
 
@@ -296,7 +311,13 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
         t1         = get_time_usec();
+
+#ifdef USE_ASYNC_VOL
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+#else
+        ts->grp_id = H5Gopen(file_id, grp_name, gapl);
+#endif
+
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
 
@@ -309,9 +330,15 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
+#ifdef USE_ASYNC_VOL
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
+#else
+            for (int j = 0; j < dset_cnt; j++)
+                H5Dclose(ts->dset_ids[j]);
+            H5Gclose(ts->grp_id);
+#endif
             ts->status = TS_READY;
             t4         = get_time_usec();
             meta_time5 = (t4 - t3);
@@ -489,7 +516,11 @@ main(int argc, char *argv[])
 
     H5Pclose(fapl);
     H5Pclose(gapl);
+#ifdef USE_ASYNC_VOL
     H5Fclose_async(file_id, 0);
+#else
+    H5Fclose(file_id);
+#endif
 
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
