@@ -46,7 +46,7 @@ To illustrate the process, we will use AMReX:
 
 	H5BENCH_AMREX = 'h5bench_amrex'
 
-Update the `run()` function that iterates over the ``benchmarks`` property list defined by the user in the ``configuration.json`` file to accept the new benchmark name:
+Update the ``run()`` function that iterates over the ``benchmarks`` property list defined by the user in the ``configuration.json`` file to accept the new benchmark name:
 
 .. code-block:: python
 
@@ -66,7 +66,7 @@ You then need to define the ``run_`` function for the benchmark you’re adding.
 
 If you plan to support the HDF5 async VOL connector, make sure you can ``enable_vol()`` and ``disable_vol()`` at the beginning and end of this ``run_`` function.
 
-Here you can check an example of the complete `run_amrex` function:
+Here you can check an example of the complete ``run_amrex`` function:
 
 .. code-block:: python
 
