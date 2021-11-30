@@ -22,7 +22,7 @@ build:
       - module load cmake
       - mkdir ${H5BENCH_BUILD_PATH}
       - cd ${H5BENCH_BUILD_PATH}
-      - CC=mpicc cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
+      - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
       - make
       - make install
     artifacts:
