@@ -1,9 +1,6 @@
 Add new benchmarks
 ===================
 
-How to add new benchmarks to the h5bench Suite?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 We provide a set of instructions on how to add new benchmarks to the h5bench Suite. However, please notice that you might require some changes depending on how your benchmark work.
 
 To illustrate the process, we will use AMReX:
