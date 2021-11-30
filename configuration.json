@@ -39,6 +39,22 @@
             }
         },
         {
+            "amrex": {
+                "file": "amrex.h5",
+                "configuration": {
+                    "ncells": "64",
+                    "max_grid_size": "8",
+                    "nlevs": "1",
+                    "ncomp": "6",
+                    "nppc": "2",
+                    "nplotfile": "2",
+                    "nparticlefile": "2",
+                    "sleeptime": "2",
+                    "restart_check": "1"
+                }
+            }
+        },
+        {
             "exerciser": {
                 "configuration": {
                     "numdims": "2",
