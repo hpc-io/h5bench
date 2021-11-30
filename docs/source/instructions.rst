@@ -27,7 +27,7 @@ To illustrate the process, we will use AMReX:
 	set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
 	add_executable(h5bench_amrex ${amrex_src})
 
-4. Be sure to follow the convention of naming the executable as `h5bench_` plus the benchmark name, e.g. `h5bench_amrex`.
+4. Be sure to follow the convention of naming the executable as ``h5bench_`` plus the benchmark name, e.g. ``h5bench_amrex``.
 
 5. If you are going to provide support for the HDF5 async VOL connector with explicit implementation (which require changes in the original code), make sure you link the required libraries (``asynchdf5`` and ``h5async``):
 
@@ -40,7 +40,7 @@ To illustrate the process, we will use AMReX:
 	        target_link_libraries(h5bench_amrex hdf5 z m amrex MPI::MPI_C)
 	endif()
 
-6. The last step is to update the `h5bench` Python-based script to handle the new benchmark. On the top of the file, add the path of your benchmark:
+6. The last step is to update the ``h5bench`` Python-based script to handle the new benchmark. On the top of the file, add the path of your benchmark:
 
 .. code-block:: python
 
