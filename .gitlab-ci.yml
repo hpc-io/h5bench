@@ -1,5 +1,6 @@
 variables:
     HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
+    HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
     H5BENCH_BUILD_PATH: "${CI_PROJECT_DIR}/build"
     H5BENCH_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
 
@@ -21,7 +22,7 @@ build:
       - module load cmake
       - mkdir ${H5BENCH_BUILD_PATH}
       - cd ${H5BENCH_BUILD_PATH}
-      - cmake .. -DCMAKE_C_COMPILER=$HDF5_DIR/bin/h5pcc -DCMAKE_CXX_COMPILER=$HDF5_DIR/bin/h5pcc -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
+      - CC=mpicc cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
       - make
       - make install
     artifacts:
