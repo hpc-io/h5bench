@@ -11,7 +11,7 @@ To illustrate the process, we will use AMReX:
 
 	git submodule add https://github.com/AMReX-Codes/amrex amrex
 
-2. For this benchmark, we need some libraries to be compiled and available as well, so we will need to modify our `CMakeLists.txt`, so it builds that subdirectory:
+2. For this benchmark, we need some libraries to be compiled and available as well, so we will need to modify our ``CMakeLists.txt``, so it builds that subdirectory:
 
 .. code-block:: bash
 
@@ -20,7 +20,7 @@ To illustrate the process, we will use AMReX:
 	set(AMReX_MPI_THREAD_MULTIPLE YES)
 	add_subdirectory(amrex)
 
-3. AMReX comes with several other benchmarks. Still, since we are only interested in the HDF5 one, we will only compile that code. For that, we will need to add the following to our `CMakeLists.txt`. This is based on how that benchmark is normally compiled within AMReX.
+3. AMReX comes with several other benchmarks. Still, since we are only interested in the HDF5 one, we will only compile that code. For that, we will need to add the following to our ``CMakeLists.txt``. This is based on how that benchmark is normally compiled within AMReX.
 
 .. code-block:: bash
 
@@ -29,7 +29,7 @@ To illustrate the process, we will use AMReX:
 
 4. Be sure to follow the convention of naming the executable as `h5bench_` plus the benchmark name, e.g. `h5bench_amrex`.
 
-5. If you are going to provide support for the HDF5 async VOL connector with explicit implementation (which require changes in the original code), make sure you link the required libraries (`asynchdf5` and `h5async`):
+5. If you are going to provide support for the HDF5 async VOL connector with explicit implementation (which require changes in the original code), make sure you link the required libraries (``asynchdf5`` and ``h5async``):
 
 .. code-block:: bash
 
@@ -46,14 +46,14 @@ To illustrate the process, we will use AMReX:
 
 	H5BENCH_AMREX = 'h5bench_amrex'
 
-Update the `run()` function that iterates over the `benchmarks` property list defined by the user in the `configuration.json` file to accept the new benchmark name:
+Update the `run()` function that iterates over the ``benchmarks`` property list defined by the user in the ``configuration.json`` file to accept the new benchmark name:
 
 .. code-block:: python
 
     elif name == 'amrex':
         self.run_amrex(id, benchmark[name], setup['vol'])
 
-You then need to define the `run_` function for the benchmark you’re adding. The most important part is translating the configuration defined in the `configuration.json` file into a format accepted by your benchmark (e.g., a file, a JSON, command line). For AMReX, it requires an `amrex.ini` file with key-value configurations defined in the format `key = value`, one per line:
+You then need to define the ``run_`` function for the benchmark you’re adding. The most important part is translating the configuration defined in the ``configuration.json`` file into a format accepted by your benchmark (e.g., a file, a JSON, command line). For AMReX, it requires an ``amrex.ini`` file with key-value configurations defined in the format ``key = value``, one per line:
 
 .. code-block:: python
 
@@ -64,7 +64,7 @@ You then need to define the `run_` function for the benchmark you’re adding. T
 
         f.write('directory = {}\n'.format(file))
 
-If you plan to support the HDF5 async VOL connector, make sure you can `enable_vol()` and `disable_vol()` at the beginning and end of this `run_` function.
+If you plan to support the HDF5 async VOL connector, make sure you can ``enable_vol()`` and ``disable_vol()`` at the beginning and end of this ``run_`` function.
 
 Here you can check an example of the complete `run_amrex` function:
 
@@ -125,6 +125,6 @@ Here you can check an example of the complete `run_amrex` function:
 
         self.disable_vol(vol)
 
-7. Make sure you provide some sample JSON configuration files in the `configurations` directory.
+7. Make sure you provide some sample JSON configuration files in the ``configurations`` directory.
 
 Please, feel free to reach us if you have questions!
