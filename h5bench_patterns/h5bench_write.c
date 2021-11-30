@@ -446,14 +446,22 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
     unsigned t1 = get_time_usec();
 
 #ifdef USE_ASYNC_VOL
-    dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[3] = H5Dcreate_async(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[4] = H5Dcreate_async(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[3] = H5Dcreate_async(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[4] = H5Dcreate_async(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
+    dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
+                                  ts->es_meta_create);
 #else
     dset_ids[0] = H5Dcreate(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
     dset_ids[1] = H5Dcreate(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
@@ -464,27 +472,35 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
     dset_ids[6] = H5Dcreate(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
     dset_ids[7] = H5Dcreate(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 #endif
-    
+
     unsigned t2 = get_time_usec();
 
 #ifdef USE_ASYNC_VOL
-    ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2, ts->es_data);
+    ierr =
+        H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
+    ierr =
+        H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
+    ierr =
+        H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
+                          ts->es_data);
 #else
-    ierr = H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x);
-    ierr = H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y);
-    ierr = H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z);
-    ierr = H5Dwrite(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px);
-    ierr = H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py);
-    ierr = H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz);
-    ierr = H5Dwrite(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1);
-    ierr = H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2);
+    ierr        = H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x);
+    ierr        = H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y);
+    ierr        = H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z);
+    ierr        = H5Dwrite(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px);
+    ierr        = H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py);
+    ierr        = H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz);
+    ierr        = H5Dwrite(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1);
+    ierr        = H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2);
 #endif
 
     unsigned t3 = get_time_usec();
@@ -509,34 +525,52 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
     unsigned t1 = get_time_usec();
 
 #ifdef USE_ASYNC_VOL
-    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
+                                  H5P_DEFAULT, ts->es_meta_create);
 #else
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] =
+        H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 #endif
 
     unsigned t2 = get_time_usec();
-    
+
 #ifdef USE_ASYNC_VOL
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id, data_in->px, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id, data_in->py, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id, data_in->pz, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id, data_in->id_1, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id, data_in->id_2, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id,
+                          data_in->x, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id,
+                          data_in->y, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id,
+                          data_in->z, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id,
+                          data_in->px, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id,
+                          data_in->py, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id,
+                          data_in->pz, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id,
+                          data_in->id_1, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id,
+                          data_in->id_2, ts->es_data);
 #else
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id, data_in->px);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id, data_in->py);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id, data_in->pz);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id, data_in->id_1);
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id, data_in->id_2);
+    ierr =
+        H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x);
+    ierr =
+        H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y);
+    ierr =
+        H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z);
+    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[3], memspace, filespace, plist_id,
+                    data_in->px);
+    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[4], memspace, filespace, plist_id,
+                    data_in->py);
+    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[5], memspace, filespace, plist_id,
+                    data_in->pz);
+    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[6], memspace, filespace, plist_id,
+                    data_in->id_1);
+    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id,
+                    data_in->id_2);
 #endif
 
-    unsigned t3    = get_time_usec();
+    unsigned t3 = get_time_usec();
 
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
@@ -555,53 +589,77 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
-    
+
     unsigned t1 = get_time_usec();
-    
+
 #ifdef USE_ASYNC_VOL
-    dset_ids[0] = H5Dcreate_async(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[1] = H5Dcreate_async(loc, "y", PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[2] = H5Dcreate_async(loc, "z", PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[3] = H5Dcreate_async(loc, "px", PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[4] = H5Dcreate_async(loc, "py", PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[5] = H5Dcreate_async(loc, "pz", PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[6] = H5Dcreate_async(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
-    dset_ids[7] = H5Dcreate_async(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[0] = H5Dcreate_async(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl,
+                                  H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[1] = H5Dcreate_async(loc, "y", PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl,
+                                  H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[2] = H5Dcreate_async(loc, "z", PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl,
+                                  H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[3] = H5Dcreate_async(loc, "px", PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT,
+                                  dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[4] = H5Dcreate_async(loc, "py", PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT,
+                                  dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[5] = H5Dcreate_async(loc, "pz", PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT,
+                                  dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[6] = H5Dcreate_async(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT,
+                                  dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[7] = H5Dcreate_async(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT,
+                                  dcpl, H5P_DEFAULT, ts->es_meta_create);
 #else
-    dset_ids[0] = H5Dcreate(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[1] = H5Dcreate(loc, "y", PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[2] = H5Dcreate(loc, "z", PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[3] = H5Dcreate(loc, "px", PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[4] = H5Dcreate(loc, "py", PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[5] = H5Dcreate(loc, "pz", PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[6] = H5Dcreate(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
-    dset_ids[7] = H5Dcreate(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] =
+        H5Dcreate(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[1] =
+        H5Dcreate(loc, "y", PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[2] =
+        H5Dcreate(loc, "z", PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[3] =
+        H5Dcreate(loc, "px", PARTICLE_COMPOUND_TYPE_SEPARATES[3], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[4] =
+        H5Dcreate(loc, "py", PARTICLE_COMPOUND_TYPE_SEPARATES[4], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[5] =
+        H5Dcreate(loc, "pz", PARTICLE_COMPOUND_TYPE_SEPARATES[5], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[6] = H5Dcreate(loc, "id_1", PARTICLE_COMPOUND_TYPE_SEPARATES[6], filespace, H5P_DEFAULT, dcpl,
+                            H5P_DEFAULT);
+    dset_ids[7] = H5Dcreate(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT, dcpl,
+                            H5P_DEFAULT);
 #endif
 
     unsigned t2 = get_time_usec();
 
 #ifdef USE_ASYNC_VOL
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
-    ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
 #else
-    ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
-    ierr = H5Dwrite(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
+    ierr        = H5Dwrite(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
 #endif
-    
+
     unsigned t3 = get_time_usec();
-    
+
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
     if (MY_RANK == 0)
@@ -621,23 +679,26 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
         dcpl = H5P_DEFAULT;
 
     unsigned t1 = get_time_usec();
-    
+
 #ifdef USE_ASYNC_VOL
-    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
+    dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
+                                  H5P_DEFAULT, ts->es_meta_create);
 #else
-    dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
+    dset_ids[0] =
+        H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
 #endif
 
     unsigned t2 = get_time_usec();
-    
+
 #ifdef USE_ASYNC_VOL
-    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+                          ts->es_data);
 #else
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
 #endif
 
     // should write all things in data_in
-    unsigned t3    = get_time_usec();
+    unsigned t3 = get_time_usec();
 
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
@@ -794,12 +855,13 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         t0 = get_time_usec();
 
 #ifdef USE_ASYNC_VOL
-        ts->grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
+        ts->grp_id =
+            H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
 #else
         ts->grp_id = H5Gcreate(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #endif
 
-        t1 = get_time_usec();
+        t1         = get_time_usec();
         meta_time3 = (t1 - t0);
 
         if (MY_RANK == 0)
