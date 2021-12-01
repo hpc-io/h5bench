@@ -310,7 +310,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         }
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
-        t1         = get_time_usec();
+        t1 = get_time_usec();
 
 #if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
