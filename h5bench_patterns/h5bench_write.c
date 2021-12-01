@@ -445,7 +445,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
     unsigned t1 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
@@ -467,7 +467,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
     
     unsigned t2 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     ierr = H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
@@ -508,7 +508,7 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
 
     unsigned t1 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
 #else
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
@@ -516,7 +516,7 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
 
     unsigned t2 = get_time_usec();
     
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id, data_in->x, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[1], memspace, filespace, plist_id, data_in->y, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[2], memspace, filespace, plist_id, data_in->z, ts->es_data);
@@ -558,7 +558,7 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
     
     unsigned t1 = get_time_usec();
     
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     dset_ids[0] = H5Dcreate_async(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[1] = H5Dcreate_async(loc, "y", PARTICLE_COMPOUND_TYPE_SEPARATES[1], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[2] = H5Dcreate_async(loc, "z", PARTICLE_COMPOUND_TYPE_SEPARATES[2], filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
@@ -580,7 +580,7 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
 
     unsigned t2 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
@@ -622,7 +622,7 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
 
     unsigned t1 = get_time_usec();
     
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT, ts->es_meta_create);
 #else
     dset_ids[0] = H5Dcreate(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT);
@@ -630,7 +630,7 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
 
     unsigned t2 = get_time_usec();
     
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in, ts->es_data);
 #else
     ierr = H5Dwrite(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in);
@@ -793,7 +793,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         t0 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         ts->grp_id = H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
 #else
         ts->grp_id = H5Gcreate(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -845,7 +845,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
@@ -1070,14 +1070,14 @@ main(int argc, char *argv[])
         char mpi_rank_output_file_path[4096];
         sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(output_file), MY_RANK,
                 get_file_name_from_path(output_file));
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         file_id = H5Fcreate_async(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
 #else
         file_id = H5Fcreate(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
 #endif
     }
     else {
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
 #else
         file_id = H5Fcreate(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
@@ -1112,7 +1112,7 @@ main(int argc, char *argv[])
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     H5Fclose_async(file_id, 0);
 #else
     H5Fclose(file_id);
@@ -1123,7 +1123,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         if (params.asyncMode == ASYNC_EXPLICIT)
             mode_str = "Async";
         else

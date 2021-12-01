@@ -82,7 +82,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 
     t1 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
@@ -104,7 +104,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 
     t2 = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ts->es_data);
     ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ts->es_data);
     ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ts->es_data);
@@ -312,7 +312,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
 
         t1         = get_time_usec();
 
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
 #else
         ts->grp_id = H5Gopen(file_id, grp_name, gapl);
@@ -330,7 +330,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
@@ -516,7 +516,7 @@ main(int argc, char *argv[])
 
     H5Pclose(fapl);
     H5Pclose(gapl);
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
     H5Fclose_async(file_id, 0);
 #else
     H5Fclose(file_id);
@@ -529,7 +529,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
+#if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
         if (params.asyncMode == ASYNC_EXPLICIT)
             mode_str = "Async";
         else
