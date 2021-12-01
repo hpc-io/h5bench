@@ -549,9 +549,9 @@ main(int argc, char *argv[])
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time = %llu sec\n"
+        printf("Total emulated compute time = %.3lf sec\n"
                "Total read size = %lu GB\n",
-               total_sleep_time_us / (1000 * 1000), total_size_gb);
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rrt_s = (float)raw_read_time / (1000 * 1000);
 

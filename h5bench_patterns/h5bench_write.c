@@ -1198,9 +1198,9 @@ main(int argc, char *argv[])
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time %llu ms\n"
+        printf("Total emulated compute time %.3lf sec\n"
                "Total write size = %lu GB\n",
-               total_sleep_time_us / (1000 * 1000), total_size_gb);
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rwt_s        = (float)raw_write_time / (1000 * 1000);
         float raw_rate_gbs = (float)total_size_gb / rwt_s;
@@ -1209,13 +1209,13 @@ main(int argc, char *argv[])
         float meta_time_s = (float)inner_metadata_time / (1000 * 1000);
         printf("Metadata time = %.3f sec\n", meta_time_s);
 
-        float fcreate_time_s = (float)(tfopen_end - tfopen_start);
+        float fcreate_time_s = (float)(tfopen_end - tfopen_start) / (1000 * 1000);
         printf("H5Fcreate() takes %.3f sec\n", fcreate_time_s);
 
-        float flush_time_s = (float)(tflush_end - tflush_start);
+        float flush_time_s = (float)(tflush_end - tflush_start) / (1000 * 1000);
         printf("H5Fflush() takes %.3f sec\n", flush_time_s);
 
-        float fclose_time_s = (float)(tfclose_end - tfclose_start);
+        float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000 * 1000);
         printf("H5Fclose() takes %.3f sec\n", fclose_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
