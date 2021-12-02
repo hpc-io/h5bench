@@ -7,7 +7,7 @@ on:
 
 jobs:
   h5bench:
-    runs-on: ubuntu-18.04
+    runs-on: jlbez/hdf5-1.10.4
     timeout-minutes: 60
 
     steps:
@@ -23,7 +23,10 @@ jobs:
           sudo apt-get install libtool
           sudo apt-get install zlib1g-dev
           sudo apt-get install python3
+          sudo apt-get install python3-pip
           sudo apt-get install libopenmpi-dev
+
+          pip3 install psutil
           
           # HDF5
           wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_10_4.tar.gz
