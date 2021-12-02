@@ -28,7 +28,6 @@ jobs:
       - name: Test h5bench SYNC write/read
         run: |
           cd build
-          pwd
           ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
 
       - name: Upload artifact

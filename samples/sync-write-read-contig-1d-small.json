@@ -1,7 +1,8 @@
 {
     "mpi": {
         "command": "mpirun",
-        "ranks": "4"
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --oversubscribe"
     },
     "vol": {
         
@@ -22,7 +23,7 @@
                     "DELAYED_CLOSE_TIMESTEPS": "2",
                     "COLLECTIVE_DATA": "NO",
                     "COLLECTIVE_METADATA": "NO",
-                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "30 s", 
+                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
                     "NUM_DIMS": "1",
                     "DIM_1": "16777216",
                     "DIM_2": "1",
@@ -41,7 +42,7 @@
                     "DELAYED_CLOSE_TIMESTEPS": "2",
                     "COLLECTIVE_DATA": "NO",
                     "COLLECTIVE_METADATA": "NO",
-                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "30 s", 
+                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
                     "NUM_DIMS": "1",
                     "DIM_1": "16777216",
                     "DIM_2": "1",
