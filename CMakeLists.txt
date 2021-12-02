@@ -20,6 +20,8 @@ set(ASYNC_HOME $ENV{ASYNC_HOME})
 option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
 	add_definitions(-DUSE_ASYNC_VOL)
+	include_directories(${ASYNC_HOME})
+	link_directories(${ASYNC_HOME})
 endif()
 
 # =========== Utilility libs ==============
@@ -62,34 +64,35 @@ add_executable(h5bench_hdf5_iotest ${meta_stress_src})
 target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 
 # ===========  GPUIO test: h5bench_write_cuda ===========
-set(METAMEM_CUDA_SUPPORT OFF)
-set(METAMEM_HIP_SUPPORT OFF)
+set(MEM_CUDA_SUPPORT OFF)
+set(MEM_HIP_SUPPORT OFF)
 
 find_package(CUDAToolkit)
 if(CUDAToolkit_FOUND)
   enable_language(CUDA)
-  set(METAMEM_CUDA_SUPPORT ON)
+  set(MEM_CUDA_SUPPORT ON)
 endif(CUDAToolkit_FOUND)
 
-message(STATUS "METAMEM_CUDA_SUPPORT=" ${METAMEM_CUDA_SUPPORT})
+message(STATUS "MEM_CUDA_SUPPORT=" ${MEM_CUDA_SUPPORT})
 
-if(METAMEM_CUDA_SUPPORT)
-  file (GLOB METAMEM_API_CUDA_SRCS
-    ./gpuio/metamemory/include/*.h
-    ./gpuio/metamemory/src/*.c
-    ./gpuio/metamemory/src/cuda/*.c
+if(MEM_CUDA_SUPPORT)
+  file (GLOB MEM_API_CUDA_SRCS
+    ./gpuio/mem/include/*.h
+    ./gpuio/mem/src/*.c
+    ./gpuio/mem/src/cuda/*.c
   )
 
-  add_library(cuda_metamemapi SHARED ${METAMEM_API_CUDA_SRCS})
-  set_target_properties(cuda_metamemapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
-  target_include_directories(cuda_metamemapi PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-  target_include_directories(cuda_metamemapi PRIVATE ./gpuio/metamemory/include/)
+  add_library(cuda_memapi SHARED ${MEM_API_CUDA_SRCS})
+  set_target_properties(cuda_memapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
+  target_include_directories(cuda_memapi PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  target_include_directories(cuda_memapi PRIVATE ./gpuio/mem/include/)
+  target_link_libraries(cuda_memapi PRIVATE CUDA::cudart CUDA::cuda_driver)
 
   add_executable(h5bench_cuda_write gpuio/h5bench_write.c)
   target_include_directories(h5bench_cuda_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
   set_target_properties(h5bench_cuda_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
-  target_link_libraries(h5bench_cuda_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart cuda_metamemapi)
-endif(METAMEM_CUDA_SUPPORT)
+  target_link_libraries(h5bench_cuda_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart CUDA::cuda_driver cuda_memapi)
+endif(MEM_CUDA_SUPPORT)
 
 
 # Search for rocm in common locations
@@ -98,33 +101,33 @@ list(APPEND CMAKE_PREFIX_PATH /opt/rocm/hip /opt/rocm)
 # Find hip
 find_package(HIP)
 if(HIP_VERSION)
-  set(METAMEM_HIP_SUPPORT ON)
+  set(MEM_HIP_SUPPORT ON)
   set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
   set(CMAKE_CXX_LINKER   ${HIP_HIPCC_EXECUTABLE})
 endif(HIP_VERSION)
 
-message(STATUS "METAMEM_HIP_SUPPORT=" ${METAMEM_HIP_SUPPORT})
+message(STATUS "MEM_HIP_SUPPORT=" ${MEM_HIP_SUPPORT})
 
-if(METAMEM_HIP_SUPPORT)
-  file (GLOB METAMEM_API_HIP_SRCS
-    ./gpuio/metamemory/include/*.h
-    ./gpuio/metamemory/src/*.c
-    ./gpuio/metamemory/src/hip/*.c
+if(MEM_HIP_SUPPORT)
+  file (GLOB MEM_API_HIP_SRCS
+    ./gpuio/mem/include/*.h
+    ./gpuio/mem/src/*.c
+    ./gpuio/mem/src/hip/*.c
   )
 
   set(ORIGINAL_CMAKE_C_COMPILER ${CMAKE_C_COMPILER})
   set(CMAKE_C_COMPILER amdclang) # TODO: hardcoded c compiler for now..
-  add_library(hip_metamemapi SHARED ${METAMEM_API_HIP_SRCS})
-  set_target_properties(hip_metamemapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
-  target_include_directories(hip_metamemapi PRIVATE ${HIP_ROOT_DIR}/include)
-  target_include_directories(hip_metamemapi PRIVATE ./gpuio/metamemory/include/)
-  target_link_libraries(hip_metamemapi hip::host)
+  add_library(hip_memapi SHARED ${MEM_API_HIP_SRCS})
+  set_target_properties(hip_memapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
+  target_include_directories(hip_memapi PRIVATE ${HIP_ROOT_DIR}/include)
+  target_include_directories(hip_memapi PRIVATE ./gpuio/mem/include/)
+  target_link_libraries(hip_memapi hip::host)
 
   set(CMAKE_C_COMPILER ${ORIGINAL_CMAKE_C_COMPILER})
   add_executable(h5bench_hip_write gpuio/h5bench_write.c)
   set_target_properties(h5bench_hip_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
-  target_link_libraries(h5bench_hip_write h5bench_util hdf5 z MPI::MPI_C hip::host hip_metamemapi)
-endif(METAMEM_HIP_SUPPORT)
+  target_link_libraries(h5bench_hip_write h5bench_util hdf5 z MPI::MPI_C hip::host hip_memapi)
+endif(MEM_HIP_SUPPORT)
 # =================================================================
 
 # ===========  Streaming (append) test: h5bench_vl_stream ===========
@@ -157,4 +160,5 @@ install(TARGETS
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
 	#h5bench_vl_stream_hl
-	DESTINATION bin)
+	DESTINATION bin
+)

@@ -1,4 +1,0 @@
-[submodule "gpuio/metamemory"]
-  path = gpuio/metamemory
-  url = https://github.com/jjravi/metamemory.git
-  branch = main

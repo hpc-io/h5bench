@@ -49,8 +49,8 @@
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 
-#include "metamemory/include/metamem_api.h"
-#include "metamemory/include/metamem_pch.h"
+#include "mem/include/metamem_api.h"
+#include "mem/include/metamem_pch.h"
 
 #define DIM_MAX 3
 
@@ -62,7 +62,6 @@ typedef struct compress_info {
     hsize_t chunk_dims[DIM_MAX];
 } compress_info;
 
-// MetaMemory
 metamem **mm;
 
 // Global Variables and dimensions
