@@ -1,0 +1,30 @@
+name: h5bench (HDF5 1.10.4)
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  h5bench:
+    container:
+      image: jlbez/hdf5-1.10.4
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Build h5bench
+        run: |
+          export HDF5_HOME=$PWD/hdf5/install
+          mkdir build_sync
+          cd build_sync
+          CC=mpicc cmake ..
+          make -j 8
+          
+      - name: Test h5bench SYNC write/read
+        run: |
+          cd build_sync
+          ./h5bench --debug --abort-on-failure /home/runner/work/h5bench/h5bench/samples/sync-write-read-contig-1d-small.json

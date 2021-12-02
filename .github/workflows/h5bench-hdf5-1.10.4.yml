@@ -45,7 +45,7 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           CC=mpicc ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 16
+          make -j 8
           make install
           
       - name: Build h5bench
@@ -54,9 +54,9 @@ jobs:
           mkdir build_sync
           cd build_sync
           CC=mpicc cmake ..
-          make
+          make -j 8
           
       - name: Test h5bench SYNC write/read
         run: |
           cd build_sync
-          ./h5bench --debug /home/runner/work/h5bench/h5bench/samples/sync-write-read-contig-1d-small.json
+          ./h5bench --debug --abort-on-failure /home/runner/work/h5bench/h5bench/samples/sync-write-read-contig-1d-small.json
