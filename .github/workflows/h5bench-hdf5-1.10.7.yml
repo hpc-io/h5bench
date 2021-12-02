@@ -19,7 +19,6 @@ jobs:
 
       - name: Build h5bench
         run: |
-          export HDF5_HOME=$PWD/hdf5/install
           mkdir build_sync
           cd build_sync
           CC=mpicc cmake ..
