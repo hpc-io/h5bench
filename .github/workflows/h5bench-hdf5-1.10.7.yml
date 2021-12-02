@@ -31,8 +31,9 @@ jobs:
           ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
 
       - name: Upload artifact
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: test
-          path: full-test
+          path: full-test/*/std*
           retention-days: 1
