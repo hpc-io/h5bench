@@ -80,7 +80,7 @@ jobs:
           export HDF5_PLUGIN_PATH="$VOL_DIR/src"
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
-          cd $current/vol-async/test
+          cd $VOL_DIR/test
           tail -n 47 Makefile.summit > Makefile
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
           make -j 8
