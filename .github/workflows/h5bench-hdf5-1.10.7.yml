@@ -27,7 +27,7 @@ jobs:
           
       - name: Test h5bench SYNC write/read
         run: |
-          cd build_sync
+          cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
 
       - name: Upload artifact
@@ -35,5 +35,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: test
-          path: storage/**/std*
+          path: build/storage/**/std*
           retention-days: 1
