@@ -74,7 +74,11 @@ jobs:
 
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots
-          export VOL_DIR=$current/vol-async      
+          export VOL_DIR=$current/vol-async
+
+          export LD_LIBRARY_PATH=$VOL_DIR/src:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+          export HDF5_PLUGIN_PATH="$VOL_DIR/src"
+          export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
           cd $current/vol-async/test
           tail -n 47 Makefile.summit > Makefile
