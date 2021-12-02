@@ -43,6 +43,8 @@ jobs:
 
       - name: Build Argobots
         run: |
+          current="$PWD"
+
           export ABT_DIR=$current/vol-async/argobots
           
           cd $ABT_DIR
