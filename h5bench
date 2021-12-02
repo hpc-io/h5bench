@@ -41,7 +41,7 @@ class H5bench:
         # Get user defined shell
         if 'SHELL' in os.environ:
             shell = os.environ['SHELL']
-        
+
             for m in mpi:
                 if m in shell:
                     print('You should not call MPI directly when running h5bench.')
