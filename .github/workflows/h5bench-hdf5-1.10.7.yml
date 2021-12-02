@@ -28,4 +28,4 @@ jobs:
       - name: Test h5bench SYNC write/read
         run: |
           cd build_sync
-          ./h5bench --debug --abort-on-failure /home/runner/work/h5bench/h5bench/samples/sync-write-read-contig-1d-small.json
+          ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
