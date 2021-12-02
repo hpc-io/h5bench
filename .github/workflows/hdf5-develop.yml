@@ -26,10 +26,10 @@ jobs:
           sudo apt-get install python3
           sudo apt-get install libopenmpi-dev
           
-          # hdf5
+          # HDF5
           git clone https://github.com/HDFGroup/hdf5.git
 
-          # vol-async
+          # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git
 
       - name: Install VOL-Async
