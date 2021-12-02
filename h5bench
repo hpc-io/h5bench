@@ -318,6 +318,8 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
+            exit(-1)
+
         self.disable_vol(vol)
 
     def run_exerciser(self, id, setup):
@@ -366,6 +368,8 @@ class H5bench:
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
@@ -425,6 +429,8 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
+            exit(-1)
+
     def run_amrex(self, id, setup, vol):
         """Run the AMReX benchmark."""
         self.enable_vol(vol)
@@ -477,6 +483,8 @@ class H5bench:
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
 
         self.disable_vol(vol)
 
