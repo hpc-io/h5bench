@@ -105,23 +105,31 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     t2 = get_time_usec();
 
 #if H5_VERSION_GE(1, 13, 0) && defined(USE_ASYNC_VOL)
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x, ts->es_data);
-    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y, ts->es_data);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z, ts->es_data);
-    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1, ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2, ts->es_data);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px, ts->es_data);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py, ts->es_data);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz, ts->es_data);
+    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py,
+                         ts->es_data);
+    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz,
+                         ts->es_data);
 #else
-    ierr = H5Dread(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x);
-    ierr = H5Dread(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y);
-    ierr = H5Dread(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z);
-    ierr = H5Dread(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1);
-    ierr = H5Dread(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2);
-    ierr = H5Dread(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px);
-    ierr = H5Dread(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py);
-    ierr = H5Dread(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz);
+    ierr        = H5Dread(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x);
+    ierr        = H5Dread(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y);
+    ierr        = H5Dread(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z);
+    ierr        = H5Dread(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1);
+    ierr        = H5Dread(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2);
+    ierr        = H5Dread(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px);
+    ierr        = H5Dread(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py);
+    ierr        = H5Dread(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz);
 #endif
 
     t3 = get_time_usec();
@@ -541,9 +549,9 @@ main(int argc, char *argv[])
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time = %llu sec\n"
+        printf("Total emulated compute time = %.3lf sec\n"
                "Total read size = %lu GB\n",
-               total_sleep_time_us / (1000 * 1000), total_size_gb);
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rrt_s = (float)raw_read_time / (1000 * 1000);
 
