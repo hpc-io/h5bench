@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.10.4)
+name: h5bench (HDF5 1.10.7)
 
 on:
   pull_request:
