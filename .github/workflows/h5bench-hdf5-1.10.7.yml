@@ -35,5 +35,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: test
-          path: full-test/*/std*
+          path: storage/*/std*
           retention-days: 1

@@ -9,7 +9,7 @@
     "file-system": {
 
     },
-    "directory": "full-teste",
+    "directory": "storage",
     "benchmarks": [
         {
             "write": {
