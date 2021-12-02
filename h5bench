@@ -5,7 +5,6 @@ import json
 import time
 import uuid
 import shlex
-import psutil
 import errno
 import argparse
 import collections
