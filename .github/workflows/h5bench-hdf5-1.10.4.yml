@@ -7,7 +7,7 @@ on:
 
 jobs:
   h5bench:
-    runs-on: jlbez/hdf5-1.10.4
+    runs-on: ubuntu-18.04
     timeout-minutes: 60
 
     steps:
