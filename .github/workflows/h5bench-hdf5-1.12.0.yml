@@ -30,6 +30,16 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
 
+      - name: Test h5bench SYNC exerciser
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+
+      - name: Test h5bench SYNC metadata
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
