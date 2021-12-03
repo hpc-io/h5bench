@@ -149,7 +149,7 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots
           export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$current/vol-async/src
+          export ASYNC_DIR=$VOL_DIR/src
 
           cd build-async
 
@@ -162,7 +162,7 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots
           export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$current/vol-async/src
+          export ASYNC_DIR=$VOL_DIR/src
 
           cd build-async
 
