@@ -118,7 +118,7 @@ jobs:
           current="$PWD"
 
           export HDF5_HOME=/opt/hdf5
-          export VOL_DIR=$current/vol-async/src
+          export ASYNC_HOME=$current/vol-async/src
           
           mkdir build-async
           cd build-async
