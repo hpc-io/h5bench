@@ -131,12 +131,12 @@ jobs:
 
       - name: Test h5bench SYNC write/read
         run: |
-          cd build
+          cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
 
       - name: Test h5bench SYNC exerciser
         run: |
-          cd build
+          cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
 
       - name: Test h5bench ASYNC (implicit) write/read
@@ -145,7 +145,7 @@ jobs:
           export ABT_DIR=$current/vol-async/argobots
           export VOL_DIR=$current/vol-async
 
-          cd build
+          cd build-async
 
           python3 ../samples/update.py ../samples/async-implicit-write-read-contig-1d-small.json
 
@@ -157,7 +157,7 @@ jobs:
           export ABT_DIR=$current/vol-async/argobots
           export VOL_DIR=$current/vol-async
 
-          cd build
+          cd build-async
 
           python3 ../samples/update.py ../samples/async-implicit-write-read-contig-1d-small.json
 
