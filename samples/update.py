@@ -16,8 +16,9 @@ PARSER.add_argument(
 ARGS = PARSER.parse_args()
 
 HDF5_DIR = os.getenv('HDF5_DIR')
-ABT_DIR = os.getenv('VOL_DIR')
-VOL_DIR = os.getenv('VOL_DIR')
+ABT_DIR = os.getenv('ABT_DIR')
+ASYNC_DIR = os.getenv('ASYNC_DIR')
+
 
 if HDF5_DIR is None:
 	print('HDF5_DIR enviroment variable is not set!')
@@ -35,7 +36,7 @@ with open(ARGS.setup, 'r') as f:
     data = json.load(f, object_pairs_hook=collections.OrderedDict)
 
 data['vol']['library'] = '{}:{}:{}'.format(
-	VOL_DIR,
+	ASYNC_DIR,
 	'/'.join([ABT_DIR, 'lib']),
 	'/'.join([HDF5_DIR, 'lib'])
 )
