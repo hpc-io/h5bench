@@ -17,6 +17,10 @@ jobs:
         with:
           submodules: true
 
+      - name: Clone VOL-ASYNC
+        run: |
+          git clone --recursive https://github.com/hpc-io/vol-async.git
+
       - name: Build Argobots
         run: |
           current="$PWD"
