@@ -22,8 +22,9 @@ class H5bench:
     H5BENCH_EXERCISER = 'h5bench_exerciser'
     H5BENCH_METADATA = 'h5bench_hdf5_iotest'
     H5BENCH_AMREX = 'h5bench_amrex'
+    H5BENCH_E3SM = 'h5bench_e3sm'
 
-    def __init__(self, setup, abort, debug):
+    def __init__(self, setup, debug, abort):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
@@ -187,8 +188,10 @@ class H5bench:
                 self.run_metadata(id, benchmark[name])
             elif name == 'amrex':
                 self.run_amrex(id, benchmark[name], setup['vol'])
+            elif name == 'e3sm':
+                self.run_e3sm(id, benchmark[name])
             else:
-                self.logger('{} - Unsupported benchmark/kernel')
+                self.logger.critical('{} - Unsupported benchmark/kernel')
 
             self.logger.info('h5bench [{}] - Complete'.format(name))
 
@@ -450,8 +453,8 @@ class H5bench:
             # Make sure the command line is in the correct format
             arguments = shlex.split(command)
 
-            stdout_file_name = 'stdout'
-            stderr_file_name = 'stderr'
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
 
             with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
@@ -474,6 +477,60 @@ class H5bench:
             self.logger.error('Unable to run the benchmark: %s', e)
 
         self.disable_vol(vol)
+
+    def run_e3sm(self, id, setup):
+        """Run the E3SM benchmark."""
+        try:
+            start = time.time()
+
+            configuration = setup['configuration']
+
+            parameters = []
+
+            # Create the configuration parameter list
+            for key in configuration:
+                if key not in ['i', 'o', 'netcdf']:
+                    parameters.append('-{} {} '.format(key, configuration[key]))
+
+                if key in ['i', 'o']:
+                    parameters.append('-{} {}/{}/{} '.format(key, self.directory, id, setup['file']))
+
+            file = '{}/{}'.format(self.directory, configuration['netcdf'])
+
+            command = '{} {} {} {}'.format(
+                self.mpi,
+                self.H5BENCH_E3SM,
+                ' '.join(parameters),
+                file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
 
 
 PARSER = argparse.ArgumentParser(

@@ -1,11 +1,21 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(h5bench)
 
-# cmake_policy(SET CMP0074 NEW)
+project(
+	h5bench
+    VERSION 1.2.0
+)
 
-# Dependency: MPI
+include(ExternalProject)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+
 find_package(MPI REQUIRED)
-include_directories(SYSTEM /usr/local/include)#for MPI
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+set(PNETCDF_HOME $ENV{PNETCDF_HOME})
+set(CMAKE_PREFIX_PATH ${PNETCDF_HOME})
+find_package(PNetCDF REQUIRED)
+include_directories(${PNETCDF_INCLUDES})
 
 # Dependency: HDF5
 set(HDF5_HOME $ENV{HDF5_HOME})
@@ -59,30 +69,9 @@ set(meta_stress_src
 	metadata_stress/dataset.h
 	metadata_stress/ini.c
 	metadata_stress/ini.h
-	)
+)
 add_executable(h5bench_hdf5_iotest ${meta_stress_src})
 target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
-
-# ===========  Streaming (append) test: h5bench_vl_stream ===========
-#message("============== Build without USE_DEV_VL ==============")
-#add_executable(h5bench_vl_stream_hl streaming/h5bench_vl_stream.c)
-#target_link_libraries(h5bench_vl_stream_hl h5bench_util hdf5 hdf5_hl z)
-
-
-#set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})
-#include_directories(${HDF5_VL_HOME}/include)
-#link_directories(${HDF5_VL_HOME}/lib)
-#find_package(HDF5 1.13.0)
-#	message("============== Build with USE_DEV_VL ==============")
-#	set(HDF5_VL_HOME $ENV{HDF5_VL_HOME})
-#	include_directories(${HDF5_VL_HOME}/include)
-#	link_directories(${HDF5_VL_HOME}/lib)
-#	message("hdf5 home path = ${HDF5_VL_HOME}")
-#	add_executable(h5bench_vl_stream_lib streaming/h5bench_vl_stream.c)
-#	target_compile_definitions(h5bench_vl_stream_lib PUBLIC -DDEV_VL)
-#	target_link_libraries(h5bench_vl_stream_lib h5bench_util ${HDF5_VL_HOME}/lib/libhdf5.a z)
-#	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
-#endif()
 
 # ===========  Build AMReX ===========
 set(AMReX_HDF5 YES)
@@ -102,21 +91,31 @@ endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 
-# =================================================================
+# ===========  Build E3SM ===========
 
-# =========== Install binaries ===========
+ExternalProject_Add(h5bench_e3sm
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
+    CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-pnetcdf=${PNETCDF_HOME} --with-hdf5=${HDF5_HOME} --enable-shared --enable-zlib
+    BUILD_COMMAND make
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
+    BUILD_IN_SOURCE 1
+    LOG_CONFIGURE 1
+    LOG_BUILD 1
+)
+
 install(
 	FILES
 	h5bench
 	PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 	DESTINATION bin
 )
-install(TARGETS 
+
+install(
+	TARGETS 
 	h5bench_write 
 	h5bench_read 
 	h5bench_exerciser 
-	h5bench_hdf5_iotest 
-	#h5bench_vl_stream_hl
+	h5bench_hdf5_iotest
 	DESTINATION bin
 )
 

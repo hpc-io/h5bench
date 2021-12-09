@@ -1,3 +1,6 @@
 [submodule "amrex"]
 	path = amrex
 	url = https://github.com/AMReX-Codes/amrex
+[submodule "e3sm"]
+	path = e3sm
+	url = https://github.com/Parallel-NetCDF/E3SM-IO
