@@ -1,19 +1,19 @@
 Ways to contribute
 ===================
 
-We appreciate your interest in h5bench, and thank you for taking the time to contribute!
+We appreciate your interest in **h5bench**, and thank you for taking the time to contribute!
 
 We have compiled a set of instructions to help us make h5bench even better.
 
 Reporting bugs
 --------------
 
-You can open a new issue using our GitHub ![issue tracker](https://github.com/hpc-io/h5bench/issues/new/choose). If you run into an issue, please search first to ensure the issue has not been reported before. Open a new issue only if you have not found anything similar to your issue. Please, try to provide as much information as possible to reproduce your bug quickly.
+You can open a new issue using our GitHub `issue tracker <https://github.com/hpc-io/h5bench/issues/new/choose>`_. If you run into an issue, please search first to ensure the issue has not been reported before. Open a new issue only if you have not found anything similar to your issue. Please, try to provide as much information as possible to reproduce your bug quickly.
 
 Suggesting enhancements
 -----------------------
 
-You can use our GitHub ![issue tracker](https://github.com/hpc-io/h5bench/issues/new/choose) to describe your proposed feature. Please, provide the necessary context, covering why it is needed and what problem does it solve.
+You can use our GitHub `issue tracker <https://github.com/hpc-io/h5bench/issues/new/choose>`_ to describe your proposed feature. Please, provide the necessary context, covering why it is needed and what problem does it solve.
 
 Adding new benchmarks
 ---------------------
