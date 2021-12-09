@@ -1,31 +1,55 @@
-Add new benchmarks
+Ways to contribute
 ===================
 
-We provide a set of instructions on how to add new benchmarks to the h5bench Suite. However, please notice that you might require some changes depending on how your benchmark work.
+We appreciate your interest in h5bench, and thank you for taking the time to contribute!
 
-To illustrate the process, we will use AMReX:
+We have compiled a set of instructions to help us make h5bench even better.
+
+Reporting bugs
+--------------
+
+You can open a new issue using our GitHub ![issue tracker](https://github.com/hpc-io/h5bench/issues/new/choose). If you run into an issue, please search first to ensure the issue has not been reported before. Open a new issue only if you have not found anything similar to your issue. Please, try to provide as much information as possible to reproduce your bug quickly.
+
+Suggesting enhancements
+-----------------------
+
+You can use our GitHub ![issue tracker](https://github.com/hpc-io/h5bench/issues/new/choose) to describe your proposed feature. Please, provide the necessary context, covering why it is needed and what problem does it solve.
+
+Adding new benchmarks
+---------------------
+
+We provide a set of instructions on how to add new benchmarks to the h5bench Benchmarking Suite. However, please notice that you might require some changes depending on how your benchmark work. You can contribute in two ways:
+
+- **Adding existing benchmarks as submodules**: We plan to support only the version included in the original PR, based on its commit hash. Updates on the submodule require the contributor's help to ensure we can smoothly upgrade the available version without breaking existing features (both in the benchmark and in h5bench).
+
+- **Adding newly developed benchmarks**: The community may perform maintenance, requiring you to provide comprehensive documentation (in code and usage) and examples to understand the benchmark module.
+
+Example
+^^^^^^^^^
+
+To illustrate how you can add a new benchmark using the submodule aprroach we will use AMReX:
 
 1. You need to include the AMReX repository as a submodule:
 
 .. code-block:: bash
 
-	git submodule add https://github.com/AMReX-Codes/amrex amrex
+    git submodule add https://github.com/AMReX-Codes/amrex amrex
 
 2. For this benchmark, we need some libraries to be compiled and available as well, so we will need to modify our ``CMakeLists.txt``, so it builds that subdirectory:
 
 .. code-block:: bash
 
-	set(AMReX_HDF5 YES)
-	set(AMReX_PARTICLES YES)
-	set(AMReX_MPI_THREAD_MULTIPLE YES)
-	add_subdirectory(amrex)
+    set(AMReX_HDF5 YES)
+    set(AMReX_PARTICLES YES)
+    set(AMReX_MPI_THREAD_MULTIPLE YES)
+    add_subdirectory(amrex)
 
 3. AMReX comes with several other benchmarks. Still, since we are only interested in the HDF5 one, we will only compile that code. For that, we will need to add the following to our ``CMakeLists.txt``. This is based on how that benchmark is normally compiled within AMReX.
 
 .. code-block:: bash
 
-	set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
-	add_executable(h5bench_amrex ${amrex_src})
+    set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
+    add_executable(h5bench_amrex ${amrex_src})
 
 4. Be sure to follow the convention of naming the executable as ``h5bench_`` plus the benchmark name, e.g. ``h5bench_amrex``.
 
@@ -33,18 +57,18 @@ To illustrate the process, we will use AMReX:
 
 .. code-block:: bash
 
-	if(WITH_ASYNC_VOL)
-	        set(AMREX_USE_HDF5_ASYNC YES)
-	        target_link_libraries(h5bench_amrex hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
-	else()
-	        target_link_libraries(h5bench_amrex hdf5 z m amrex MPI::MPI_C)
-	endif()
+    if(WITH_ASYNC_VOL)
+            set(AMREX_USE_HDF5_ASYNC YES)
+            target_link_libraries(h5bench_amrex hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
+    else()
+            target_link_libraries(h5bench_amrex hdf5 z m amrex MPI::MPI_C)
+    endif()
 
 6. The last step is to update the ``h5bench`` Python-based script to handle the new benchmark. On the top of the file, add the path of your benchmark:
 
 .. code-block:: python
 
-	H5BENCH_AMREX = 'h5bench_amrex'
+    H5BENCH_AMREX = 'h5bench_amrex'
 
 Update the ``run()`` function that iterates over the ``benchmarks`` property list defined by the user in the ``configuration.json`` file to accept the new benchmark name:
 
@@ -128,3 +152,8 @@ Here you can check an example of the complete ``run_amrex`` function:
 7. Make sure you provide some sample JSON configuration files in the ``configurations`` directory.
 
 Please, feel free to reach us if you have questions!
+
+Testing
+-------
+
+h5bench constantly receives updates and improvements. If you can run the latest version, please consider helping us by reporting your findings, including bugs and performance regressions. Running the benchmarks contained in the h5bench Benchmarking Suite with different configurations and platforms helps us a lot in making it more robust by quickly identifying and solving issues.
