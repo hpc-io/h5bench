@@ -19,6 +19,8 @@
 #ifdef USE_ASYNC_VOL
 #include <H5VLconnector.h>
 #include <h5_async_lib.h>
+#else
+#include "async_adaptor.h"
 #endif
 
 #include "h5bench_util.h"
@@ -184,15 +186,9 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
         ts_run = &(mon->time_steps[i]);
         if (mon->time_steps[i].status == TS_DELAY) {
             t1 = get_time_usec();
-#ifdef USE_ASYNC_VOL
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
-#else
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose(ts_run->dset_ids[j]);
-            H5Gclose(ts_run->grp_id);
-#endif
             t2 = get_time_usec();
             meta_time += (t2 - t1);
             ts_run->status = TS_READY;
@@ -264,15 +260,9 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
             ts_run = &(mon->time_steps[i]);
             if (mon->time_steps[i].status == TS_DELAY) {
 
-#ifdef USE_ASYNC_VOL
                 for (int j = 0; j < dset_cnt; j++)
                     H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
                 H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
-#else
-                for (int j = 0; j < dset_cnt; j++)
-                    H5Dclose(ts_run->dset_ids[j]);
-                H5Gclose(ts_run->grp_id);
-#endif
             }
         }
         return 0;
@@ -285,15 +275,9 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         ts_run = &(mon->time_steps[i]);
         if (mon->time_steps[i].status == TS_DELAY) {
 
-#ifdef USE_ASYNC_VOL
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
-#else
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose(ts_run->dset_ids[j]);
-            H5Gclose(ts_run->grp_id);
-#endif
 
             ts_run->status = TS_READY;
         }
