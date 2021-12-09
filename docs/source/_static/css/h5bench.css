@@ -1,7 +1,7 @@
-.wy-nav-shift .wy-side-nav-search {
+nav.wy-nav-side div.wy-side-nav-search {
 	background: #38617c;
 }
 
-.logo {
+div.wy-side-nav-search > a img.logo {
 	margin: 40px auto;
 }
