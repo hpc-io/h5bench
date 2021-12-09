@@ -63,7 +63,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 
 html_static_path = ['_static']
-html_css_files = ['css/h5bench.css']
+html_css_files = ['_static/css/h5bench.css']
 
-html_logo = "images/h5bench-logo-small.png"
+html_logo = '_static/images/h5bench-logo-small.png'
 
