@@ -53,7 +53,7 @@ exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
-    'style_nav_header_background': '#353131', 
+    'style_nav_header_background': '#38617c', 
     'logo_only': True,
     'display_version': False
 }
@@ -64,3 +64,5 @@ html_theme_options = {
 
 html_static_path = ['images']
 html_logo = "images/h5bench-logo-small.png"
+
+html_css_files = ['h5bench.css']
