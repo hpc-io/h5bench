@@ -60,7 +60,7 @@ jobs:
           
           mkdir $PNETCDF_DIR
           # Compile PNetCDF
-          cd pnetcdfn
+          cd pnetcdf
           ./configure --prefix=${PNETCDF_DIR} CC=mpicc
           make -j 16
           make install
