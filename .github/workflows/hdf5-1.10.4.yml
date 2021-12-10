@@ -31,6 +31,11 @@ jobs:
           tar zxvf hdf5-1_10_4.tar.gz
           mv hdf5-hdf5-1_10_4 hdf5
 
+          # pnetcdf
+          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
+          tar -zxf pnetcdf-1.12.2.tar.gz
+          mv pnetcdf-1.12.2 pnetcdf
+
           # vol-async
           git clone --recursive https://github.com/hpc-io/vol-async.git
 
@@ -45,6 +50,18 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           CC=mpicc ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          make -j 16
+          make install
+
+      - name: Install PNetCDF
+        run: |
+          mydir="$PWD"
+          export PNETCDF_DIR=$mydir/pnetcdf/install
+          
+          mkdir $PNETCDF_DIR
+          # Compile PNetCDF
+          cd pnetcdfn
+          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
           make -j 16
           make install
           
