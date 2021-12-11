@@ -80,3 +80,11 @@ jobs:
           cd build_sync
           ./h5bench_write /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
           ./h5bench_read /home/runner/work/h5bench/h5bench/h5bench_patterns/sample_config/sample_cc1d_small.cfg file.h5
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test
+          path: build_sync/h5bench_e3sm-prefix
+          retention-days: 1
