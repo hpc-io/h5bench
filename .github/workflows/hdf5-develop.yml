@@ -43,6 +43,7 @@ jobs:
           export HDF5_DIR=$mydir/hdf5/install
           export ABT_DIR=$mydir/vol-async/argobots
           export VOL_DIR=$mydir/vol-async
+          export PNETCDF_DIR=$mydir/pnetcdf/install
           
           mkdir $HDF5_DIR
           # Compile HDF5
@@ -50,7 +51,15 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 16 && make install
+          make -j 8
+          make install
+
+          mkdir $PNETCDF_DIR
+          # Compile PNetCDF
+          cd pnetcdf
+          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
+          make -j 8
+          make install
           
           # Compile Argobots
           cd $ABT_DIR
@@ -106,6 +115,8 @@ jobs:
           mydir="$PWD"
           export HDF5_HOME=$mydir/hdf5/install
           export ASYNC_HOME=$mydir/vol-async/src
+          export PNETCDF_HOME=$mydir/pnetcdf/install
+
           mkdir build_async
           cd build_async
           cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$mydir/vol-async/src -L/$mydir/vol-async/src" -DCMAKE_C_COMPILER=$mydir/hdf5/install/bin/h5pcc
