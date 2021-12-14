@@ -38,6 +38,12 @@ AMReX                ``h5bench_amrex``        |:white_check_mark:| |:white_check
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contribute
+
+   instructions
+
+.. toctree::
+   :maxdepth: 2
    :caption: Legal
 
    copyright

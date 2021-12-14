@@ -19,8 +19,8 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'h5bench'
-copyright = '2021, Suren Byna, Houjun Tang, Quincey Koziol, Tony Li, John Ravi, Scot Breitenfield'
-author = 'Suren Byna, Houjun Tang, Quincey Koziol, Tony Li, John Ravi, Scot Breitenfield'
+copyright = '2021, Suren Byna, Houjun Tang, Quincey Koziol, Tony Li, John Ravi, Scot Breitenfield, Jean Luca Bez'
+author = 'Suren Byna, Houjun Tang, Quincey Koziol, Tony Li, John Ravi, Scot Breitenfield, Jean Luca Bez'
 
 # The full version, including alpha/beta/rc tags
 release = '1.2'
@@ -50,15 +50,20 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    'style_nav_header_background': '#38617c', 
+    'logo_only': True,
+    'display_version': False
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
 
-# Add H5bench logo once received.
-# html_logo = ""
+html_static_path = ['_static']
+html_css_files = ['css/h5bench.css']
 
-html_static_path = ['images']
-html_logo = "images/h5bench-logo.png"
+html_logo = '_static/images/h5bench-logo-small.png'
+
