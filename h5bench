@@ -224,6 +224,8 @@ class H5bench:
 
         if vol is not None:
             if 'library' in vol:
+                self.logger.info('Environment: %s', vol['library'])
+
                 self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
             if 'path' in vol:
@@ -235,6 +237,8 @@ class H5bench:
         """Enable VOL by setting the connector."""
         if 'connector' in vol:
             self.vol_environment['HDF5_VOL_CONNECTOR'] = vol['connector']
+
+            self.logger.info('HDF5 VOL connector: %s', vol['connector'])
 
     def disable_vol(self, vol):
         """Disable VOL by setting the connector."""

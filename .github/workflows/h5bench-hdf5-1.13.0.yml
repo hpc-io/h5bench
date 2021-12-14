@@ -131,9 +131,11 @@ jobs:
 
       - name: Test h5bench ASYNC write/read
         run: |
+          current="$PWD"
+
           export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=$PWD/vol-async/argobots
-          export VOL_DIR=$PWD/vol-async
+          export ABT_DIR=$current/vol-async/argobots
+          export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
 
           cd build-async
@@ -144,9 +146,11 @@ jobs:
 
       - name: Test h5bench ASYNC amrex
         run: |
+          current="$PWD"
+          
           export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=$PWD/vol-async/argobots
-          export VOL_DIR=$PWD/vol-async
+          export ABT_DIR=$current/vol-async/argobots
+          export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
 
           cd build-async
