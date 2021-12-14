@@ -112,7 +112,7 @@ jobs:
       - name: Test h5bench SYNC write/read
         run: |
           cd build-sync
-          ./h5bench --debug --abort-on-failure ../samples/sync-write-read-contig-1d-small.json
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
       - name: Test h5bench SYNC exerciser
         run: |
@@ -123,6 +123,11 @@ jobs:
         run: |
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+
+      - name: Test h5bench SYNC amrex
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
       - name: Test h5bench ASYNC write/read
         run: |
@@ -136,6 +141,19 @@ jobs:
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
+
+      - name: Test h5bench ASYNC amrex
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-amrex.json
+
+          ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
 
       - name: Upload artifact
         if: always()
