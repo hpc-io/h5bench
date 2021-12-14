@@ -144,7 +144,7 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
 
-      - name: Test h5bench ASYNC (implicit) write/read
+      - name: Test h5bench ASYNC write/read
         run: |
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots
@@ -153,22 +153,9 @@ jobs:
 
           cd build-async
 
-          python3 ../samples/update.py ../samples/async-implicit-write-read-contig-1d-small.json
+          python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
 
-          ./h5bench --debug --abort-on-failure ../samples/async-implicit-write-read-contig-1d-small.json
-
-      - name: Test h5bench ASYNC (explicit) write/read
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-
-          cd build-async
-
-          python3 ../samples/update.py ../samples/async-implicit-write-read-contig-1d-small.json
-
-          ./h5bench --debug --abort-on-failure ../samples/async-explicit-write-read-contig-1d-small.json
+          ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
 
       - name: Upload artifact
         if: always()
