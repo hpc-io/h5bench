@@ -30,7 +30,7 @@
                     "DIM_1": "16777216",
                     "DIM_2": "1",
                     "DIM_3": "1",
-                    "ASYNC_MODE": "IMP",
+                    "MODE": "ASYNC",
                     "CSV_FILE": "output.csv"
                 }
             },
@@ -49,7 +49,7 @@
                     "DIM_1": "16777216",
                     "DIM_2": "1",
                     "DIM_3": "1",
-                    "ASYNC_MODE": "IMP",
+                    "MODE": "ASYNC",
                     "CSV_FILE": "output.csv"
                 }
             }

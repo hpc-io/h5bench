@@ -28,7 +28,7 @@
                     "DIM_1": "16777216",
                     "DIM_2": "1",
                     "DIM_3": "1",
-                    "ASYNC_MODE": "NON",
+                    "MODE": "SYNC",
                     "CSV_FILE": "output.csv"
                 }
             },
@@ -47,7 +47,7 @@
                     "DIM_1": "16777216",
                     "DIM_2": "1",
                     "DIM_3": "1",
-                    "ASYNC_MODE": "NON",
+                    "MODE": "SYNC",
                     "CSV_FILE": "output.csv"
                 }
             }
