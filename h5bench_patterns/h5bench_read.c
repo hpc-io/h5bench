@@ -511,7 +511,8 @@ main(int argc, char *argv[])
 
         if (has_vol_async) {
             mode_str = "ASYNC";
-        } else {
+        }
+        else {
             mode_str = "SYNC";
         }
 

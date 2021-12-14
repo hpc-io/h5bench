@@ -323,7 +323,8 @@ es_id_set(async_mode mode)
     hid_t es_id = 0;
     if (has_vol_async) {
         es_id = H5EScreate();
-    } else {
+    }
+    else {
         es_id = H5ES_NONE;
     }
 
@@ -888,7 +889,8 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 
     if (has_vol_async) {
         (*params_in_out).asyncMode = MODE_ASYNC;
-    } else {
+    }
+    else {
         (*params_in_out).asyncMode = MODE_SYNC;
     }
 
@@ -935,10 +937,11 @@ bench_params_init(bench_params *params_out)
     (*params_out).file_per_proc = 0;
 }
 
-int has_vol_connector()
+int
+has_vol_connector()
 {
 #if H5_VERSION_GE(1, 13, 0)
-    char* connector = getenv("HDF5_VOL_CONNECTOR");
+    char *connector = getenv("HDF5_VOL_CONNECTOR");
 
     if (connector != NULL) {
         return 1;

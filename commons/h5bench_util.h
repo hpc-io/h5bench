@@ -189,7 +189,7 @@ int read_config(const char *file_path, bench_params *params_out, int do_write);
 
 void print_params(const bench_params *p);
 void bench_params_free(bench_params *p);
-int has_vol_connector();
+int  has_vol_connector();
 
 int has_vol_async;
 
