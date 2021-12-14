@@ -101,7 +101,7 @@ add_executable(h5bench_amrex_sync ${amrex_src})
 target_link_libraries(h5bench_amrex_sync hdf5 z m amrex MPI::MPI_C)
 
 if(WITH_ASYNC_VOL)
-	set(AMREX_HDF5_ASYNC YES)
+	set(AMReX_HDF5_ASYNC YES)
 	
 	add_executable(h5bench_amrex_async ${amrex_src})
 	target_link_libraries(h5bench_amrex_async hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
