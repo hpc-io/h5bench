@@ -947,6 +947,7 @@ has_vol_connector()
         return 1;
     }
 #endif
+
     return 0;
 }
 
