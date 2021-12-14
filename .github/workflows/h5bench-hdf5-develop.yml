@@ -146,7 +146,7 @@ jobs:
 
       - name: Test h5bench SYNC amrex
         run: |
-          cd build
+          cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
       - name: Test h5bench ASYNC write/read
