@@ -81,7 +81,8 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     H5Pset_all_coll_metadata_ops(dapl, true);
 #endif
 
-    t1          = get_time_usec();
+    t1 = get_time_usec();
+
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
@@ -91,7 +92,8 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
 
-    t2   = get_time_usec();
+    t2 = get_time_usec();
+
     ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
@@ -273,8 +275,14 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     if (actual_read_cnt < 1)
         return -1;
 
-    if (MY_RANK == 0)
+    if (MY_RANK == 0) {
+#if H5_VERSION_GE(1, 13, 0)
+        if (H5VLis_connector_registered_by_name("async")) {
+            printf("Using 'async' VOL connector\n");
+        }
+#endif
         print_params(&params);
+    }
 
     MEM_MONITOR      = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.io_mem_limit);
     unsigned long t1 = 0, t2 = 0, t3 = 0, t4 = 0;
@@ -295,8 +303,10 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         }
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
-        t1         = get_time_usec();
+        t1 = get_time_usec();
+
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
 
@@ -498,14 +508,13 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
-        if (params.asyncMode == ASYNC_EXPLICIT)
-            mode_str = "Async";
-        else
-            mode_str = "Sync";
-#else
-        mode_str = "Sync";
-#endif
+
+        if (has_vol_async) {
+            mode_str = "ASYNC";
+        } else {
+            mode_str = "SYNC";
+        }
+
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);

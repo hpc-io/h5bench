@@ -219,7 +219,6 @@ class H5bench:
 
     def prepare_vol(self, vol):
         """Prepare the environment variables for the VOL."""
-        self.vol_environment['ABT_THREAD_STACKSIZE'] = 100000
 
         if vol is not None:
             if 'library' in vol:
@@ -257,14 +256,15 @@ class H5bench:
 
     def run_pattern(self, id, operation, setup, vol):
         """Run the h5bench_patterns (write/read) benchmarks."""
-        self.enable_vol(vol)
-
         try:
             start = time.time()
 
             # Define the output file (should be a .h5 file)
             file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
+
+            if configuration['MODE'] == 'ASYNC':
+                self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
 
@@ -274,6 +274,9 @@ class H5bench:
                     # Make sure the CSV file is generated in the temporary path
                     if key == 'CSV_FILE':
                         configuration[key] = '{}/{}/{}'.format(self.directory, id, configuration[key])
+
+                    if key == 'MODE':
+                        continue
 
                     f.write('{}={}\n'.format(key, configuration[key]))
 
@@ -314,13 +317,14 @@ class H5bench:
 
             end = time.time()
 
+            if configuration['MODE'] == 'ASYNC':
+                self.disable_vol(vol)
+
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
             exit(-1)
-
-        self.disable_vol(vol)
 
     def run_exerciser(self, id, setup):
         """Run the exerciser benchmark."""
