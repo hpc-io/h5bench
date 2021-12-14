@@ -52,12 +52,14 @@ Asynchronous Settings
 ======================================= ==========================================================
 **Parameter**                           **Description**                                         
 ======================================= ==========================================================
-``ASYNC_MODE``                          Options: ``NON`` (default), ``IMP``, and ``EXP``        
+``MODE``                                Options: ``SYNC`` or ``ASYNC``        
 ``IO_MEM_LIMIT``                        Memory threshold to determine when to execute I/O       
 ``DELAYED_CLOSE_TIMESTEPS``             Groups and datasets will be closed later.               
 ======================================= ==========================================================
 
-The ``IO_MEM_LIMIT`` parameter is optional. Its default value is ``0`` and it requires ``ASYNC_MODE=EXP``. It also only works in asynchronous mode. This is the memory threshold used to determine when to actually execute the I/O operations. The actual I/O operations (data read/write) will not be executed until the timesteps associated memory reachs the threshold, or the application run to the end.
+The ``IO_MEM_LIMIT`` parameter is optional. Its default value is ``0`` and it requires ``ASYNC``, i.e., it only works in asynchronous mode. This is the memory threshold used to determine when to actually execute the I/O operations. The actual I/O operations (data read/write) will not be executed until the timesteps associated memory reachs the threshold, or the application run to the end.
+
+For the ``ASYNC`` mode to work you **must** define the necessay HDF5 ASYNC-VOL connector. For more information about it, refer to its `documentation <https://hdf5-vol-async.readthedocs.io/en/latest/>`_.
 
 Compression Settings
 ^^^^^^^^^^^^^^^^^^^^
