@@ -53,7 +53,7 @@ jobs:
           current="$PWD"
 
           export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots
+          export ABT_DIR=$current/vol-async/argobots/install
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$current/vol-async/src
 
