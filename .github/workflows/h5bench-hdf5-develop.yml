@@ -158,6 +158,8 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
 
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
           cd build-async
 
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
@@ -172,6 +174,8 @@ jobs:
           export ABT_DIR=$current/vol-async/argobots/install
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
+
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
 
