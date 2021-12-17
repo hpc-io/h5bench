@@ -11,7 +11,7 @@ include_directories(SYSTEM /usr/local/include)#for MPI
 set(HDF5_HOME $ENV{HDF5_HOME})
 set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
-message("Detected hdf5 version: ${HDF5_VERSION}")
+message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
@@ -19,16 +19,21 @@ link_directories(${HDF5_HOME}/lib)
 set(ASYNC_HOME $ENV{ASYNC_HOME})
 option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
-	add_definitions(-DUSE_ASYNC_VOL)
-	include_directories(${ASYNC_HOME})
-	link_directories(${ASYNC_HOME})
+	if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.13.0")
+		add_definitions(-DUSE_ASYNC_VOL)
+		include_directories(${ASYNC_HOME})
+		link_directories(${ASYNC_HOME})
+		message(STATUS "VOL ASYNC: ENABLED")
+	else()
+		message(SEND_ERROR "VOL ASYNC requires HDF5 1.13.0 or newer.")
+	endif()
 endif()
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
     commons/h5bench_util.c
     commons/h5bench_util.h
-    )
+)
 add_library(h5bench_util ${h5bench_util_src})
 if(WITH_ASYNC_VOL)
 	target_link_libraries(h5bench_util asynchdf5 h5async)
@@ -91,15 +96,17 @@ set(AMReX_MPI_THREAD_MULTIPLE YES)
 add_subdirectory(amrex)
 
 set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
-add_executable(h5bench_amrex ${amrex_src})
+
+add_executable(h5bench_amrex_sync ${amrex_src})
+target_link_libraries(h5bench_amrex_sync hdf5 z m amrex MPI::MPI_C)
 
 if(WITH_ASYNC_VOL)
-	set(AMREX_USE_HDF5_ASYNC YES)
-	target_link_libraries(h5bench_amrex hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
-else()
-	target_link_libraries(h5bench_amrex hdf5 z m amrex MPI::MPI_C)
+	set(AMReX_HDF5_ASYNC YES)
+	
+	add_executable(h5bench_amrex_async ${amrex_src})
+	target_link_libraries(h5bench_amrex_async hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
 endif()
-
+	
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 
 # =================================================================
@@ -115,8 +122,15 @@ install(TARGETS
 	h5bench_write 
 	h5bench_read 
 	h5bench_exerciser 
-	h5bench_hdf5_iotest 
+	h5bench_hdf5_iotest
+	h5bench_amrex_sync
 	#h5bench_vl_stream_hl
 	DESTINATION bin
 )
 
+if(WITH_ASYNC_VOL)
+	install(TARGETS 
+		h5bench_amrex_async 
+		DESTINATION bin
+	)
+endif()

@@ -10,6 +10,7 @@
 #define COMMONS_ASYNC_ADAPTOR_H_
 #ifndef H5ES_WAIT_FOREVER
 #define H5ES_WAIT_FOREVER INT_MAX
+#define H5ES_NONE         0
 
 // An enum type H5ES_status_t exists in version 1.12.x and later
 // This definition is just to make compiler happy with older version headers
