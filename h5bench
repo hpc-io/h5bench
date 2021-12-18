@@ -5,7 +5,6 @@ import json
 import time
 import uuid
 import shlex
-import psutil
 import errno
 import argparse
 import collections
@@ -21,8 +20,10 @@ class H5bench:
     H5BENCH_PATTERNS_READ = 'h5bench_read'
     H5BENCH_EXERCISER = 'h5bench_exerciser'
     H5BENCH_METADATA = 'h5bench_hdf5_iotest'
+    H5BENCH_AMREX_SYNC = 'h5bench_amrex_sync'
+    H5BENCH_AMREX_ASYNC = 'h5bench_amrex_async'
 
-    def __init__(self, setup, abort, debug):
+    def __init__(self, setup, debug, abort, validate):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
@@ -31,18 +32,25 @@ class H5bench:
         self.configure_log(debug)
         self.setup = setup
         self.abort = abort
+        self.validate = validate
 
     def check_parallel(self):
-        p = psutil.Process(os.getppid())
-        command = p.cmdline()
+        mpi = [
+            'mpirun', 'mpiexec',
+            'srun'
+        ]
 
         # Get user defined shell
-        shell = os.environ['SHELL']
+        if 'SHELL' in os.environ:
+            shell = os.environ['SHELL']
 
-        if command[0] != shell:
-            print('You should not call MPI directly when running h5bench.')
+            for m in mpi:
+                if m in shell:
+                    print('You should not call MPI directly when running h5bench.')
 
-            exit(-1)
+                    exit(-1)
+        else:
+            shell = None
 
     def configure_log(self, debug):
         """Configure the logging system."""
@@ -211,8 +219,11 @@ class H5bench:
 
     def prepare_vol(self, vol):
         """Prepare the environment variables for the VOL."""
+
         if vol is not None:
             if 'library' in vol:
+                self.logger.info('Environment: %s', vol['library'])
+
                 self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
             if 'path' in vol:
@@ -224,6 +235,8 @@ class H5bench:
         """Enable VOL by setting the connector."""
         if 'connector' in vol:
             self.vol_environment['HDF5_VOL_CONNECTOR'] = vol['connector']
+
+            self.logger.info('HDF5 VOL connector: %s', vol['connector'])
 
     def disable_vol(self, vol):
         """Disable VOL by setting the connector."""
@@ -247,14 +260,15 @@ class H5bench:
 
     def run_pattern(self, id, operation, setup, vol):
         """Run the h5bench_patterns (write/read) benchmarks."""
-        self.enable_vol(vol)
-
         try:
             start = time.time()
 
             # Define the output file (should be a .h5 file)
             file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
+
+            if configuration['MODE'] == 'ASYNC':
+                self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
 
@@ -264,6 +278,9 @@ class H5bench:
                     # Make sure the CSV file is generated in the temporary path
                     if key == 'CSV_FILE':
                         configuration[key] = '{}/{}/{}'.format(self.directory, id, configuration[key])
+
+                    if key == 'MODE':
+                        continue
 
                     f.write('{}={}\n'.format(key, configuration[key]))
 
@@ -304,11 +321,30 @@ class H5bench:
 
             end = time.time()
 
+            if configuration['MODE'] == 'ASYNC':
+                self.disable_vol(vol)
+
+            if self.validate:
+                used_async = False
+
+                with open(stdout_file_name, mode='r') as stdout_file:
+                    lines = stdout_file.readlines()
+
+                    for line in lines:
+                        if 'Mode: ASYNC' in line:
+                            used_async = True
+                            break
+
+                if (configuration['MODE'] == 'ASYNC' and used_async) or (configuration['MODE'] == 'SYNC' and not used_async):
+                    self.logger.info('Requested and ran in %s mode', 'ASYNC' if used_async else 'SYNC')
+                else:
+                    self.logger.warning('Requested %s mode but ran in %s mode', configuration['MODE'], 'ASYNC' if used_async else 'SYNC')
+
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-        self.disable_vol(vol)
+            exit(-1)
 
     def run_exerciser(self, id, setup):
         """Run the exerciser benchmark."""
@@ -356,6 +392,8 @@ class H5bench:
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
@@ -415,6 +453,71 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
+            exit(-1)
+
+    def run_amrex(self, id, setup, vol):
+        """Run the AMReX benchmark."""
+        try:
+            start = time.time()
+
+            file = '{}/{}'.format(self.directory, setup['file'])
+            configuration = setup['configuration']
+
+            if configuration['mode'] == 'ASYNC':
+                self.enable_vol(vol)
+
+                binary = self.H5BENCH_AMREX_ASYNC
+            else:
+                binary = self.H5BENCH_AMREX_SYNC
+
+            configuration_file = '{}/{}/amrex.ini'.format(self.directory, id)
+
+            # Create the configuration file for this benchmark
+            with open(configuration_file, 'w+') as f:
+                for key in configuration:
+                    f.write('{} = {}\n'.format(key, configuration[key]))
+
+                f.write('directory = {}\n'.format(file))
+
+            command = '{} {} {}'.format(
+                self.mpi,
+                binary,
+                configuration_file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
+
+            if configuration['mode'] == 'ASYNC':
+                self.disable_vol(vol)
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
+
 
 PARSER = argparse.ArgumentParser(
     description='H5bench: a Parallel I/O Benchmark Suite for HDF5: '
@@ -440,7 +543,14 @@ PARSER.add_argument(
     help='Enable debug mode'
 )
 
+PARSER.add_argument(
+    '--validate-mode',
+    action='store_true',
+    dest='validate',
+    help='Validated if the requested mode (async/sync) was run'
+)
+
 ARGS = PARSER.parse_args()
 
-BENCH = H5bench(ARGS.setup, ARGS.debug, ARGS.abort)
+BENCH = H5bench(ARGS.setup, ARGS.debug, ARGS.abort, ARGS.validate)
 BENCH.run()
