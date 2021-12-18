@@ -1,0 +1,7 @@
+[submodule "amrex"]
+	path = amrex
+	url = https://github.com/AMReX-Codes/amrex
+
+[submodule "openpmd"]
+	path = openpmd
+	url = https://github.com/openPMD/openPMD-api
