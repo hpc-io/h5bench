@@ -22,6 +22,8 @@ class H5bench:
     H5BENCH_METADATA = 'h5bench_hdf5_iotest'
     H5BENCH_AMREX_SYNC = 'h5bench_amrex_sync'
     H5BENCH_AMREX_ASYNC = 'h5bench_amrex_async'
+    H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
+    H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
 
     def __init__(self, setup, debug, abort, validate):
         """Initialize the suite."""
@@ -172,9 +174,9 @@ class H5bench:
         self.prepare_vol(setup['vol'])
 
         benchmarks = setup['benchmarks']
-
+        
         for benchmark in benchmarks:
-            name = next(iter(benchmark))
+            name = benchmark['benchmark']
             id = str(uuid.uuid4()).split('-')[0]
 
             self.logger.info('h5bench [{}] - Starting'.format(name))
@@ -185,15 +187,17 @@ class H5bench:
             self.prepare_parallel(setup['mpi'])
 
             if name == 'write':
-                self.run_pattern(id, name, benchmark[name], setup['vol'])
+                self.run_pattern(id, name, benchmark, setup['vol'])
             elif name == 'read':
-                self.run_pattern(id, name, benchmark[name], setup['vol'])
+                self.run_pattern(id, name, benchmark, setup['vol'])
             elif name == 'exerciser':
-                self.run_exerciser(id, benchmark[name])
+                self.run_exerciser(id, benchmark)
             elif name == 'metadata':
-                self.run_metadata(id, benchmark[name])
+                self.run_metadata(id, benchmark)
             elif name == 'amrex':
-                self.run_amrex(id, benchmark[name], setup['vol'])
+                self.run_amrex(id, benchmark, setup['vol'])
+            elif name == 'openpmd':
+                self.run_openpmd(id, benchmark)
             else:
                 self.logger.error('{} - Unsupported benchmark/kernel')
 
@@ -513,6 +517,74 @@ class H5bench:
 
             if configuration['mode'] == 'ASYNC':
                 self.disable_vol(vol)
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
+
+    def run_openpmd(self, id, setup):
+        """Run the OpenPMD kernel benchmark."""
+        try:
+            start = time.time()
+
+            # Define the output file (should be a .h5 file)
+            if 'file' in setup:
+                self.logger.warning('OpenPMD does not take an input file name, only the directory')
+
+            configuration = setup['configuration']
+
+            configuration_file = '{}/{}/openpmd.input'.format(self.directory, id)
+
+            # Create the configuration file for this benchmark
+            with open(configuration_file, 'w+') as f:
+                for key in configuration:
+                    if 'operation' in key:
+                        continue
+
+                    f.write('{}={}\n'.format(key, configuration[key]))
+
+                f.write('fileLocation={}/{}\n'.format(self.directory, id))
+
+            if configuration['operation'] == 'write':
+                binary = self.H5BENCH_OPENPMD_WRITE
+            elif configuration['operation'] == 'read':
+                binary = self.H5BENCH_OPENPMD_READ
+            else:
+                self.logger.error('Unsupported operation for OpenPMD benchmark')
+
+                exit(-1)
+
+            command = '{} {} {}'.format(
+                self.mpi,
+                binary,
+                configuration_file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
         except Exception as e:

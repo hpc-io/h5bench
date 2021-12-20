@@ -129,6 +129,11 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
+      - name: Test h5bench SYNC openpmd
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
       - name: Test h5bench ASYNC write/read
         run: |
           current="$PWD"

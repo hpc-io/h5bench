@@ -15,43 +15,43 @@
     "directory": "storage",
     "benchmarks": [
         {
-            "write": {
-                "file": "test.h5",
-                "configuration": {
-                    "MEM_PATTERN": "CONTIG",
-                    "FILE_PATTERN": "CONTIG",
-                    "NUM_PARTICLES": "16 M",
-                    "TIMESTEPS": "5",
-                    "DELAYED_CLOSE_TIMESTEPS": "2",
-                    "COLLECTIVE_DATA": "NO",
-                    "COLLECTIVE_METADATA": "NO",
-                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
-                    "NUM_DIMS": "1",
-                    "DIM_1": "16777216",
-                    "DIM_2": "1",
-                    "DIM_3": "1",
-                    "MODE": "ASYNC",
-                    "CSV_FILE": "output.csv"
-                }
-            },
-            "read": {
-                "file": "test.h5",
-                "configuration": {
-                    "MEM_PATTERN": "CONTIG",
-                    "FILE_PATTERN": "CONTIG",
-                    "NUM_PARTICLES": "16 M",
-                    "TIMESTEPS": "5",
-                    "DELAYED_CLOSE_TIMESTEPS": "2",
-                    "COLLECTIVE_DATA": "NO",
-                    "COLLECTIVE_METADATA": "NO",
-                    "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
-                    "NUM_DIMS": "1",
-                    "DIM_1": "16777216",
-                    "DIM_2": "1",
-                    "DIM_3": "1",
-                    "MODE": "ASYNC",
-                    "CSV_FILE": "output.csv"
-                }
+            "benchmark": "write",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "NUM_PARTICLES": "16 M",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "NO",
+                "COLLECTIVE_METADATA": "NO",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "16777216",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "MODE": "ASYNC",
+                "CSV_FILE": "output.csv"
+            }
+        },
+        {
+            "benchmark": "read",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "NUM_PARTICLES": "16 M",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "NO",
+                "COLLECTIVE_METADATA": "NO",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "16777216",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "MODE": "ASYNC",
+                "CSV_FILE": "output.csv"
             }
         }
     ]
