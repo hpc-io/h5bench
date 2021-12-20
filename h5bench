@@ -491,7 +491,6 @@ class H5bench:
             except Exception as e:
                 self.logger.debug('Unable to create {}: {}'.format(self.directory, e))
 
-
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
                 for key in configuration:
