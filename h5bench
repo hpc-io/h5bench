@@ -174,7 +174,7 @@ class H5bench:
         self.prepare_vol(setup['vol'])
 
         benchmarks = setup['benchmarks']
-        
+
         for benchmark in benchmarks:
             name = benchmark['benchmark']
             id = str(uuid.uuid4()).split('-')[0]
@@ -466,7 +466,7 @@ class H5bench:
         try:
             start = time.time()
 
-            file = '{}/{}'.format(self.directory, setup['file'])
+            file = '{}/{}/{}'.format(self.directory, id, setup['file'])
             configuration = setup['configuration']
 
             if configuration['mode'] == 'ASYNC':
