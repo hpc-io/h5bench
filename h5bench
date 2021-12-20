@@ -466,7 +466,7 @@ class H5bench:
         try:
             start = time.time()
 
-            file = '{}/{}/{}'.format(self.directory, id, setup['file'])
+            directory = '{}/{}/{}'.format(self.directory, id, setup['file'])
             configuration = setup['configuration']
 
             if configuration['mode'] == 'ASYNC':
@@ -478,12 +478,26 @@ class H5bench:
 
             configuration_file = '{}/{}/amrex.ini'.format(self.directory, id)
 
+            try:
+                # Create a temporary directory to store all configurations
+                os.mkdir(directory)
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+
+                self.logger.warning('Base directory already exists: {}'.format(self.directory))
+
+                pass
+            except Exception as e:
+                self.logger.debug('Unable to create {}: {}'.format(self.directory, e))
+
+
             # Create the configuration file for this benchmark
             with open(configuration_file, 'w+') as f:
                 for key in configuration:
                     f.write('{} = {}\n'.format(key, configuration[key]))
 
-                f.write('directory = {}\n'.format(file))
+                f.write('directory = {}\n'.format(directory))
 
             command = '{} {} {}'.format(
                 self.mpi,
