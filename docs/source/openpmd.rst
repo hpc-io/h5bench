@@ -32,7 +32,7 @@ To run an instance of openPMD HDF5 benchmark you need to include the following i
 
 .. code-block::
 
-	{
+    {
         "benchmark": "openpmd",
         "configuration": {
             "operation": "write",
