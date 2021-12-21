@@ -18,6 +18,7 @@ BDCATS-IO (read)     ``h5bench_read``         |:white_check_mark:| |:white_check
 Metadata Stress      ``h5bench_hdf5_iotest``  |:white_check_mark:| |:white_large_square:| 
 Exerciser            ``h5bench_exerciser``    |:white_check_mark:| |:white_large_square:| 
 AMReX                ``h5bench_amrex``        |:white_check_mark:| |:white_check_mark:|   
+E3SM-IO              ``h5bench_e3sm``         |:white_check_mark:| |:white_large_square:| 
 ==================== ======================== ==================== ========================
 
 .. toctree::
@@ -35,6 +36,7 @@ AMReX                ``h5bench_amrex``        |:white_check_mark:| |:white_check
    metadata
    exerciser
    amrex
+   e3sm
 
 .. toctree::
    :maxdepth: 2

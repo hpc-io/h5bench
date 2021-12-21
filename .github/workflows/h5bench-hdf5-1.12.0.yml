@@ -66,6 +66,11 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
+      - name: Test h5bench SYNC e3sm
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
