@@ -50,7 +50,7 @@ jobs:
           export HDF5_LIBTOOL=/usr/bin/libtoolize
           ./autogen.sh
           CC=mpicc ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-          make -j 16
+          make -j 8
           make install
 
       - name: Install PNetCDF
@@ -62,7 +62,7 @@ jobs:
           # Compile PNetCDF
           cd pnetcdf
           ./configure --prefix=${PNETCDF_DIR} CC=mpicc
-          make -j 16
+          make -j 1
           make install
                     
       - name: Build h5bench
