@@ -179,7 +179,7 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     unsigned long t1, t2;
     unsigned long meta_time = 0;
 
-    if (mon->mode == ASYNC_NON)
+    if (!has_vol_async)
         return 0;
 
     for (int i = 0; i < mon->time_step_cnt; i++) {
@@ -205,7 +205,7 @@ mem_monitor_check_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
     *data_time_total     = 0;
     if (!mon || !metadata_time_total || !data_time_total)
         return -1;
-    if (mon->mode == ASYNC_NON)
+    if (!has_vol_async)
         return 0;
     time_step *   ts_run;
     size_t        num_in_progress;
@@ -255,11 +255,10 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
     unsigned long meta_time = 0, data_time = 0;
     int           dset_cnt = 8;
 
-    if (mon->mode == ASYNC_NON) {
+    if (!has_vol_async) {
         for (int i = 0; i < mon->time_step_cnt; i++) {
             ts_run = &(mon->time_steps[i]);
             if (mon->time_steps[i].status == TS_DELAY) {
-
                 for (int j = 0; j < dset_cnt; j++)
                     H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
                 H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
@@ -286,7 +285,7 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
     t2 = get_time_usec();
     meta_time += (t2 - t1);
 
-    if (mon->mode == ASYNC_NON)
+    if (!has_vol_async)
         return 0;
 
     for (int i = 0; i < mon->time_step_cnt; i++) {
@@ -322,38 +321,21 @@ hid_t
 es_id_set(async_mode mode)
 {
     hid_t es_id = 0;
-#ifdef USE_ASYNC_VOL
-    switch (mode) {
-        case ASYNC_NON:
-            es_id = H5ES_NONE;
-            break;
-        case ASYNC_EXPLICIT:
-            es_id = H5EScreate();
-            break;
-        case ASYNC_IMPLICIT:
-            break;
-        default:
-            break;
+    if (has_vol_async) {
+        es_id = H5EScreate();
     }
-#endif
+    else {
+        es_id = H5ES_NONE;
+    }
+
     return es_id;
 }
 
 void
 es_id_close(hid_t es_id, async_mode mode)
 {
-    switch (mode) {
-        case ASYNC_NON:
-            break;
-#ifdef USE_ASYNC_VOL
-        case ASYNC_EXPLICIT:
-            H5ESclose(es_id);
-            break;
-        case ASYNC_IMPLICIT:
-            break;
-#endif
-        default:
-            break;
+    if (has_vol_async) {
+        H5ESclose(es_id);
     }
 }
 
@@ -892,14 +874,6 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
     else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);
     }
-    else if (strcmp(key, "ASYNC_MODE") == 0) {
-        if (val_in[0] == 'E')
-            (*params_in_out).asyncMode = ASYNC_EXPLICIT;
-        else if (val_in[0] == 'I')
-            (*params_in_out).asyncMode = ASYNC_IMPLICIT;
-        else
-            (*params_in_out).asyncMode = ASYNC_NON;
-    }
     else if (strcmp(key, "FILE_PER_PROC") == 0) {
         if (val[0] == 'Y' || val[0] == 'y')
             (*params_in_out).file_per_proc = 1;
@@ -910,6 +884,16 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         printf("Unknown Parameter: %s\n", key);
         return -1;
     }
+
+    has_vol_async = has_vol_connector();
+
+    if (has_vol_async) {
+        (*params_in_out).asyncMode = MODE_ASYNC;
+    }
+    else {
+        (*params_in_out).asyncMode = MODE_SYNC;
+    }
+
     if ((*params_in_out).useCSV)
         (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
 
@@ -925,7 +909,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).pattern_name = NULL;
     (*params_out).meta_coll    = 0;
     (*params_out).data_coll    = 0;
-    (*params_out).asyncMode    = ASYNC_NON;
+    (*params_out).asyncMode    = MODE_SYNC;
 
     (*params_out).cnt_time_step         = 0;
     (*params_out).cnt_time_step_delay   = 0;
@@ -952,6 +936,21 @@ bench_params_init(bench_params *params_out)
     (*params_out).env_meta_path = NULL;
     (*params_out).file_per_proc = 0;
 }
+
+int
+has_vol_connector()
+{
+#if H5_VERSION_GE(1, 13, 0)
+    char *connector = getenv("HDF5_VOL_CONNECTOR");
+
+    if (connector != NULL) {
+        return 1;
+    }
+#endif
+
+    return 0;
+}
+
 int
 read_config(const char *file_path, bench_params *params_out, int do_write)
 {
@@ -1045,22 +1044,12 @@ print_params(const bench_params *p)
     printf("=======================================\n");
     printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
     printf("Number of particles per rank: %llu\n", p->num_particles);
-    // printf("Per rank actual read number (in M): %d M\n", p->cnt_actual_particles_M);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
-    int asyncMode = p->asyncMode;
-#ifndef USE_ASYNC_VOL
-    asyncMode = 0;
-#endif
-    printf("Async mode = %d (0: ASYNC_NON; 1: ASYNC_EXP; 2: ASYNC_IMP)\n", asyncMode);
-    if (p->meta_coll == 1)
-        printf("Collective metadata operations: YES.\n");
-    else
-        printf("Collective metadata operations: NO.\n");
-    if (p->data_coll == 1)
-        printf("Collective buffering for data operations: YES.\n");
-    else
-        printf("Collective buffering for data operations: NO.\n");
+
+    printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
+    printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
+    printf("Collective buffering for data operations: %s\n", p->data_coll == 1 ? "YES" : "NO");
 
     printf("Number of dimensions: %d\n", p->num_dims);
     printf("    Dim_1: %lu\n", p->dim_1);

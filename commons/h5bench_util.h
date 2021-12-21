@@ -19,7 +19,7 @@
 #define M_VAL            ((unsigned long long)1024 * 1024)
 #define K_VAL            ((unsigned long long)1024)
 #define PARTICLE_SIZE    (7 * sizeof(float) + sizeof(int))
-typedef enum async_mode { ASYNC_NON, ASYNC_EXPLICIT, ASYNC_IMPLICIT } async_mode;
+typedef enum async_mode { MODE_SYNC, MODE_ASYNC } async_mode;
 
 typedef enum num_unit {
     UNIT_INVALID,
@@ -189,6 +189,9 @@ int read_config(const char *file_path, bench_params *params_out, int do_write);
 
 void print_params(const bench_params *p);
 void bench_params_free(bench_params *p);
+int  has_vol_connector();
+
+int has_vol_async;
 
 int   file_create_try(const char *path);
 int   file_exist(const char *path);
