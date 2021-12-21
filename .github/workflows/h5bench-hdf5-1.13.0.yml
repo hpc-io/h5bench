@@ -17,9 +17,27 @@ jobs:
         with:
           submodules: true
 
-      - name: Clone VOL-ASYNC
+      - name: Dependencies
         run: |
+          # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git
+
+          # PnetCDF
+          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
+          tar -zxf pnetcdf-1.12.2.tar.gz
+          mv pnetcdf-1.12.2 pnetcdf
+
+      - name: Build PnetCDF
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export PNETCDF_DIR=/opt/pnetcdf
+
+          cd pnetcdf
+
+          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
+
+          make -j 8
+          make install
 
       - name: Build Argobots
         run: |
@@ -85,7 +103,9 @@ jobs:
       - name: Build h5bench SYNC
         run: |
           current="$PWD"
+
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
 
           mkdir build-sync
           cd build-sync
@@ -98,6 +118,7 @@ jobs:
           current="$PWD"
 
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
           export ASYNC_HOME=$current/vol-async/src
           
           mkdir build-async

@@ -26,6 +26,11 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git
 
+          # PnetCDF
+          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
+          tar -zxf pnetcdf-1.12.2.tar.gz
+          mv pnetcdf-1.12.2 pnetcdf
+
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -37,6 +42,18 @@ jobs:
 
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+
+          make -j 8
+          make install
+
+      - name: Build PnetCDF
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export PNETCDF_DIR=/opt/pnetcdf
+
+          cd pnetcdf
+
+          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
 
           make -j 8
           make install
@@ -105,7 +122,9 @@ jobs:
       - name: Build h5bench SYNC
         run: |
           current="$PWD"
+
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
 
           mkdir build-sync
           cd build-sync
@@ -118,6 +137,7 @@ jobs:
           current="$PWD"
 
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
           export ASYNC_HOME=$current/vol-async/src
           
           mkdir build-async
