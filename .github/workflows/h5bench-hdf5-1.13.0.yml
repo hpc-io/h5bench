@@ -152,6 +152,8 @@ jobs:
 
       - name: Test h5bench SYNC e3sm
         run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
