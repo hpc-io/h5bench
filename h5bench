@@ -496,7 +496,7 @@ class H5bench:
                 for key in configuration:
                     f.write('{} = {}\n'.format(key, configuration[key]))
 
-                f.write('directory = {}\n'.format(directory))
+                # f.write('directory = {}\n'.format(directory))
 
             command = '{} {} {}'.format(
                 self.mpi,

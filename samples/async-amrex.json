@@ -16,7 +16,7 @@
     "benchmarks": [
         {
             "benchmark": "amrex",
-            "file": ".",
+            "file": "amrex",
             "configuration": {
                 "ncells": "64",
                 "max_grid_size": "8",
