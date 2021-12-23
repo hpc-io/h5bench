@@ -1002,6 +1002,8 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
     if (ret < 0)
         return ret;
 
+    params_out->num_particles = params_out->dim_1 * params_out->dim_2 * params_out->dim_3;
+
     if (params_out->io_mem_limit > 0) {
         if (params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
             printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified "
