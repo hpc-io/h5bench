@@ -558,22 +558,31 @@ class H5bench:
 
                     f.write('{}={}\n'.format(key, configuration[key]))
 
-                f.write('fileLocation={}/{}\n'.format(self.directory, id))
+                f.write('fileLocation={}\n'.format(self.directory))
 
             if configuration['operation'] == 'write':
                 binary = self.H5BENCH_OPENPMD_WRITE
+
+                command = '{} {} {}'.format(
+                    self.mpi,
+                    binary,
+                    configuration_file
+                )
             elif configuration['operation'] == 'read':
                 binary = self.H5BENCH_OPENPMD_READ
+
+                file_path = '{}/8a_parallel_3Db'.format(self.directory)
+
+                command = '{} {} {} {}'.format(
+                    self.mpi,
+                    binary,
+                    file_path,
+                    configuration['pattern']
+                )
             else:
                 self.logger.error('Unsupported operation for OpenPMD benchmark')
 
                 exit(-1)
-
-            command = '{} {} {}'.format(
-                self.mpi,
-                binary,
-                configuration_file
-            )
 
             self.logger.info(command)
 

@@ -15,15 +15,35 @@ You can configure the openPMD write HDF5 benchmark with the following options. N
 ====================== ==============================================================================
 **Parameter**          **Description**                                                             
 ====================== ==============================================================================
-``operation``		   Operation: write or read
-``dim``                Number of dimensions                                                                 
-``balanced``      	   Should it use a balanced load? 
-``ratio``              Particle to mesh ratio                                                            
-``steps``              Number of iteration steps                                       
-``minBlock``           Meshes are viewed as grid of mini blocks                                                
-``grid``               Grid based on the mini block                                               
+``operation``		   Operation: ``write`` or ``read``
 ``fileLocation``       Directory where the file will be written to or read from                    
 ====================== ==============================================================================
+
+When running with the ``write`` operation, you have to define the following options:
+
+``dim``                Number of dimensions (``1``, ``2``, or ``3``)                                                     
+``balanced``           Should it use a balanced load? (``true`` or ``false``)
+``ratio``              Particle to mesh ratio                             
+``steps``              Number of iteration steps                                       
+``minBlock``           Meshes are viewed as grid of mini blocks
+``grid``               Grid based on the mini block                   
+
+When running with the ``read`` operation, you have to define the pattern:
+
+``pattern``            Read access pattern
+
+
+The ``minBlock`` and ``grid`` parameters must include the values for each of the ``dim`` dimensions. For example, if ``"dim": "3"`` (for a 3D mesh) ``minBlock`` should contain three values, one for each dimenseion ``"16 32 32"`` and ``grid`` (which is based on the mini block) should also contain three values, one for each dimension ``"32 32 16"``.
+
+For the ``pattern`` attribute for read you can chose:
+
+- ``m``: metadata onlune
+- ``sx``: slice of the 'rho' mesh in the x-axis (eg. ``x=0``)
+- ``sy``: slice of the 'rho' mesh in the y-axis (eg. ``y=0``)
+- ``sz``: slice of the 'rho' mesh in the z-axis (eg. ``z=0``)
+- ``fx``: slice of the 3D magnetic field in the x-axis (eg. ``x=0``)
+- ``fy``: slice of the 3D magnetic field in the y-axis (eg. ``y=0``)
+- ``fz``: slice of the 3D magnetic field in the z-axis (eg. ``z=0``)
 
 JSON Configuration (recomended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
