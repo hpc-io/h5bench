@@ -35,20 +35,19 @@ To run an instance of AMReX HDF5 benchmark you need to include the following in 
 .. code-block::
 
     {
-        "amrex": {
-            "file": "amrex.h5",
-            "configuration": {
-                "ncells": "64",
-                "max_grid_size": "8",
-                "nlevs": "1",
-                "ncomp": "6",
-                "nppc": "2",
-                "nplotfile": "2",
-                "nparticlefile": "2",
-                "sleeptime": "2",
-                "restart_check": "1",
-                "hdf5compression": "ZFP_ACCURACY#0.001"
-            }
+        "benchmark": "amrex",
+        "file": "amrex.h5",
+        "configuration": {
+            "ncells": "64",
+            "max_grid_size": "8",
+            "nlevs": "1",
+            "ncomp": "6",
+            "nppc": "2",
+            "nplotfile": "2",
+            "nparticlefile": "2",
+            "sleeptime": "2",
+            "restart_check": "1",
+            "hdf5compression": "ZFP_ACCURACY#0.001"
         }
     }
 
@@ -57,23 +56,22 @@ To read grids from file you need to set: ``grids_from_file``, ``nlevels``, and `
 .. code-block::
 
     {
-        "amrex": {
-            "file": "amrex.h5",
-            "configuration": {
-                "ncells": "64",
-                "max_grid_size": "8",
-                "nlevs": "1",
-                "ncomp": "6",
-                "nppc": "2",
-                "nplotfile": "2",
-                "nparticlefile": "2",
-                "sleeptime": "2",
-                "restart_check": "1",
-                "hdf5compression": "ZFP_ACCURACY#0.001",
-                "nlevs": "3",
-                "grids_from_file": "1",
-                "ref_ratio_file": "4 2"
-            }
+        "benchmark": "amrex",
+        "file": "amrex.h5",
+        "configuration": {
+            "ncells": "64",
+            "max_grid_size": "8",
+            "nlevs": "1",
+            "ncomp": "6",
+            "nppc": "2",
+            "nplotfile": "2",
+            "nparticlefile": "2",
+            "sleeptime": "2",
+            "restart_check": "1",
+            "hdf5compression": "ZFP_ACCURACY#0.001",
+            "nlevs": "3",
+            "grids_from_file": "1",
+            "ref_ratio_file": "4 2"
         }
     }
 

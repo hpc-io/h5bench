@@ -13,14 +13,13 @@
     "directory": "storage",
     "benchmarks": [
         {
-            "exerciser": {
-                "configuration": {
-                    "numdims": "2",
-                    "minels": "8 8",
-                    "nsizes": "3",
-                    "bufmult": "2 2",
-                    "dimranks": "8 4"
-                }
+            "benchmark": "exerciser",
+            "configuration": {
+                "numdims": "2",
+                "minels": "8 8",
+                "nsizes": "3",
+                "bufmult": "2 2",
+                "dimranks": "8 4"
             }
         }
     ]

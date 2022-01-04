@@ -34,23 +34,22 @@ To run an instance of Metadata Stress Test benchmark you need to include the fol
 .. code-block::
 
     {
-    	"metadata": {
-            "file": "hdf5_iotest.h5",
-            "configuration": {
-                "version": "0",
-                "steps": "20",
-                "arrays": "500",
-                "rows": "100",
-                "columns": "200",
-                "process-rows": "2",
-                "process-columns": "2",
-                "scaling": "weak",
-                "dataset-rank": "4",
-                "slowest-dimension": "step",
-                "layout": "contiguous",
-                "mpi-io": "independent",       
-                "csv-file": "hdf5_iotest.csv"
-            }
+    	"benchmark": "metadata",
+        "file": "hdf5_iotest.h5",
+        "configuration": {
+            "version": "0",
+            "steps": "20",
+            "arrays": "500",
+            "rows": "100",
+            "columns": "200",
+            "process-rows": "2",
+            "process-columns": "2",
+            "scaling": "weak",
+            "dataset-rank": "4",
+            "slowest-dimension": "step",
+            "layout": "contiguous",
+            "mpi-io": "independent",       
+            "csv-file": "hdf5_iotest.csv"
         }
     }
 

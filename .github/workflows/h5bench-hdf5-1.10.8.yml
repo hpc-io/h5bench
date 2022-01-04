@@ -45,6 +45,11 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
+      - name: Test h5bench SYNC openpmd
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
