@@ -626,6 +626,7 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    '-a',
     '--abort-on-failure',
     action='store_true',
     dest='abort',
@@ -633,6 +634,7 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    '-d',
     '--debug',
     action='store_true',
     dest='debug',
@@ -640,10 +642,18 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    '-v',
     '--validate-mode',
     action='store_true',
     dest='validate',
     help='Validated if the requested mode (async/sync) was run'
+)
+
+PARSER.add_argument(
+    '-V',
+    '--version',
+    action='version',
+    version='%(prog)s (version 1.1)'
 )
 
 ARGS = PARSER.parse_args()

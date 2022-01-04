@@ -18,7 +18,6 @@
             "configuration": {
                 "MEM_PATTERN": "CONTIG",
                 "FILE_PATTERN": "CONTIG",
-                "NUM_PARTICLES": "16 M",
                 "TIMESTEPS": "5",
                 "DELAYED_CLOSE_TIMESTEPS": "2",
                 "COLLECTIVE_DATA": "NO",
@@ -38,7 +37,6 @@
             "configuration": {
                 "MEM_PATTERN": "CONTIG",
                 "FILE_PATTERN": "CONTIG",
-                "NUM_PARTICLES": "16 M",
                 "TIMESTEPS": "5",
                 "DELAYED_CLOSE_TIMESTEPS": "2",
                 "COLLECTIVE_DATA": "NO",

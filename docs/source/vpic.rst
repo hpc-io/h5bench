@@ -13,7 +13,6 @@ You can configure the ``h5bench_write`` and ``h5bench_read`` benchmarks with the
 ======================================= ==========================================================
 ``MEM_PATTERN``                         Options: ``CONTIG``, ``INTERLEAVED``, and ``STRIDED``   
 ``FILE_PATTERN``                        Options: ``CONTIG`` and ``STRIDED``                     
-``NUM_PARTICLES``                       The number of particles that each rank needs to process 
 ``TIMESTEPS``                           The number of iterations                                
 ``EMULATED_COMPUTE_TIME_PER_TIMESTEP``  Sleeps after each iteration to emulate computation      
 ``NUM_DIMS``                            The number of dimensions, valid values are 1, 2 and 3   
@@ -26,11 +25,9 @@ For ``MEM_PATTERN``, ``CONTIG`` represents arrays of basic data types (i.e., int
 
 For ``FILE_PATTERN``, ``CONTIG`` represents a HDF5 dataset of basic data types (i.e., int, float, double, etc.); ``INTERLEAVED`` represents a dataset of a compound datatype;
 
-For ``NUM_PARTICLES``, you can use absolute numbers (e.g. ``12345``) or in units (e.g. ``16 K``, ``128 M``, or ``256 G``). Notice that you `must` provide a space between the number and unit.
-
 For ``EMULATED_COMPUTE_TIME_PER_TIMESTEP``, you `must` provide the time unit (e.g. ``10 s``, ``100 ms``, or ``5000us``) to ensure correct behavior.
 
-For ``DIM_2`` and ``DIM_3`` if **unused**, you should set both as ``1``. Notice that ``NUM_PARTICLES == DIM_1 * DIM_2 * DIM_3`` **must** hold. For example, ``DIM_1=1024``, ``DIM_2=256``, ``DIM_3=1`` is a valid setting for a 2D array when ``NUM_PARTICLES=262144`` or ``NUM_PARTICLES=256 K``.
+For ``DIM_2`` and ``DIM_3`` if **unused**, you should set both as ``1``. Notice that the total number of particles will be given by ``DIM_1 * DIM_2 * DIM_3``. For example, ``DIM_1=1024``, ``DIM_2=256``, ``DIM_3=1`` is a valid setting for a 2D array and it will generate ``262144`` particles.
 
 A set of sample configuration files can be found in the ``samples/`` diretory in GitHub.
 
