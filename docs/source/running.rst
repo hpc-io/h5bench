@@ -225,6 +225,12 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
 Cori
 ^^^^
 
+In Cori you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark that is not required. 
+
+.. code-block::
+
+   module load python
+
 In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads, make sure you define:
 
 .. code-block::
