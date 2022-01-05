@@ -889,6 +889,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (params.io_op != IO_WRITE) {
+        if (params.io_op == IO_OVERWRITE) 
+            printf("Given configuration file shows IO_OPERATION=OVERWRITE\n");
+        if (params.io_op == IO_APPEND) 
+            printf("Given configuration file shows IO_OPERATION=APPEND\n");
         if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=WRITE defined\n");
         return 0;
     }
