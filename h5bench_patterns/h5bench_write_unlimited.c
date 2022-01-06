@@ -387,8 +387,8 @@ set_select_space_2D_array(bench_params params, hid_t *filespace_out, hid_t *mems
                           unsigned long dim_2)
 { // dim_1 * dim_2 === NUM_PARTICLES
     hsize_t mem_dims[2], file_dims[2];
-    mem_dims[0] = (hsize_t)dim_1;
-    mem_dims[1] = (hsize_t)dim_2;
+    mem_dims[0]  = (hsize_t)dim_1;
+    mem_dims[1]  = (hsize_t)dim_2;
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
@@ -631,10 +631,10 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
     *data_preparation_time = 0;
 
     //    unsigned long data_size;
-    unsigned long long particle_cnt = params.num_particles;
-    unsigned long actual_elem_cnt = 0; // only for set_select_spaces_strided()
-    int           dset_cnt        = 0;
-    unsigned long t_prep_start = get_time_usec();
+    unsigned long long particle_cnt    = params.num_particles;
+    unsigned long      actual_elem_cnt = 0; // only for set_select_spaces_strided()
+    int                dset_cnt        = 0;
+    unsigned long      t_prep_start    = get_time_usec();
     switch (params.access_pattern.pattern_write) {
         case CONTIG_CONTIG_1D:
             set_select_spaces_default(params, filespace_out, memspace_out);
