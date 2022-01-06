@@ -11,22 +11,29 @@ include_directories(SYSTEM /usr/local/include)#for MPI
 set(HDF5_HOME $ENV{HDF5_HOME})
 set(CMAKE_PREFIX_PATH ${HDF5_HOME})
 find_package(HDF5 REQUIRED)
-message("Detected hdf5 version: ${HDF5_VERSION}")
+message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
-#Dependency: Async
+# Dependency: VOL Async
 set(ASYNC_HOME $ENV{ASYNC_HOME})
 option(WITH_ASYNC_VOL "" OFF)
 if(WITH_ASYNC_VOL)
-	add_definitions(-DUSE_ASYNC_VOL)
+	if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.13.0")
+		add_definitions(-DUSE_ASYNC_VOL)
+		include_directories(${ASYNC_HOME})
+		link_directories(${ASYNC_HOME})
+		message(STATUS "VOL ASYNC: ENABLED")
+	else()
+		message(SEND_ERROR "VOL ASYNC requires HDF5 1.13.0 or newer.")
+	endif()
 endif()
 
 # =========== Utilility libs ==============
 set(h5bench_util_src
     commons/h5bench_util.c
     commons/h5bench_util.h
-    )
+)
 add_library(h5bench_util ${h5bench_util_src})
 if(WITH_ASYNC_VOL)
 	target_link_libraries(h5bench_util asynchdf5 h5async)
@@ -100,9 +107,68 @@ target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m MPI::MPI_C)
 #	install(TARGET h5bench_vl_stream_lib DESTINATION bin)
 #endif()
 
+# ===========  Build AMReX ===========
+set(AMReX_HDF5 YES)
+set(AMReX_PARTICLES YES)
+set(AMReX_MPI_THREAD_MULTIPLE YES)
+add_subdirectory(amrex)
+
+set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
+
+add_executable(h5bench_amrex_sync ${amrex_src})
+target_link_libraries(h5bench_amrex_sync hdf5 z m amrex MPI::MPI_C)
+
+if(WITH_ASYNC_VOL)
+	set(AMReX_HDF5_ASYNC YES)
+	
+	add_executable(h5bench_amrex_async ${amrex_src})
+	target_link_libraries(h5bench_amrex_async hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
+endif()
+	
+configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+
+# =================================================================
+
+# ===========  Build OpenPMD ===========
+set(openPMD_USE_MPI ON)
+set(openPMD_USE_HDF5 ON)
+set(openPMD_USE_ADIOS1 OFF)
+set(openPMD_USE_ADIOS2 OFF)
+set(openPMD_USE_JSON OFF)
+set(openPMD_USE_PYTHON OFF)
+set(openPMD_INSTALL OFF)
+set(openPMD_BUILD_TESTING OFF)
+set(openPMD_BUILD_EXAMPLES OFF)
+set(openPMD_BUILD_CLI_TOOLS OFF)
+
+add_subdirectory(openpmd)
+
+add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
+target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_write PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+add_executable(h5bench_openpmd_read openpmd/examples/8b_benchmark_read_parallel.cpp)
+target_link_libraries(h5bench_openpmd_read openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_read PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
+configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+
 # =================================================================
 
 # =========== Install binaries ===========
+install(
+	FILES
+	h5bench
+	PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+	DESTINATION bin
+)
 install(TARGETS 
 	h5bench_write 
 	h5bench_write_unlimited
@@ -111,5 +177,16 @@ install(TARGETS
 	h5bench_append
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
+	h5bench_openpmd_write
+	h5bench_openpmd_read
+	h5bench_amrex_sync
 	#h5bench_vl_stream_hl
-	DESTINATION bin)
+	DESTINATION bin
+)
+
+if(WITH_ASYNC_VOL)
+	install(TARGETS 
+		h5bench_amrex_async 
+		DESTINATION bin
+	)
+endif()

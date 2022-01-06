@@ -1,0 +1,59 @@
+name: h5bench (HDF5 1.10.4)
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  h5bench:
+    runs-on: ubuntu-18.04
+    container:
+      image: hpcio/hdf5-1.10.4
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Build h5bench
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          mkdir build
+          cd build
+          CC=mpicc cmake ..
+          make -j 8
+          
+      - name: Test h5bench SYNC write/read
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+
+      - name: Test h5bench SYNC exerciser
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+
+      - name: Test h5bench SYNC metadata
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+
+      - name: Test h5bench SYNC amrex
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+
+      - name: Test h5bench SYNC openpmd
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test
+          path: build/storage/**/std*
+          retention-days: 1
