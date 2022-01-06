@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/hpc-io/h5bench/blob/master/docs/source/images/h5bench-logo.png?raw=true" alt="h5bench"/>
+  <img src="https://github.com/hpc-io/h5bench/blob/develop/docs/source/images/h5bench-logo.png?raw=true" alt="h5bench"/>
 </p>
 
 # H5bench: a Parallel I/O Benchmark Suite for HDF5
