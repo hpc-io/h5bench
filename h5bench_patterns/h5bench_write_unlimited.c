@@ -405,7 +405,7 @@ set_select_space_2D_array(bench_params params, hid_t *filespace_out, hid_t *mems
     }
 
     if (MY_RANK == 0)
-        printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n", dim_1,
+        printf("%lu * %lu 2D array, my x_start = %lu, y_start = %lu, x_cnt = %lu, y_cnt = %lu\n", dim_1,
                dim_2, file_starts[0], file_starts[1], count[0], count[1]);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
     return 0;
@@ -457,7 +457,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
         dcpl = H5P_DEFAULT;
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
-            printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
+            printf("Parallel compressed: chunk_dim1 = %lu, chunk_dim2 = %lu\n", COMPRESS_INFO.chunk_dims[0],
                    COMPRESS_INFO.chunk_dims[1]);
     }
 
