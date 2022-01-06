@@ -1082,14 +1082,13 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
-        if (params.asyncMode == ASYNC_EXPLICIT)
-            mode_str = "Async";
-        else
-            mode_str = "Sync";
-#else
-        mode_str = "Sync";
-#endif
+
+        if (has_vol_async) {
+            mode_str = "ASYNC";
+        }
+        else {
+            mode_str = "SYNC";
+        }
         printf("\n==================  Performance results  =================\n");
 
         unsigned long long total_sleep_time_us =
