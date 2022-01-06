@@ -571,11 +571,12 @@ _set_io_pattern(bench_params *params_in_out)
             ret = -1;
             printf("%s() failed on line %d\n", __func__, __LINE__);
         }
-    } else if((params_in_out->io_op == IO_READ) || (params_in_out->io_op == IO_OVERWRITE) 
-      || (params_in_out->io_op == IO_APPEND)) {//file --> mem
-        if(params_in_out->mem_pattern == PATTERN_CONTIG) {
-            if(params_in_out->file_pattern == PATTERN_CONTIG) {
-                switch(params_in_out->num_dims) {
+    }
+    else if ((params_in_out->io_op == IO_READ) || (params_in_out->io_op == IO_OVERWRITE) ||
+             (params_in_out->io_op == IO_APPEND)) { // file --> mem
+        if (params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if (params_in_out->file_pattern == PATTERN_CONTIG) {
+                switch (params_in_out->num_dims) {
                     case 1:
                         (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
                         ret                                          = 0;
@@ -640,11 +641,14 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         }
         else if (strcmp(val, "WRITE") == 0) {
             params_in_out->io_op = IO_WRITE;
-        } else if(strcmp(val, "OVERWRITE") == 0) {
+        }
+        else if (strcmp(val, "OVERWRITE") == 0) {
             params_in_out->io_op = IO_OVERWRITE;
-        } else if(strcmp(val, "APPEND") == 0) {
+        }
+        else if (strcmp(val, "APPEND") == 0) {
             params_in_out->io_op = IO_APPEND;
-        } else {
+        }
+        else {
             printf("Unknown value for \"IO_OPERATION\": %s\n", val);
             return -1;
         }
@@ -1027,10 +1031,11 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
                 return -1;
             }
         }
-    } else if ((params_out->io_op == IO_READ) || (params_out->io_op == IO_OVERWRITE) 
-    || (params_out->io_op == IO_APPEND)) { //read-based operations
-        if (params_out->access_pattern.pattern_read == CONTIG_1D) { //read whole file
-            if(params_out->num_particles > 1)
+    }
+    else if ((params_out->io_op == IO_READ) || (params_out->io_op == IO_OVERWRITE) ||
+             (params_out->io_op == IO_APPEND)) {                    // read-based operations
+        if (params_out->access_pattern.pattern_read == CONTIG_1D) { // read whole file
+            if (params_out->num_particles > 1)
                 params_out->try_num_particles = params_out->num_particles;
             else
                 params_out->num_particles = params_out->try_num_particles;

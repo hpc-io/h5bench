@@ -403,7 +403,8 @@ main(int argc, char *argv[])
     }
 
     if (params.io_op != IO_READ) {
-        if(MY_RANK == 0) printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
+        if (MY_RANK == 0)
+            printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
         return 0;
     }
 
