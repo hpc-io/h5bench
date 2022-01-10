@@ -544,7 +544,7 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
                     total_sleep_time_us / (1000 * 1000));
             fprintf(params.csv_fs, "Total read size, %lu, GB\n", total_size_gb);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
+            fprintf(params.csv_fs, "Metadata time, %.3f, sec\n", meta_time_s);
             fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
 
