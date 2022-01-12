@@ -1009,8 +1009,7 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
     if (ret < 0)
         return ret;
 
-    if (params_out->io_op == IO_WRITE ||
-        params_out->io_op == IO_OVERWRITE ||
+    if (params_out->io_op == IO_WRITE || params_out->io_op == IO_OVERWRITE ||
         params_out->io_op == IO_APPEND ||
         (params_out->io_op == IO_READ && params_out->try_num_particles == 0)) {
         params_out->num_particles = params_out->dim_1 * params_out->dim_2 * params_out->dim_3;
