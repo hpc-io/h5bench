@@ -30,7 +30,7 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
-      - name: Test h5bench SYNC write-unlimited
+      - name: Test h5bench SYNC write unlimited
         run: |
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
