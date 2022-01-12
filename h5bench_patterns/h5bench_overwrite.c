@@ -69,6 +69,16 @@ print_data(int n)
                BUF_STRUCT->pz[i]);
 }
 
+void
+set_dspace_plist(hid_t *plist_id_out, int data_collective)
+{
+    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
+    if (data_collective == 1)
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    else
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
+}
+
 // Overwrite dataset
 void
 overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace,
@@ -243,16 +253,6 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
         free(data_3D_INT);
         free(data_3D_FLOAT);
     }
-}
-
-void
-set_dspace_plist(hid_t *plist_id_out, int data_collective)
-{
-    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
-    if (data_collective == 1)
-        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
-    else
-        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
 
 int

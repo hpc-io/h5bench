@@ -1,0 +1,36 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --oversubscribe -np 2 "
+    },
+    "vol": {
+        
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "write-unlimited",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "NO",
+                "COLLECTIVE_METADATA": "NO",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "4000",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "MODE": "SYNC",
+                "CSV_FILE": "output.csv",
+                "COMPRESS": "YES"
+            }
+        }
+    ]
+}
