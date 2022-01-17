@@ -661,7 +661,7 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 #if defined(METAMEM_USE_CUDA)
         mm[i] = metamem_init(METAMEM_CUDA);
 #elif defined(METAMEM_USE_HIP)
-        mm[i]    = metamem_init(METAMEM_HIP);
+        mm[i] = metamem_init(METAMEM_HIP);
 #else
         mm[i] = metamem_init(METAMEM_POSIX);
 #endif
