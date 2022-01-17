@@ -1,0 +1,32 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --oversubscribe -np 8"
+    },
+    "vol": {
+        
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "amrex",
+            "file": "amrex",
+            "configuration": {
+                "ncells": "64",
+                "max_grid_size": "8",
+                "nlevs": "1",
+                "ncomp": "6",
+                "nppc": "2",
+                "nplotfile": "2",
+                "nparticlefile": "2",
+                "sleeptime": "2",
+                "restart_check": "1",
+                "mode": "SYNC"
+            }
+        }
+    ]
+}

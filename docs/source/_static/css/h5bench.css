@@ -1,0 +1,13 @@
+nav.wy-nav-side, div.wy-side-nav-search,
+div.ethical-dark-theme .ethical-sidebar,
+div.rst-versions .rst-current-version {
+	background: #38617c;
+}
+
+div.wy-side-nav-search > a img.logo {
+	margin: 40px auto;
+}
+
+div.wy-menu-vertical p.caption {
+	color: #52bee1;
+}

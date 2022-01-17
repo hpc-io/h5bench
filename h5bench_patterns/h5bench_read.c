@@ -81,7 +81,8 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     H5Pset_all_coll_metadata_ops(dapl, true);
 #endif
 
-    t1          = get_time_usec();
+    t1 = get_time_usec();
+
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
@@ -91,7 +92,8 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
 
-    t2   = get_time_usec();
+    t2 = get_time_usec();
+
     ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
@@ -273,8 +275,14 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     if (actual_read_cnt < 1)
         return -1;
 
-    if (MY_RANK == 0)
+    if (MY_RANK == 0) {
+#if H5_VERSION_GE(1, 13, 0)
+        if (H5VLis_connector_registered_by_name("async")) {
+            printf("Using 'async' VOL connector\n");
+        }
+#endif
         print_params(&params);
+    }
 
     MEM_MONITOR      = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.io_mem_limit);
     unsigned long t1 = 0, t2 = 0, t3 = 0, t4 = 0;
@@ -295,8 +303,10 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         }
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
-        t1         = get_time_usec();
+        t1 = get_time_usec();
+
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
 
@@ -498,48 +508,48 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
-        if (params.asyncMode == ASYNC_EXPLICIT)
-            mode_str = "Async";
-        else
-            mode_str = "Sync";
-#else
-        mode_str = "Sync";
-#endif
+
+        if (has_vol_async) {
+            mode_str = "ASYNC";
+        }
+        else {
+            mode_str = "SYNC";
+        }
+
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        unsigned long total_size_mb = NUM_RANKS * local_data_size / (1024 * 1024);
-        printf("Total emulated compute time = %llu ms\n"
-               "Total read size = %lu MB\n",
-               total_sleep_time_us / 1000, total_size_mb);
+        unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
+        printf("Total emulated compute time = %.3lf sec\n"
+               "Total read size = %lu GB\n",
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rrt_s = (float)raw_read_time / (1000 * 1000);
 
-        float raw_rate_mbs = total_size_mb / rrt_s;
+        float raw_rate_gbs = total_size_gb / rrt_s;
         printf("Raw read time = %.3f sec \n", rrt_s);
 
-        float meta_time_ms = (float)metadata_time / 1000;
-        printf("Metadata time = %.3f ms\n", meta_time_ms);
+        float meta_time_s = (float)metadata_time / (1000 * 1000);
+        printf("Metadata time = %.3f sec\n", meta_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
         printf("Observed read completion time = %.3f sec\n", oct_s);
 
-        printf("%s Raw read rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
-        double or_mbs = (float)total_size_mb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed read rate = %.6f MB/sec\n", mode_str, or_mbs);
+        printf("%s Raw read rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
+        double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
+        printf("%s Observed read rate = %.6f GB/sec\n", mode_str, or_gbs);
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
                     total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total read size, %lu, MB\n", total_size_mb);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Total read size, %lu, GB\n", total_size_gb);
+            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
             fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
 
-            fprintf(params.csv_fs, "Raw read rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Observed read rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Raw read rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Observed read rate, %.3f, GB/sec\n", or_gbs);
             fclose(params.csv_fs);
         }
     }
