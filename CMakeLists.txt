@@ -97,6 +97,14 @@ if(MEM_CUDA_SUPPORT)
   target_include_directories(h5bench_cuda_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
   set_target_properties(h5bench_cuda_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
   target_link_libraries(h5bench_cuda_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart CUDA::cuda_driver cuda_memapi)
+
+  # BUILD ctests
+  enable_testing()
+  # 1 GPU, cuda, tested on summit
+  add_test( h5bench_cuda_write_00 jsrun --nrs 1 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
+  # 6 GPU, cuda, tested on summit
+  # add_test( h5bench_cuda_write_01 jsrun --nrs 6 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
+
 endif(MEM_CUDA_SUPPORT)
 
 
