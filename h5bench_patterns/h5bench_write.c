@@ -28,13 +28,13 @@
  */
 
 // Description: This is a simple benchmark based on VPIC's I/O interface
-//		Each process writes a specified number of particles into
-//		a hdf5 output file using only HDF5 calls
-// Author:	Suren Byna <SByna@lbl.gov>
-//		Lawrence Berkeley National Laboratory, Berkeley, CA
-// Created:	in 2011
-// Modified:	01/06/2014 --> Removed all H5Part calls and using HDF5 calls
-//          	02/19/2019 --> Add option to write multiple timesteps of data - Tang
+//      Each process writes a specified number of particles into
+//      a hdf5 output file using only HDF5 calls
+// Author:  Suren Byna <SByna@lbl.gov>
+//      Lawrence Berkeley National Laboratory, Berkeley, CA
+// Created: in 2011
+// Modified:    01/06/2014 --> Removed all H5Part calls and using HDF5 calls
+//              02/19/2019 --> Add option to write multiple timesteps of data - Tang
 //
 
 #include <hdf5.h>
@@ -464,6 +464,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
                                   ts->es_meta_create);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+
     unsigned t2 = get_time_usec();
     ierr =
         H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
@@ -471,16 +472,17 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
         H5Dwrite_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->y, ts->es_data);
     ierr =
         H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
+    ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
+    ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
+    ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
+    ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
+    ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
                           ts->es_data);
+
     unsigned t3 = get_time_usec();
 
     *metadata_time = t2 - t1;
@@ -499,9 +501,11 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
+
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
                                   H5P_DEFAULT, ts->es_meta_create);
+
     unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id,
                           data_in->x, ts->es_data);
@@ -519,6 +523,7 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
                           data_in->id_1, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[7], memspace, filespace, plist_id,
                           data_in->id_2, ts->es_data);
+
     unsigned t3    = get_time_usec();
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
@@ -537,6 +542,7 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
+
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "x", PARTICLE_COMPOUND_TYPE_SEPARATES[0], filespace, H5P_DEFAULT, dcpl,
                                   H5P_DEFAULT, ts->es_meta_create);
@@ -554,24 +560,27 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
                                   dcpl, H5P_DEFAULT, ts->es_meta_create);
     dset_ids[7] = H5Dcreate_async(loc, "id_2", PARTICLE_COMPOUND_TYPE_SEPARATES[7], filespace, H5P_DEFAULT,
                                   dcpl, H5P_DEFAULT, ts->es_meta_create);
+
     unsigned t2 = get_time_usec();
-    ierr        = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+
+    ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    ierr        = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
+    ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
-    unsigned t3 = get_time_usec();
+
+    unsigned t3    = get_time_usec();
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
     if (MY_RANK == 0)
@@ -592,9 +601,11 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
                                   H5P_DEFAULT, ts->es_meta_create);
+
     unsigned t2 = get_time_usec();
     ierr        = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
+
     // should write all things in data_in
     unsigned t3    = get_time_usec();
     *metadata_time = t2 - t1;
@@ -752,6 +763,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         t0 = get_time_usec();
         ts->grp_id =
             H5Gcreate_async(file_id, grp_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, ts->es_meta_create);
+
         t1         = get_time_usec();
         meta_time3 = (t1 - t0);
 
@@ -803,9 +815,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
+
             for (int j = 0; j < dset_cnt; j++)
                 H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
+
             ts->status = TS_READY;
             t4         = get_time_usec();
             meta_time5 += (t4 - t3);
@@ -974,8 +988,14 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
-    if (MY_RANK == 0)
+    if (MY_RANK == 0) {
+#if H5_VERSION_GE(1, 13, 0)
+        if (H5VLis_connector_registered_by_name("async")) {
+            printf("Using 'async' VOL connector\n");
+        }
+#endif
         print_params(&params);
+    }
 
     set_globals(&params);
 
@@ -1021,6 +1041,7 @@ main(int argc, char *argv[])
         char mpi_rank_output_file_path[4096];
         sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(output_file), MY_RANK,
                 get_file_name_from_path(output_file));
+
         file_id = H5Fcreate_async(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
     else {
@@ -1055,28 +1076,29 @@ main(int argc, char *argv[])
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
+
     H5Fclose_async(file_id, 0);
+
     unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t4 = get_time_usec();
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
-#ifdef USE_ASYNC_VOL
-        if (params.asyncMode == ASYNC_EXPLICIT)
-            mode_str = "Async";
-        else
-            mode_str = "Sync";
-#else
-        mode_str = "Sync";
-#endif
+
+        if (has_vol_async) {
+            mode_str = "ASYNC";
+        }
+        else {
+            mode_str = "SYNC";
+        }
         printf("\n==================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time %llu ms\n"
+        printf("Total emulated compute time %.3lf sec\n"
                "Total write size = %lu GB\n",
-               total_sleep_time_us / (1000 * 1000), total_size_gb);
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rwt_s        = (float)raw_write_time / (1000 * 1000);
         float raw_rate_gbs = (float)total_size_gb / rwt_s;
@@ -1085,13 +1107,13 @@ main(int argc, char *argv[])
         float meta_time_s = (float)inner_metadata_time / (1000 * 1000);
         printf("Metadata time = %.3f sec\n", meta_time_s);
 
-        float fcreate_time_s = (float)(tfopen_end - tfopen_start);
+        float fcreate_time_s = (float)(tfopen_end - tfopen_start) / (1000 * 1000);
         printf("H5Fcreate() takes %.3f sec\n", fcreate_time_s);
 
-        float flush_time_s = (float)(tflush_end - tflush_start);
+        float flush_time_s = (float)(tflush_end - tflush_start) / (1000 * 1000);
         printf("H5Fflush() takes %.3f sec\n", flush_time_s);
 
-        float fclose_time_s = (float)(tfclose_end - tfclose_start);
+        float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000 * 1000);
         printf("H5Fclose() takes %.3f sec\n", fclose_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
