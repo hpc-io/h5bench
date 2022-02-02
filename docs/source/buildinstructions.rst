@@ -32,6 +32,19 @@ Make sure to unload any system provided HDF5 version, and set an environment var
 
 	HDF5_HOME: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories.
 
+ 
+
++++++++++++++++++++++++++++++++++
+Compile with CUDA
++++++++++++++++++++++++++++++++++
+
+You can test GPU memory transfers bandwidth if you compile with cuda support.
+
+For instance on Summit system at OLCF:
+
+.. code-block:: bash
+   module load cuda
+
 
 Compile with CMake
 ---------------------------------------------------
