@@ -43,6 +43,7 @@ You can test GPU memory transfers bandwidth if you compile with cuda support.
 For instance on Summit system at OLCF:
 
 .. code-block:: bash
+
    module load cuda
 
 
