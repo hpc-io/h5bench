@@ -1110,7 +1110,8 @@ main(int argc, char *argv[])
                 fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
             else
                 fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n", total_sleep_time_us / (1000 * 1000));
+            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
+                    total_sleep_time_us / (1000 * 1000));
             fprintf(params.csv_fs, "Total_write_size, %lu, GB\n", total_size_gb);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, GB/sec\n", raw_rate_gbs);
