@@ -1,40 +1,15 @@
-/****** Copyright Notice ***
- *
- * PIOK - Parallel I/O Kernels - VPIC-IO, VORPAL-IO, and GCRM-IO, Copyright
- * (c) 2015, The Regents of the University of California, through Lawrence
- * Berkeley National Laboratory (subject to receipt of any required
- * approvals from the U.S. Dept. of Energy).  All rights reserved.
- *
- * If you have questions about your rights to use or distribute this
- * software, please contact Berkeley Lab's Innovation & Partnerships Office
- * at  IPO@lbl.gov.
- *
- * NOTICE.  This Software was developed under funding from the U.S.
- * Department of Energy and the U.S. Government consequently retains
- * certain rights. As such, the U.S. Government has been granted for itself
- * and others acting on its behalf a paid-up, nonexclusive, irrevocable,
- * worldwide license in the Software to reproduce, distribute copies to the
- * public, prepare derivative works, and perform publicly and display
- * publicly, and to permit other to do so.
- *
- ****************************/
-
 /**
  *
- * Email questions to SByna@lbl.gov
+ * Email questions to runzhouhan@lbl.gov
  * Scientific Data Management Research Group
  * Lawrence Berkeley National Laboratory
  *
  */
 
-// Description: This is a simple benchmark based on VPIC's I/O interface
-//      Each process reads a specified number of particles into
-//      a hdf5 output file using only HDF5 calls
-// Author:  Suren Byna <SByna@lbl.gov>
+// Description: Overwrite every dataset in a given file
+// Author:  Runzhou Han <runzhouhan@lbl.gov>
 //      Lawrence Berkeley National Laboratory, Berkeley, CA
-// Created: in 2011
-// Modified:    01/06/2014 --> Removed all H5Part calls and using HDF5 calls
-//              02/19/2019 --> Add option to read multiple timesteps of data - Tang
+// Created: in 2021
 
 #include <math.h>
 #include <hdf5.h>
@@ -660,37 +635,37 @@ main(int argc, char *argv[])
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        unsigned long total_size_mb = NUM_RANKS * local_data_size / (1024 * 1024);
-        printf("Total emulated compute time = %llu ms\n"
-               "Total modify size = %lu MB\n",
-               total_sleep_time_us / 1000, total_size_mb);
+        unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
+        printf("Total emulated compute time = %.3lf sec\n"
+               "Total modify size = %lu GB\n",
+               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rrt_s = (float)raw_read_time / (1000 * 1000);
 
-        float raw_rate_mbs = total_size_mb / rrt_s;
+        float raw_rate_gbs = total_size_gb / rrt_s;
         printf("Raw modify time = %.3f sec \n", rrt_s);
 
-        float meta_time_ms = (float)metadata_time / 1000;
-        printf("Metadata time = %.3f ms\n", meta_time_ms);
+        float meta_time_s = (float)metadata_time / (1000 * 1000);
+        printf("Metadata time = %.3f sec\n", meta_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
         printf("Observed modify completion time = %.3f sec\n", oct_s);
 
-        printf("%s Raw modify rate = %.3f MB/sec \n", mode_str, raw_rate_mbs);
-        double or_mbs = (float)total_size_mb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed modify rate = %.6f MB/sec\n", mode_str, or_mbs);
+        printf("%s Raw modify rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
+        double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
+        printf("%s Observed modify rate = %.3f GB/sec\n", mode_str, or_gbs);
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
                     total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total modify size, %lu, MB\n", total_size_mb);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, ms\n", meta_time_ms);
+            fprintf(params.csv_fs, "Total modify size, %lu, GB\n", total_size_gb);
+            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
             fprintf(params.csv_fs, "Data modify time, %.3f, sec\n", rrt_s);
             fprintf(params.csv_fs, "Observed modify completion time, %.3f, sec\n", oct_s);
 
-            fprintf(params.csv_fs, "Raw modify rate, %.3f, MB/sec\n", raw_rate_mbs);
-            fprintf(params.csv_fs, "Observed modify rate, %.3f, MB/sec\n", or_mbs);
+            fprintf(params.csv_fs, "Raw modify rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Observed modify rate, %.3f, GB/sec\n", or_gbs);
             fclose(params.csv_fs);
         }
     }
