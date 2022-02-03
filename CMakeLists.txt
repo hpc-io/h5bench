@@ -40,15 +40,33 @@ if(WITH_ASYNC_VOL)
 endif()
 # =================================================================
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # ===========  Build h5bench_patterns: h5bench_write and h5bench_read ===========
 set(h5bench_write_src h5bench_patterns/h5bench_write.c)
+set(h5bench_write_unlimited_src h5bench_patterns/h5bench_write_unlimited.c)
 set(h5bench_read_src h5bench_patterns/h5bench_read.c)
 
 add_executable(h5bench_write ${h5bench_write_src})
 target_link_libraries(h5bench_write h5bench_util hdf5 z MPI::MPI_C) 
 
+add_executable(h5bench_write_unlimited ${h5bench_write_unlimited_src})
+target_link_libraries(h5bench_write_unlimited h5bench_util hdf5 z MPI::MPI_C) 
+
 add_executable(h5bench_read ${h5bench_read_src})
 target_link_libraries(h5bench_read h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_overwrite ===========
+set(h5bench_overwrite_src h5bench_patterns/h5bench_overwrite.c)
+
+add_executable(h5bench_overwrite ${h5bench_overwrite_src})
+target_link_libraries(h5bench_overwrite h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_append ===========
+set(h5bench_append_src h5bench_patterns/h5bench_append.c)
+
+add_executable(h5bench_append ${h5bench_append_src})
+target_link_libraries(h5bench_append h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)
@@ -153,7 +171,10 @@ install(
 )
 install(TARGETS 
 	h5bench_write 
+	h5bench_write_unlimited
 	h5bench_read 
+	h5bench_overwrite
+	h5bench_append
 	h5bench_exerciser 
 	h5bench_hdf5_iotest 
 	h5bench_openpmd_write

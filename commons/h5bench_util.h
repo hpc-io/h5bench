@@ -76,6 +76,8 @@ typedef enum io_operation {
     IO_INVALID,
     IO_READ,
     IO_WRITE,
+    IO_OVERWRITE,
+    IO_APPEND,
 } io_operation;
 
 typedef enum read_option { READ_OPTION_INVALID, READ_FULL, READ_PARTIAL, READ_STRIDED } read_option;

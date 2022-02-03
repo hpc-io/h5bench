@@ -134,6 +134,21 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
+      - name: Test h5bench SYNC write unlimited
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+
+      - name: Test h5bench SYNC overwrite
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+
+      - name: Test h5bench SYNC append
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+
       - name: Test h5bench SYNC exerciser
         run: |
           cd build-sync
