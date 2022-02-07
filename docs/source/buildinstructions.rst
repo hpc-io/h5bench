@@ -48,7 +48,7 @@ Assume that the repo is cloned and now you are in the source directory h5bench, 
 
 .. warning::
 
-	If you want to specify the installation directory, you can pass `-DCMAKE_INSTALL_RPATH` to `cmake`. If you are not installing it, make sure when you run `h5bench`, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
+	If you want to specify the installation directory, you can pass ``-DCMAKE_INSTALL_PREFIX`` to ``cmake``. If you are not installing it, make sure when you run ``h5bench``, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
 
 Build to run in async
 ---------------------------------------------------
