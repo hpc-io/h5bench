@@ -950,7 +950,7 @@ has_vol_connector()
 #if H5_VERSION_GE(1, 13, 0)
     char *connector = getenv("HDF5_VOL_CONNECTOR");
 
-    if (strstr(connector, "async")) {
+    if (connector != NULL && strstr(connector, "async")) {
         return 1;
     }
 #endif
