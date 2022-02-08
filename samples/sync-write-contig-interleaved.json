@@ -1,7 +1,8 @@
 {
     "mpi": {
         "command": "mpirun",
-        "ranks": "2"
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --np 2 --oversubscribe"
     },
     "vol": {
     },
