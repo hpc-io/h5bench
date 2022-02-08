@@ -7,7 +7,7 @@
     },
     "file-system": {
     },
-    "directory": "full-test",
+    "directory": "storage",
     "benchmarks": [
         {
             "benchmark": "write",
