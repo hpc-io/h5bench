@@ -1,0 +1,33 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "2"
+    },
+    "vol": {
+    },
+    "file-system": {
+    },
+    "directory": "full-test",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "INTERLEAVED",
+                "NUM_PARTICLES": "1 M",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "NO",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "16777216",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "output.csv",
+                "MODE": "SYNC"
+            }
+        }
+    ]
+}
