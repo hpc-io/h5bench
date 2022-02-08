@@ -116,7 +116,7 @@ jobs:
 
       - name: Test h5bench SYNC write contiguous (memory) interleaved (file)
         run: |
-          cd build
+          cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-contig-interleaved.json
 
       - name: Test h5bench SYNC write unlimited
