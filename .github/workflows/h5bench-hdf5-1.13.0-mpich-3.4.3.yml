@@ -9,7 +9,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-20.04
     container:
-      image: hpcio/hdf5-1.13.0-mpich-3.4.3
+      image: jlbez/hdf5-1.13.0-mpich-3.4.3
     timeout-minutes: 60
 
     steps:
