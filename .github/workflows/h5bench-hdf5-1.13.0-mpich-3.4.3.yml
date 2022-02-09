@@ -119,16 +119,19 @@ jobs:
       - name: Test h5bench SYNC write/read
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
       - name: Test h5bench SYNC write contiguous (memory) interleaved (file)
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-contig-interleaved.json
 
       - name: Test h5bench SYNC write unlimited
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
 
       - name: Test h5bench SYNC overwrite
@@ -139,26 +142,31 @@ jobs:
       - name: Test h5bench SYNC append
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-append.json
 
       - name: Test h5bench SYNC exerciser
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
 
       - name: Test h5bench SYNC metadata
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
 
       - name: Test h5bench SYNC amrex
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
       - name: Test h5bench SYNC openpmd
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
 
       - name: Test h5bench ASYNC write/read
@@ -173,6 +181,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
 
@@ -190,6 +199,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-amrex.json
 
