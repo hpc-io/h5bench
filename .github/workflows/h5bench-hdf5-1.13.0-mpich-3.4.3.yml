@@ -111,8 +111,10 @@ jobs:
 
       - name: Configure for MPICH
         run: |
-          find samples -type f -name "*.json" -print0 | xargs -0 sed -i '' -e 's/--allow-run-as-root//g'
-          find samples -type f -name "*.json" -print0 | xargs -0 sed -i '' -e 's/--oversubscribe//g'
+          cd build-sync
+
+          find ../samples -type f -name "*.json" -print0 | xargs -0 sed -i '' -e 's/--allow-run-as-root//g'
+          find ../samples -type f -name "*.json" -print0 | xargs -0 sed -i '' -e 's/--oversubscribe//g'
 
       - name: Test h5bench SYNC write/read
         run: |
