@@ -137,6 +137,7 @@ jobs:
       - name: Test h5bench SYNC overwrite
         run: |
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
 
       - name: Test h5bench SYNC append
