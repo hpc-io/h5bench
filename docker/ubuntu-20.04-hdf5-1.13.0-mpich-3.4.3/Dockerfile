@@ -36,7 +36,7 @@ RUN apt-get update \
     && tar zxvf mpich-3.4.3.tar.gz \
     && mv mpich-3.4.3 mpich \
     && cd mpich \
-    && ./configure --with-device=ch4:ofi --disable-fortran \
+    && ./configure --with-device=ch4:ofi --disable-fortran --enable-cxx \
     && make \
     && make install \
     && cd .. \
