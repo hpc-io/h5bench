@@ -113,8 +113,8 @@ jobs:
         run: |
           cd build-sync
 
-          find ../samples -name '*.json' -exec sed "s/--allow-run-as-root//g" '{}' \;
-          find ../samples -name '*.json' -exec sed "s/--oversubscribe//g" '{}' \;
+          find ../samples -name '*.json' -exec sed -i "s/--allow-run-as-root//g" '{}' \;
+          find ../samples -name '*.json' -exec sed -i "s/--oversubscribe//g" '{}' \;
 
       - name: Test h5bench SYNC write/read
         run: |
