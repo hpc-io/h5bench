@@ -5,6 +5,9 @@
         "configuration": "--allow-run-as-root --np 2 --oversubscribe"
     },
     "vol": {
+        "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
+        "path": "/vol-async/src",
+        "connector": "async under_vol=0;under_info={}"
     },
     "file-system": {
     },
