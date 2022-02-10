@@ -182,6 +182,36 @@ jobs:
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
 
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          cd build-sync
+          export PATH=$(pwd):$PATH
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          cd build-sync
+          export PATH=$(pwd):$PATH
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          cd build-sync
+          export PATH=$(pwd):$PATH
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          cd build-sync
+          export PATH=$(pwd):$PATH
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          cd build-sync
+          export PATH=$(pwd):$PATH
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
       - name: Test h5bench SYNC write unlimited
         run: |
           cd build-sync
@@ -254,6 +284,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-strided.json
 
@@ -271,6 +302,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-contig.json
 
@@ -288,6 +320,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-interleaved.json
 
@@ -305,6 +338,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-interleaved-contig.json
 
@@ -322,6 +356,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-interleaved-interleaved.json
 
@@ -339,6 +374,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-contig.json
 
@@ -356,6 +392,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-interleaved.json
 
@@ -373,6 +410,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-interleaved-contig.json
 
@@ -390,6 +428,7 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-interleaved-interleaved.json
 
@@ -407,10 +446,101 @@ jobs:
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-3d-contig-contig.json
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-3d-contig-contig.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots/install
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+          
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
+          cd build-async
+          export PATH=$(pwd):$PATH
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots/install
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+          
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
+          cd build-async
+          export PATH=$(pwd):$PATH
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-partial.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots/install
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+          
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
+          cd build-async
+          export PATH=$(pwd):$PATH
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench ASYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots/install
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+          
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
+          cd build-async
+          export PATH=$(pwd):$PATH
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench ASYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=$current/vol-async/argobots/install
+          export VOL_DIR=$current/vol-async
+          export ASYNC_DIR=$VOL_DIR/src
+          
+          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+
+          cd build-async
+          export PATH=$(pwd):$PATH
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench ASYNC amrex
         run: |

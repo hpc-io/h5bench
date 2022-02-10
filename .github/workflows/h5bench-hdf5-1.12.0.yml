@@ -80,6 +80,56 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
 
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
       - name: Test h5bench SYNC write unlimited
         run: |
           cd build
