@@ -24,7 +24,7 @@ jobs:
           cd build
           CC=mpicc cmake ..
           make -j 8
-          
+
       - name: Test h5bench SYNC write/read
         run: |
           cd build
