@@ -116,13 +116,13 @@ add_subdirectory(amrex)
 set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
 
 add_executable(h5bench_amrex_sync ${amrex_src})
-target_link_libraries(h5bench_amrex_sync hdf5 z m amrex MPI::MPI_C)
+target_link_libraries(h5bench_amrex_sync hdf5 z m amrex pthread MPI::MPI_C)
 
 if(WITH_ASYNC_VOL)
 	set(AMReX_HDF5_ASYNC YES)
 	
 	add_executable(h5bench_amrex_async ${amrex_src})
-	target_link_libraries(h5bench_amrex_async hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
+	target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async MPI::MPI_C)
 endif()
 	
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
