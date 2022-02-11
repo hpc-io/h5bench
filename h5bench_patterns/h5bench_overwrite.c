@@ -1,40 +1,15 @@
-/****** Copyright Notice ***
- *
- * PIOK - Parallel I/O Kernels - VPIC-IO, VORPAL-IO, and GCRM-IO, Copyright
- * (c) 2015, The Regents of the University of California, through Lawrence
- * Berkeley National Laboratory (subject to receipt of any required
- * approvals from the U.S. Dept. of Energy).  All rights reserved.
- *
- * If you have questions about your rights to use or distribute this
- * software, please contact Berkeley Lab's Innovation & Partnerships Office
- * at  IPO@lbl.gov.
- *
- * NOTICE.  This Software was developed under funding from the U.S.
- * Department of Energy and the U.S. Government consequently retains
- * certain rights. As such, the U.S. Government has been granted for itself
- * and others acting on its behalf a paid-up, nonexclusive, irrevocable,
- * worldwide license in the Software to reproduce, distribute copies to the
- * public, prepare derivative works, and perform publicly and display
- * publicly, and to permit other to do so.
- *
- ****************************/
-
 /**
  *
- * Email questions to SByna@lbl.gov
+ * Email questions to runzhouhan@lbl.gov
  * Scientific Data Management Research Group
  * Lawrence Berkeley National Laboratory
  *
  */
 
-// Description: This is a simple benchmark based on VPIC's I/O interface
-//      Each process reads a specified number of particles into
-//      a hdf5 output file using only HDF5 calls
-// Author:  Suren Byna <SByna@lbl.gov>
+// Description: Overwrite every dataset in a given file
+// Author:  Runzhou Han <runzhouhan@lbl.gov>
 //      Lawrence Berkeley National Laboratory, Berkeley, CA
-// Created: in 2011
-// Modified:    01/06/2014 --> Removed all H5Part calls and using HDF5 calls
-//              02/19/2019 --> Add option to read multiple timesteps of data - Tang
+// Created: in 2021
 
 #include <math.h>
 #include <hdf5.h>
@@ -69,17 +44,100 @@ print_data(int n)
                BUF_STRUCT->pz[i]);
 }
 
-// Create HDF5 file and read data
 void
-read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
-             unsigned long *read_time, unsigned long *metadata_time)
+set_dspace_plist(hid_t *plist_id_out, int data_collective)
+{
+    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
+    if (data_collective == 1)
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    else
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
+}
+
+// Overwrite dataset
+void
+overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace,
+                  hid_t memspace, unsigned long *read_time, unsigned long *metadata_time)
 {
     hid_t         dapl;
     unsigned long t1, t2, t3;
+
+    hsize_t dims[3];
+    hsize_t dims_memory[3];
+
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(dapl, true);
-#endif
+
+    int *  data_1D_INT, **data_2D_INT, ***data_3D_INT;
+    float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
+
+    if (params.num_dims == 1) {
+        data_1D_INT   = malloc(params.dim_1 * sizeof(int));
+        data_1D_FLOAT = malloc(params.dim_1 * sizeof(float));
+    }
+
+    if (params.num_dims == 2) {
+        data_2D_INT   = malloc(params.dim_1 * sizeof(int *));
+        data_2D_FLOAT = malloc(params.dim_1 * sizeof(float *));
+        for (int i = 0; i < params.dim_1; i++) {
+            data_2D_INT[i]   = malloc(params.dim_2 * sizeof(int));
+            data_2D_FLOAT[i] = malloc(params.dim_2 * sizeof(float));
+        }
+    }
+
+    if (params.num_dims == 3) {
+        data_3D_INT   = malloc(params.dim_1 * sizeof(int **));
+        data_3D_FLOAT = malloc(params.dim_1 * sizeof(float **));
+        for (int i = 0; i < params.dim_1; i++) {
+            data_3D_INT[i]   = malloc(params.dim_2 * sizeof(int *));
+            data_3D_FLOAT[i] = malloc(params.dim_2 * sizeof(float *));
+            for (int j = 0; j < params.dim_2; j++) {
+                data_3D_INT[i][j]   = malloc(params.dim_3 * sizeof(int));
+                data_3D_FLOAT[i][j] = malloc(params.dim_3 * sizeof(float));
+            }
+        }
+    }
+
+    switch (params.access_pattern.pattern_read) {
+        case CONTIG_1D:
+        case STRIDED_1D:
+            for (long i = 0; i < params.dim_1; i++) {
+                data_1D_INT[i]   = i;
+                data_1D_FLOAT[i] = (float)i * 0.1;
+            }
+            break;
+
+        case CONTIG_2D:
+            for (long i = 0; i < params.dim_1; i++) {
+                for (long j = 0; j < params.dim_2; j++) {
+                    data_2D_INT[i][j]   = i + j;
+                    data_2D_FLOAT[i][j] = i / (float)(j + 1) * 0.1;
+                }
+            }
+            break;
+
+        case CONTIG_3D:
+            for (long i = 0; i < params.dim_1; i++) {
+                for (long j = 0; j < params.dim_2; j++) {
+                    for (long k = 0; k < params.dim_3; k++) {
+                        data_3D_INT[i][j][k]   = i + j + k;
+                        data_3D_FLOAT[i][j][k] = i / (float)(j + 1) / (float)(k + 1) * 0.1;
+                    }
+                }
+            }
+            break;
+        default:
+            printf("Unknown read pattern\n");
+            break;
+    }
+
+    dims[0]        = params.dim_1;
+    dims_memory[0] = params.dim_1;
+
+    dims[1]        = params.dim_2;
+    dims_memory[1] = params.dim_2;
+
+    dims[2]        = params.dim_3;
+    dims_memory[2] = params.dim_3;
 
     t1 = get_time_usec();
 
@@ -94,22 +152,46 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 
     t2 = get_time_usec();
 
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py,
-                         ts->es_data);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz,
-                         ts->es_data);
+    set_dspace_plist(&dapl, params.data_coll);
+
+    switch (params.access_pattern.pattern_read) {
+        case CONTIG_1D:
+        case STRIDED_1D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_1D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_1D_FLOAT);
+            break;
+
+        case CONTIG_2D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_2D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            break;
+
+        case CONTIG_3D:
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_3D_INT);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            break;
+        default:
+            printf("Unknown read pattern\n");
+            break;
+    }
 
     t3 = get_time_usec();
 
@@ -117,14 +199,43 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     *metadata_time = t2 - t1;
 
     if (MY_RANK == 0)
-        printf("  Read 8 variable completed\n");
+        printf("  Overwrite 8 variable completed\n");
     H5Pclose(dapl);
+
+    if (params.num_dims == 1) {
+        free(data_1D_INT);
+        free(data_1D_FLOAT);
+    }
+
+    if (params.num_dims == 2) {
+        for (int i = 0; i < params.dim_1; i++) {
+            free(data_2D_INT[i]);
+            free(data_2D_FLOAT[i]);
+        }
+        free(data_2D_INT);
+        free(data_2D_FLOAT);
+    }
+
+    if (params.num_dims == 3) {
+        for (int i = 0; i < params.dim_1; i++) {
+            for (int j = 0; j < params.dim_2; j++) {
+                free(data_3D_INT[i][j]);
+                free(data_3D_FLOAT[i][j]);
+            }
+            free(data_3D_INT[i]);
+            free(data_3D_FLOAT[i]);
+        }
+        free(data_3D_INT);
+        free(data_3D_FLOAT);
+    }
 }
 
 int
 _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t *filespace_in, hid_t *memspace_out)
 {
+    /* Overwrite dataset, set dim to NULL. */
     *memspace_out = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, NULL);
+
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
                         (hsize_t *)&read_elem_cnt, NULL);
     return read_elem_cnt;
@@ -257,9 +368,9 @@ set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t *
 }
 
 int
-_run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
-                    unsigned long *total_data_size_out, unsigned long *raw_read_time_out,
-                    unsigned long *inner_metadata_time)
+_run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
+                      unsigned long *total_data_size_out, unsigned long *raw_read_time_out,
+                      unsigned long *inner_metadata_time)
 {
     *raw_read_time_out               = 0;
     *inner_metadata_time             = 0;
@@ -275,14 +386,8 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     if (actual_read_cnt < 1)
         return -1;
 
-    if (MY_RANK == 0) {
-#if H5_VERSION_GE(1, 13, 0)
-        if (H5VLis_connector_registered_by_name("async")) {
-            printf("Using 'async' VOL connector\n");
-        }
-#endif
+    if (MY_RANK == 0)
         print_params(&params);
-    }
 
     MEM_MONITOR      = mem_monitor_new(nts, ASYNC_MODE, actual_read_cnt, params.io_mem_limit);
     unsigned long t1 = 0, t2 = 0, t3 = 0, t4 = 0;
@@ -303,17 +408,16 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         }
         mem_monitor_check_run(MEM_MONITOR, &meta_time2, &read_time_imp);
 
-        t1 = get_time_usec();
-
+        t1         = get_time_usec();
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
-
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
 
         if (MY_RANK == 0)
             printf("Reading %s ... \n", grp_name);
 
-        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
+        overwrite_h5_data(params, ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp,
+                          &meta_time4);
 
         ts->status = TS_DELAY;
 
@@ -353,14 +457,10 @@ set_pl(hid_t *fapl, hid_t *gapl)
 {
     *fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
-#if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(*fapl, true);
     H5Pset_coll_metadata_write(*fapl, true);
-#endif
     *gapl = H5Pcreate(H5P_GROUP_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(*gapl, true);
-#endif
 }
 
 void
@@ -402,9 +502,9 @@ main(int argc, char *argv[])
         return 0;
     }
 
-    if (params.io_op != IO_READ) {
+    if (params.io_op != IO_OVERWRITE) {
         if (MY_RANK == 0)
-            printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
+            printf("Make sure the configuration file has IO_OPERATION=OVERWRITE defined\n");
         return 0;
     }
 
@@ -413,7 +513,7 @@ main(int argc, char *argv[])
 
     hsize_t dims[64] = {0};
 
-    hid_t         file_id         = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    hid_t         file_id         = H5Fopen(file_name, H5F_ACC_RDWR, fapl);
     hid_t         filespace       = get_filespace(file_id);
     int           dims_cnt        = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;
@@ -428,6 +528,12 @@ main(int argc, char *argv[])
         if (MY_RANK == 0)
             printf("Failed to read dimensions. \n");
         return 0;
+    }
+
+    if (params.num_dims != dims_cnt) {
+        printf("Number of dimensions to be overwriten (%d) is inconsist with original dimension: %d\n",
+               params.num_dims, dims_cnt);
+        goto error;
     }
 
     if (dims_cnt > 0) { // 1D
@@ -472,6 +578,11 @@ main(int argc, char *argv[])
         printf("Number of particles available per rank: %llu \n", NUM_PARTICLES);
     }
 
+    if (params.num_particles > NUM_PARTICLES) {
+        printf("Number of particle per rank exceeds maximum value: %llu \n", NUM_PARTICLES);
+        return -1;
+    }
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
@@ -492,8 +603,8 @@ main(int argc, char *argv[])
 
     unsigned long raw_read_time, metadata_time, local_data_size;
 
-    int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time,
-                                  &metadata_time);
+    int ret = _run_benchmark_modify(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time,
+                                    &metadata_time);
 
     if (ret < 0) {
         if (MY_RANK == 0)
@@ -521,41 +632,40 @@ main(int argc, char *argv[])
         else {
             mode_str = "SYNC";
         }
-
         printf("\n =================  Performance results  =================\n");
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
         printf("Total emulated compute time = %.3lf sec\n"
-               "Total read size = %lu GB\n",
+               "Total modify size = %lu GB\n",
                total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
 
         float rrt_s = (float)raw_read_time / (1000 * 1000);
 
         float raw_rate_gbs = total_size_gb / rrt_s;
-        printf("Raw read time = %.3f sec \n", rrt_s);
+        printf("Raw modify time = %.3f sec \n", rrt_s);
 
         float meta_time_s = (float)metadata_time / (1000 * 1000);
         printf("Metadata time = %.3f sec\n", meta_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000 * 1000);
-        printf("Observed read completion time = %.3f sec\n", oct_s);
+        printf("Observed modify completion time = %.3f sec\n", oct_s);
 
-        printf("%s Raw read rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
+        printf("%s Raw modify rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
         double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed read rate = %.6f GB/sec\n", mode_str, or_gbs);
+        printf("%s Observed modify rate = %.3f GB/sec\n", mode_str, or_gbs);
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
             fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
                     total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total read size, %lu, GB\n", total_size_gb);
+            fprintf(params.csv_fs, "Total modify size, %lu, GB\n", total_size_gb);
             fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
-            fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
+            fprintf(params.csv_fs, "Data modify time, %.3f, sec\n", rrt_s);
+            fprintf(params.csv_fs, "Observed modify completion time, %.3f, sec\n", oct_s);
 
-            fprintf(params.csv_fs, "Raw read rate, %.3f, GB/sec\n", raw_rate_gbs);
-            fprintf(params.csv_fs, "Observed read rate, %.3f, GB/sec\n", or_gbs);
+            fprintf(params.csv_fs, "Raw modify rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Observed modify rate, %.3f, GB/sec\n", or_gbs);
             fclose(params.csv_fs);
         }
     }

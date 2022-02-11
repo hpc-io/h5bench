@@ -613,29 +613,28 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
             printf("%s() failed, unsupported value/patterns.\n", __func__);
         return ret;
     }
-
-    char *_parse_val(char *val_in)
-    {
-        char *val_str = strdup(val_in);
-        char *tokens[2];
-        char *tok = strtok(val_str, "#");
-        char *val = NULL;
-        val       = strdup(tok);
-        //    printf("_parse_val: val_in = [%s], val = [%s]\n", val_in, val);
-        if (val_str)
-            free(val_str);
-        return val;
-    }
-
-    int _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
-    {
-        if (!params_in_out)
-            return 0;
-        char *val = _parse_val(val_in);
-
-        if (strcmp(key, "IO_OPERATION") == 0) {
-            if (strcmp(val, "READ") == 0) {
-                params_in_out->io_op = IO_READ;
+    else if ((params_in_out->io_op == IO_READ) || (params_in_out->io_op == IO_OVERWRITE) ||
+             (params_in_out->io_op == IO_APPEND)) { // file --> mem
+        if (params_in_out->mem_pattern == PATTERN_CONTIG) {
+            if (params_in_out->file_pattern == PATTERN_CONTIG) {
+                switch (params_in_out->num_dims) {
+                    case 1:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+                        ret                                          = 0;
+                        break;
+                    case 2:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
+                        ret                                          = 0;
+                        break;
+                    case 3:
+                        (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
+                        ret                                          = 0;
+                        break;
+                    default:
+                        ret = -1;
+                        printf("%s() failed on line %d\n", __func__, __LINE__);
+                        break;
+                }
             }
             else if (strcmp(val, "WRITE") == 0) {
                 params_in_out->io_op = IO_WRITE;
@@ -685,11 +684,15 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
                 return -1;
             (*params_in_out).try_num_particles = num;
         }
-        else if (strcmp(key, "COLLECTIVE_METADATA") == 0) {
-            if (val[0] == 'Y' || val[0] == 'y')
-                (*params_in_out).meta_coll = 1;
-            else
-                (*params_in_out).meta_coll = 0;
+        else if (strcmp(val, "OVERWRITE") == 0) {
+            params_in_out->io_op = IO_OVERWRITE;
+        }
+        else if (strcmp(val, "APPEND") == 0) {
+            params_in_out->io_op = IO_APPEND;
+        }
+        else {
+            printf("Unknown value for \"IO_OPERATION\": %s\n", val);
+            return -1;
         }
         else if (strcmp(key, "COLLECTIVE_DATA") == 0) {
             if (val[0] == 'Y' || val[0] == 'y')
@@ -941,9 +944,9 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
 #if H5_VERSION_GE(1, 13, 0)
         char *connector = getenv("HDF5_VOL_CONNECTOR");
 
-        if (connector != NULL) {
-            return 1;
-        }
+    if (connector != NULL && strstr(connector, "async")) {
+        return 1;
+    }
 #endif
 
         return 0;
@@ -999,9 +1002,20 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         if (ret < 0)
             return ret;
 
-        if (params_out->io_op == IO_WRITE ||
-            (params_out->io_op == IO_READ && params_out->try_num_particles == 0)) {
-            params_out->num_particles = params_out->dim_1 * params_out->dim_2 * params_out->dim_3;
+    if (params_out->io_op == IO_WRITE || params_out->io_op == IO_OVERWRITE ||
+        params_out->io_op == IO_APPEND ||
+        (params_out->io_op == IO_READ && params_out->try_num_particles == 0)) {
+        (*params_out).num_particles = params_out->dim_1 * params_out->dim_2 * params_out->dim_3;
+    }
+
+    if (params_out->io_mem_limit > 0) {
+        if (params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
+            printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified "
+                   "memory bound (%llu), "
+                   "please check IO_MEM_LIMIT in your config file.\n",
+                   params_out->num_particles, params_out->num_particles * PARTICLE_SIZE, PARTICLE_SIZE,
+                   params_out->io_mem_limit);
+            return -1;
         }
 
         if (params_out->io_mem_limit > 0) {
@@ -1015,13 +1029,14 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
                 return -1;
             }
         }
-        if (params_out->io_op == IO_WRITE) {
-            if (params_out->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
-                if (params_out->stride < 1 || params_out->block_size < 1 || params_out->block_cnt < 1) {
-                    printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
-                    return -1;
-                }
-            }
+    }
+    else if ((params_out->io_op == IO_READ) || (params_out->io_op == IO_OVERWRITE) ||
+             (params_out->io_op == IO_APPEND)) {                    // read-based operations
+        if (params_out->access_pattern.pattern_read == CONTIG_1D) { // read whole file
+            if (params_out->num_particles > 1)
+                params_out->try_num_particles = params_out->num_particles;
+            else
+                params_out->num_particles = params_out->try_num_particles;
         }
         else if (params_out->io_op == IO_READ) {                        // read
             if (params_out->access_pattern.pattern_read == CONTIG_1D) { // read whole file
