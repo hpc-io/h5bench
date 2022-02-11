@@ -746,6 +746,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
     unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
+#ifdef USE_CACHE_VOL
+        H5Fcache_async_close_wait(file_id);
+#endif
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
@@ -1047,6 +1050,9 @@ main(int argc, char *argv[])
     else {
         file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
+#ifdef USE_CACHE_VOL
+    H5Fcache_async_close_set(file_id);
+#endif    
     unsigned long tfopen_end = get_time_usec();
 
     if (MY_RANK == 0)
