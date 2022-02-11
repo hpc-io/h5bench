@@ -253,8 +253,6 @@ data_contig_md *
 prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, long dim_3,
                        unsigned long *data_size_out)
 {
-    printf("particle_cnt = %d, dims = %d x %d x %d\n", particle_cnt, dim_1, dim_2, dim_3);
-
     if (particle_cnt != dim_1 * dim_2 * dim_3) {
         if (MY_RANK == 0)
             printf("Invalid dimension definition: dim_1(%ld) * dim_2(%ld) * dim_3(%ld) = %ld,"
@@ -691,7 +689,6 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
             break;
 
         case CONTIG_CONTIG_3D:
-            printf("xxxxxxxxxxxxxxxxxx");
             set_select_space_multi_3D_array(filespace_out, memspace_out, params.dim_1, params.dim_2,
                                             params.dim_3);
             data     = (void *)prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3,
