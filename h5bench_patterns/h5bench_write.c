@@ -989,12 +989,15 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
-    if (MY_RANK == 0) {
 #if H5_VERSION_GE(1, 13, 0)
-        if (H5VLis_connector_registered_by_name("async")) {
+    if (H5VLis_connector_registered_by_name("async")) {
+        if (MY_RANK == 0) {
             printf("Using 'async' VOL connector\n");
         }
+    }
 #endif
+
+    if (MY_RANK == 0) {
         print_params(&params);
     }
 
