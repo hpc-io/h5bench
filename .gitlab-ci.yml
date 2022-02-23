@@ -23,7 +23,7 @@ build:
         - mkdir ${H5BENCH_BUILD_PATH}
         - cd ${H5BENCH_BUILD_PATH}
         - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
-        - make
+        - make -j 8
         - make install
     artifacts:
         paths:
