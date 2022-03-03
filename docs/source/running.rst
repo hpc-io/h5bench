@@ -36,6 +36,10 @@ The main script will handle setting and unsetting environment variables, launchi
 
 If you run it with the ``--debug`` option, h5bench will also print log messages ``stdout``. The default behavior is to store it in a file. 
 
+.. warning::
+
+   Make sure you do not call `srun`, `mpirun`, etc directly but instead define that in the JSON configuration file. You should **always** call h5bench directly.  
+
 Configuration
 -------------
 

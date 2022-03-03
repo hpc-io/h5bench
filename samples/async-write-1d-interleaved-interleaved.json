@@ -1,0 +1,36 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --np 2 --oversubscribe"
+    },
+    "vol": {
+        "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",
+        "path": "/vol-async/src",
+        "connector": "async under_vol=0;under_info={}"
+    },
+    "file-system": {
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "INTERLEAVED",
+                "FILE_PATTERN": "INTERLEAVED",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "4194304",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "output.csv",
+                "MODE": "ASYNC"
+            }
+        }
+    ]
+}
