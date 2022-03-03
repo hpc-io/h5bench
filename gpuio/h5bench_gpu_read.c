@@ -63,6 +63,7 @@ data_contig_md *BUF_STRUCT;
 mem_monitor *   MEM_MONITOR;
 
 metamem **mm;
+int enable_gds = 0;
 
 void
 print_data(int n)
@@ -107,7 +108,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
                          ts->es_data);
@@ -333,14 +334,17 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
 
         // Metamemory
         t5 = get_time_usec();
-        mm[0]->fn->copy(mm[0], H2D);
-        mm[1]->fn->copy(mm[1], H2D);
-        mm[2]->fn->copy(mm[2], H2D);
-        mm[3]->fn->copy(mm[3], H2D);
-        mm[4]->fn->copy(mm[4], H2D);
-        mm[5]->fn->copy(mm[5], H2D);
-        mm[6]->fn->copy(mm[6], H2D);
-        mm[7]->fn->copy(mm[7], H2D);
+        if(!enable_gds)
+        {
+          mm[0]->fn->copy(mm[0], H2D);
+          mm[1]->fn->copy(mm[1], H2D);
+          mm[2]->fn->copy(mm[2], H2D);
+          mm[3]->fn->copy(mm[3], H2D);
+          mm[4]->fn->copy(mm[4], H2D);
+          mm[5]->fn->copy(mm[5], H2D);
+          mm[6]->fn->copy(mm[6], H2D);
+          mm[7]->fn->copy(mm[7], H2D);
+        }
         t6 = get_time_usec();
 
         // TODO: compute here
@@ -399,15 +403,7 @@ void
 set_pl(hid_t *fapl, hid_t *gapl)
 {
     *fapl = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(*fapl, true);
-    H5Pset_coll_metadata_write(*fapl, true);
-#endif
     *gapl = H5Pcreate(H5P_GROUP_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(*gapl, true);
-#endif
 }
 
 void
@@ -450,14 +446,28 @@ prepare_data_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsig
     mm[6]->fn->alloc(mm[6], num_particles, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
     mm[7]->fn->alloc(mm[7], num_particles, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    buf_struct->x    = (float *)mm[0]->host_ptr->ptr;
-    buf_struct->y    = (float *)mm[1]->host_ptr->ptr;
-    buf_struct->z    = (float *)mm[2]->host_ptr->ptr;
-    buf_struct->px   = (float *)mm[3]->host_ptr->ptr;
-    buf_struct->py   = (float *)mm[4]->host_ptr->ptr;
-    buf_struct->pz   = (float *)mm[5]->host_ptr->ptr;
-    buf_struct->id_1 = (int *)mm[6]->host_ptr->ptr;
-    buf_struct->id_2 = (float *)mm[7]->host_ptr->ptr;
+    if(!enable_gds)
+    {
+      buf_struct->x    = (float *)mm[0]->host_ptr->ptr;
+      buf_struct->y    = (float *)mm[1]->host_ptr->ptr;
+      buf_struct->z    = (float *)mm[2]->host_ptr->ptr;
+      buf_struct->px   = (float *)mm[3]->host_ptr->ptr;
+      buf_struct->py   = (float *)mm[4]->host_ptr->ptr;
+      buf_struct->pz   = (float *)mm[5]->host_ptr->ptr;
+      buf_struct->id_1 = (int *)mm[6]->host_ptr->ptr;
+      buf_struct->id_2 = (float *)mm[7]->host_ptr->ptr;
+    }
+    else
+    {
+      buf_struct->x    = (float *)mm[0]->device_ptr->ptr;
+      buf_struct->y    = (float *)mm[1]->device_ptr->ptr;
+      buf_struct->z    = (float *)mm[2]->device_ptr->ptr;
+      buf_struct->px   = (float *)mm[3]->device_ptr->ptr;
+      buf_struct->py   = (float *)mm[4]->device_ptr->ptr;
+      buf_struct->pz   = (float *)mm[5]->device_ptr->ptr;
+      buf_struct->id_1 = (int *)mm[6]->device_ptr->ptr;
+      buf_struct->id_2 = (float *)mm[7]->device_ptr->ptr;
+    }
 
     return buf_struct;
 }
@@ -504,6 +514,19 @@ main(int argc, char *argv[])
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
+    if(params.dynamic_vfd_by_name)
+    {
+      if (strcmp(params.dynamic_vfd_by_name, "gds") == 0)
+      {
+        enable_gds = 1;
+      }
+
+      // printf("dynamic vfd: %s\n", params.dynamic_vfd_by_name);
+      // herr_t ret = H5Pset_driver_by_name(fapl, "gds", NULL);
+      herr_t ret = H5Pset_driver_by_name(fapl, params.dynamic_vfd_by_name, NULL);
+      assert(ret >= 0);
+    }
+
     hsize_t dims[64] = {0};
 
     hid_t file_id;
@@ -515,6 +538,12 @@ main(int argc, char *argv[])
         file_id = H5Fopen(mpi_rank_output_file_path, H5F_ACC_RDONLY, fapl);
     }
     else {
+      H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+#if H5_VERSION_GE(1, 10, 0)
+      H5Pset_all_coll_metadata_ops(fapl, true);
+      H5Pset_coll_metadata_write(fapl, true);
+      H5Pset_all_coll_metadata_ops(gapl, true);
+#endif
         file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     }
     hid_t         filespace       = get_filespace(file_id);
@@ -537,7 +566,7 @@ main(int argc, char *argv[])
         if (params.dim_1 > dims[0] / NUM_RANKS) {
             if (MY_RANK == 0)
                 printf("Failed: Required dimension(%lu) is greater than the allowed dimension per rank "
-                       "(%llu).\n",
+                       "(%lu).\n",
                        params.dim_1, dims[0] / NUM_RANKS);
             goto error;
         }
@@ -664,6 +693,10 @@ main(int argc, char *argv[])
         float raw_rate_gbs = total_size_gb / rrt_s;
         printf("Raw read time = %.3f sec \n", rrt_s);
 
+        float full_rrt_s        = (float)(raw_h2d_time + raw_read_time) / (1000 * 1000);
+        float raw_full_rate_gbs = (float)total_size_gb / full_rrt_s;
+        printf("Raw Full read time (inc. h2d) = %.3f sec\n", full_rrt_s);
+
         float meta_time_s = (float)metadata_time / (1000 * 1000);
         printf("Metadata time = %.3f sec\n", meta_time_s);
 
@@ -673,6 +706,8 @@ main(int argc, char *argv[])
         printf("%s Raw h2d rate = %.3f GB/sec \n", mode_str, raw_h2d_rate_gbs);
         printf("%s Raw d2h rate = %.3f GB/sec \n", mode_str, raw_d2h_rate_gbs);
         printf("%s Raw read rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
+        printf("%s Raw Full read rate (inc. d2h) = %.3f GB/sec \n", mode_str, raw_full_rate_gbs);
+
         double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
         printf("%s Observed read rate = %.6f GB/sec\n", mode_str, or_gbs);
 
@@ -685,12 +720,13 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "Raw_h2d_rate, %.3f, GB/sec\n", raw_h2d_rate_gbs);
             fprintf(params.csv_fs, "Raw_d2h_time, %.3f, sec\n", d2h_s);
             fprintf(params.csv_fs, "Raw_d2h_rate, %.3f, GB/sec\n", raw_d2h_rate_gbs);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
-            fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
-
-            fprintf(params.csv_fs, "Raw read rate, %.3f, GB/sec\n", raw_rate_gbs);
-            fprintf(params.csv_fs, "Observed read rate, %.3f, GB/sec\n", or_gbs);
+            fprintf(params.csv_fs, "Raw_read_time, %.3f, sec\n", rrt_s);
+            fprintf(params.csv_fs, "Raw_read_rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Raw_full_read_time, %.3f, sec\n", full_rrt_s);
+            fprintf(params.csv_fs, "Raw_full_read_rate, %.3f, GB/sec\n", raw_full_rate_gbs);
+            fprintf(params.csv_fs, "Core_metadata_time, %.3f, sec\n", meta_time_s);
+            fprintf(params.csv_fs, "Observed_read_rate, %.3f, GB/sec\n", or_gbs);
+            fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
             fclose(params.csv_fs);
         }
     }

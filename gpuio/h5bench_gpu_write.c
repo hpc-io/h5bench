@@ -63,6 +63,7 @@ typedef struct compress_info {
 } compress_info;
 
 metamem **mm;
+int enable_gds = 0;
 
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;
@@ -201,20 +202,42 @@ prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long *data_size
     data_out->id_1 = (int *)mm[6]->host_ptr->ptr;
     data_out->id_2 = (float *)mm[7]->host_ptr->ptr;
 
+    for (long i = 0; i < particle_cnt; i++) {
+      data_out->id_1[i] = i;
+      data_out->id_2[i] = (float)(i * 2);
+      data_out->x[i]    = uniform_random_number() * X_DIM;
+      data_out->y[i]    = uniform_random_number() * Y_DIM;
+      data_out->px[i]   = uniform_random_number() * X_DIM;
+      data_out->py[i]   = uniform_random_number() * Y_DIM;
+      data_out->z[i]    = ((float)data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
+      data_out->pz[i]   = (data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
+    }
+
+    if(enable_gds)
+    {
+      mm[0]->fn->copy(mm[0], H2D);
+      mm[1]->fn->copy(mm[1], H2D);
+      mm[2]->fn->copy(mm[2], H2D);
+      mm[3]->fn->copy(mm[3], H2D);
+      mm[4]->fn->copy(mm[4], H2D);
+      mm[5]->fn->copy(mm[5], H2D);
+      mm[6]->fn->copy(mm[6], H2D);
+      mm[7]->fn->copy(mm[7], H2D);
+
+      data_out->x    = (float *)mm[0]->device_ptr->ptr;
+      data_out->y    = (float *)mm[1]->device_ptr->ptr;
+      data_out->z    = (float *)mm[2]->device_ptr->ptr;
+      data_out->px   = (float *)mm[3]->device_ptr->ptr;
+      data_out->py   = (float *)mm[4]->device_ptr->ptr;
+      data_out->pz   = (float *)mm[5]->device_ptr->ptr;
+      data_out->id_1 = (int *)mm[6]->device_ptr->ptr;
+      data_out->id_2 = (float *)mm[7]->device_ptr->ptr;
+    }
+ 
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
     data_out->dim_3 = 1;
 
-    for (long i = 0; i < particle_cnt; i++) {
-        data_out->id_1[i] = i;
-        data_out->id_2[i] = (float)(i * 2);
-        data_out->x[i]    = uniform_random_number() * X_DIM;
-        data_out->y[i]    = uniform_random_number() * Y_DIM;
-        data_out->px[i]   = uniform_random_number() * X_DIM;
-        data_out->py[i]   = uniform_random_number() * Y_DIM;
-        data_out->z[i]    = ((float)data_out->id_1[i] / NUM_PARTICLES) * Z_DIM;
-        data_out->pz[i]   = (data_out->id_2[i] / NUM_PARTICLES) * Z_DIM;
-    }
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
@@ -258,18 +281,41 @@ prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, 
 
     long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
-        for (long i2 = 0; i2 < dim_2; i2++) {
-            data_out->id_1[idx] = i1;
-            data_out->id_2[idx] = (float)(i1 * 2);
-            data_out->x[idx]    = uniform_random_number() * X_DIM;
-            data_out->y[idx]    = uniform_random_number() * Y_DIM;
-            data_out->px[idx]   = uniform_random_number() * X_DIM;
-            data_out->py[idx]   = uniform_random_number() * Y_DIM;
-            data_out->z[idx]    = ((float)data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-            data_out->pz[idx]   = (data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
-            idx++;
-        }
+      for (long i2 = 0; i2 < dim_2; i2++) {
+        data_out->id_1[idx] = i1;
+        data_out->id_2[idx] = (float)(i1 * 2);
+        data_out->x[idx]    = uniform_random_number() * X_DIM;
+        data_out->y[idx]    = uniform_random_number() * Y_DIM;
+        data_out->px[idx]   = uniform_random_number() * X_DIM;
+        data_out->py[idx]   = uniform_random_number() * Y_DIM;
+        data_out->z[idx]    = ((float)data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+        data_out->pz[idx]   = (data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+        idx++;
+      }
     }
+
+    if(enable_gds)
+    {
+      mm[0]->fn->copy(mm[0], H2D);
+      mm[1]->fn->copy(mm[1], H2D);
+      mm[2]->fn->copy(mm[2], H2D);
+      mm[3]->fn->copy(mm[3], H2D);
+      mm[4]->fn->copy(mm[4], H2D);
+      mm[5]->fn->copy(mm[5], H2D);
+      mm[6]->fn->copy(mm[6], H2D);
+      mm[7]->fn->copy(mm[7], H2D);
+
+      data_out->x    = (float *)mm[0]->device_ptr->ptr;
+      data_out->y    = (float *)mm[1]->device_ptr->ptr;
+      data_out->z    = (float *)mm[2]->device_ptr->ptr;
+      data_out->px   = (float *)mm[3]->device_ptr->ptr;
+      data_out->py   = (float *)mm[4]->device_ptr->ptr;
+      data_out->pz   = (float *)mm[5]->device_ptr->ptr;
+      data_out->id_1 = (int *)mm[6]->device_ptr->ptr;
+      data_out->id_2 = (float *)mm[7]->device_ptr->ptr;
+    }
+ 
+
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
 
     return data_out;
@@ -315,21 +361,43 @@ prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, 
 
     long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
-        for (long i2 = 0; i2 < dim_2; i2++) {
-            for (long i3 = 0; i3 < dim_3; i3++) {
-                data_out->x[idx]    = uniform_random_number() * X_DIM;
-                data_out->id_1[idx] = i1;
-                data_out->id_2[idx] = (float)(i1 * 2);
-                data_out->x[idx]    = uniform_random_number() * X_DIM;
-                data_out->y[idx]    = uniform_random_number() * Y_DIM;
-                data_out->px[idx]   = uniform_random_number() * X_DIM;
-                data_out->py[idx]   = uniform_random_number() * Y_DIM;
-                data_out->z[idx]    = ((float)data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
-                data_out->pz[idx]   = (data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
-                idx++;
-            }
+      for (long i2 = 0; i2 < dim_2; i2++) {
+        for (long i3 = 0; i3 < dim_3; i3++) {
+          data_out->x[idx]    = uniform_random_number() * X_DIM;
+          data_out->id_1[idx] = i1;
+          data_out->id_2[idx] = (float)(i1 * 2);
+          data_out->x[idx]    = uniform_random_number() * X_DIM;
+          data_out->y[idx]    = uniform_random_number() * Y_DIM;
+          data_out->px[idx]   = uniform_random_number() * X_DIM;
+          data_out->py[idx]   = uniform_random_number() * Y_DIM;
+          data_out->z[idx]    = ((float)data_out->id_1[idx] / NUM_PARTICLES) * Z_DIM;
+          data_out->pz[idx]   = (data_out->id_2[idx] / NUM_PARTICLES) * Z_DIM;
+          idx++;
         }
+      }
     }
+
+    if(enable_gds)
+    {
+      mm[0]->fn->copy(mm[0], H2D);
+      mm[1]->fn->copy(mm[1], H2D);
+      mm[2]->fn->copy(mm[2], H2D);
+      mm[3]->fn->copy(mm[3], H2D);
+      mm[4]->fn->copy(mm[4], H2D);
+      mm[5]->fn->copy(mm[5], H2D);
+      mm[6]->fn->copy(mm[6], H2D);
+      mm[7]->fn->copy(mm[7], H2D);
+
+      data_out->x    = (float *)mm[0]->device_ptr->ptr;
+      data_out->y    = (float *)mm[1]->device_ptr->ptr;
+      data_out->z    = (float *)mm[2]->device_ptr->ptr;
+      data_out->px   = (float *)mm[3]->device_ptr->ptr;
+      data_out->py   = (float *)mm[4]->device_ptr->ptr;
+      data_out->pz   = (float *)mm[5]->device_ptr->ptr;
+      data_out->id_1 = (int *)mm[6]->device_ptr->ptr;
+      data_out->id_2 = (float *)mm[7]->device_ptr->ptr;
+    }
+ 
     *data_size_out = particle_cnt * (7 * sizeof(float) + sizeof(int));
     return data_out;
 }
@@ -850,14 +918,17 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         // Metamemory
         t7 = get_time_usec();
-        mm[0]->fn->copy(mm[0], D2H);
-        mm[1]->fn->copy(mm[1], D2H);
-        mm[2]->fn->copy(mm[2], D2H);
-        mm[3]->fn->copy(mm[3], D2H);
-        mm[4]->fn->copy(mm[4], D2H);
-        mm[5]->fn->copy(mm[5], D2H);
-        mm[6]->fn->copy(mm[6], D2H);
-        mm[7]->fn->copy(mm[7], D2H);
+        if (!enable_gds)
+        {
+          mm[0]->fn->copy(mm[0], D2H);
+          mm[1]->fn->copy(mm[1], D2H);
+          mm[2]->fn->copy(mm[2], D2H);
+          mm[3]->fn->copy(mm[3], D2H);
+          mm[4]->fn->copy(mm[4], D2H);
+          mm[5]->fn->copy(mm[5], D2H);
+          mm[6]->fn->copy(mm[6], D2H);
+          mm[7]->fn->copy(mm[7], D2H);
+        }
         t8 = get_time_usec();
 
         if (MY_RANK == 0)
@@ -1055,7 +1126,8 @@ main(int argc, char *argv[])
     char *             num_str = "1024 Ks";
     unsigned long long num     = 0;
 
-    int rand_seed_value = time(NULL);
+    // int rand_seed_value = time(NULL);
+    int rand_seed_value = 7;
     srand(rand_seed_value);
 
     if (MY_RANK == 0) {
@@ -1125,6 +1197,20 @@ main(int argc, char *argv[])
         printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
+
+    if(params.dynamic_vfd_by_name)
+    {
+      if (strcmp(params.dynamic_vfd_by_name, "gds") == 0)
+      {
+        enable_gds = 1;
+      }
+
+      // printf("dynamic vfd: %s\n", params.dynamic_vfd_by_name);
+      // herr_t ret = H5Pset_driver_by_name(fapl, "gds", NULL);
+      herr_t ret = H5Pset_driver_by_name(fapl, params.dynamic_vfd_by_name, NULL);
+      // printf("dynamic vfd ret: %d\n", ret);
+      assert(ret >= 0);
+    }
 
     if (params.file_per_proc) {
     }
@@ -1218,6 +1304,10 @@ main(int argc, char *argv[])
         float raw_rate_gbs = (float)total_size_gb / rwt_s;
         printf("Raw write time = %.3f sec\n", rwt_s);
 
+        float full_rwt_s        = (float)(raw_d2h_time + raw_write_time) / (1000 * 1000);
+        float raw_full_rate_gbs = (float)total_size_gb / full_rwt_s;
+        printf("Raw Full write time (inc. d2h) = %.3f sec\n", full_rwt_s);
+
         float meta_time_s = (float)inner_metadata_time / (1000 * 1000);
         printf("Metadata time = %.3f sec\n", meta_time_s);
 
@@ -1236,6 +1326,7 @@ main(int argc, char *argv[])
         printf("%s Raw h2d rate = %.3f GB/sec \n", mode_str, raw_h2d_rate_gbs);
         printf("%s Raw d2h rate = %.3f GB/sec \n", mode_str, raw_d2h_rate_gbs);
         printf("%s Raw write rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
+        printf("%s Raw Full write rate (inc. d2h) = %.3f GB/sec \n", mode_str, raw_full_rate_gbs);
 
         float or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
         printf("%s Observed write rate = %.3f GB/sec\n", mode_str, or_gbs);
@@ -1261,6 +1352,8 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "Raw_d2h_rate, %.3f, GB/sec\n", raw_d2h_rate_gbs);
             fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
             fprintf(params.csv_fs, "Raw_write_rate, %.3f, GB/sec\n", raw_rate_gbs);
+            fprintf(params.csv_fs, "Raw_full_write_time, %.3f, sec\n", full_rwt_s);
+            fprintf(params.csv_fs, "Raw_full_write_rate, %.3f, GB/sec\n", raw_full_rate_gbs);
             fprintf(params.csv_fs, "Core_metadata_time, %.3f, sec\n", meta_time_s);
             fprintf(params.csv_fs, "Observed_write_rate, %.3f, GB/sec\n", or_gbs);
             fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);

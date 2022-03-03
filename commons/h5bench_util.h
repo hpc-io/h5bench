@@ -121,6 +121,7 @@ typedef struct bench_params {
     char *        env_meta_path;
     FILE *        csv_fs;
     int           file_per_proc;
+    char *        dynamic_vfd_by_name;
 } bench_params;
 
 typedef struct data_md {

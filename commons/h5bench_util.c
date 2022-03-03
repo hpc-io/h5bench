@@ -628,6 +628,25 @@ _parse_val(char *val_in)
     return val;
 }
 
+static char *ltrim(char *s)
+{
+  while(isspace(*s)) s++;
+  return s;
+}
+
+static char *rtrim(char *s)
+{
+  char* back = s + strlen(s);
+  while(isspace(*--back));
+  *(back+1) = '\0';
+  return s;
+}
+
+static char *trim(char *s)
+{
+  return rtrim(ltrim(s)); 
+}
+
 int
 _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 {
@@ -887,6 +906,9 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).file_per_proc = 0;
     }
+    else if (strcmp(key, "DYNAMIC_VFD_NAME") == 0) {
+        (*params_in_out).dynamic_vfd_by_name = trim(strdup(val));
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -942,6 +964,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).csv_fs        = NULL;
     (*params_out).env_meta_path = NULL;
     (*params_out).file_per_proc = 0;
+    (*params_out).dynamic_vfd_by_name = NULL;
 }
 
 int
