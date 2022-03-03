@@ -628,23 +628,28 @@ _parse_val(char *val_in)
     return val;
 }
 
-static char *ltrim(char *s)
+static char *
+ltrim(char *s)
 {
-  while(isspace(*s)) s++;
-  return s;
+    while (isspace(*s))
+        s++;
+    return s;
 }
 
-static char *rtrim(char *s)
+static char *
+rtrim(char *s)
 {
-  char* back = s + strlen(s);
-  while(isspace(*--back));
-  *(back+1) = '\0';
-  return s;
+    char *back = s + strlen(s);
+    while (isspace(*--back))
+        ;
+    *(back + 1) = '\0';
+    return s;
 }
 
-static char *trim(char *s)
+static char *
+trim(char *s)
 {
-  return rtrim(ltrim(s)); 
+    return rtrim(ltrim(s));
 }
 
 int
@@ -960,10 +965,10 @@ bench_params_init(bench_params *params_out)
     (*params_out).csv_path      = NULL;
     (*params_out).env_meta_path = NULL;
 
-    (*params_out).csv_path      = NULL;
-    (*params_out).csv_fs        = NULL;
-    (*params_out).env_meta_path = NULL;
-    (*params_out).file_per_proc = 0;
+    (*params_out).csv_path            = NULL;
+    (*params_out).csv_fs              = NULL;
+    (*params_out).env_meta_path       = NULL;
+    (*params_out).file_per_proc       = 0;
     (*params_out).dynamic_vfd_by_name = NULL;
 }
 

@@ -63,7 +63,7 @@ data_contig_md *BUF_STRUCT;
 mem_monitor *   MEM_MONITOR;
 
 metamem **mm;
-int enable_gds = 0;
+int       enable_gds = 0;
 
 void
 print_data(int n)
@@ -334,16 +334,15 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
 
         // Metamemory
         t5 = get_time_usec();
-        if(!enable_gds)
-        {
-          mm[0]->fn->copy(mm[0], H2D);
-          mm[1]->fn->copy(mm[1], H2D);
-          mm[2]->fn->copy(mm[2], H2D);
-          mm[3]->fn->copy(mm[3], H2D);
-          mm[4]->fn->copy(mm[4], H2D);
-          mm[5]->fn->copy(mm[5], H2D);
-          mm[6]->fn->copy(mm[6], H2D);
-          mm[7]->fn->copy(mm[7], H2D);
+        if (!enable_gds) {
+            mm[0]->fn->copy(mm[0], H2D);
+            mm[1]->fn->copy(mm[1], H2D);
+            mm[2]->fn->copy(mm[2], H2D);
+            mm[3]->fn->copy(mm[3], H2D);
+            mm[4]->fn->copy(mm[4], H2D);
+            mm[5]->fn->copy(mm[5], H2D);
+            mm[6]->fn->copy(mm[6], H2D);
+            mm[7]->fn->copy(mm[7], H2D);
         }
         t6 = get_time_usec();
 
@@ -446,27 +445,25 @@ prepare_data_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsig
     mm[6]->fn->alloc(mm[6], num_particles, sizeof(int), MEM_CPU_PAGEABLE, MEM_GPU);
     mm[7]->fn->alloc(mm[7], num_particles, sizeof(float), MEM_CPU_PAGEABLE, MEM_GPU);
 
-    if(!enable_gds)
-    {
-      buf_struct->x    = (float *)mm[0]->host_ptr->ptr;
-      buf_struct->y    = (float *)mm[1]->host_ptr->ptr;
-      buf_struct->z    = (float *)mm[2]->host_ptr->ptr;
-      buf_struct->px   = (float *)mm[3]->host_ptr->ptr;
-      buf_struct->py   = (float *)mm[4]->host_ptr->ptr;
-      buf_struct->pz   = (float *)mm[5]->host_ptr->ptr;
-      buf_struct->id_1 = (int *)mm[6]->host_ptr->ptr;
-      buf_struct->id_2 = (float *)mm[7]->host_ptr->ptr;
+    if (!enable_gds) {
+        buf_struct->x    = (float *)mm[0]->host_ptr->ptr;
+        buf_struct->y    = (float *)mm[1]->host_ptr->ptr;
+        buf_struct->z    = (float *)mm[2]->host_ptr->ptr;
+        buf_struct->px   = (float *)mm[3]->host_ptr->ptr;
+        buf_struct->py   = (float *)mm[4]->host_ptr->ptr;
+        buf_struct->pz   = (float *)mm[5]->host_ptr->ptr;
+        buf_struct->id_1 = (int *)mm[6]->host_ptr->ptr;
+        buf_struct->id_2 = (float *)mm[7]->host_ptr->ptr;
     }
-    else
-    {
-      buf_struct->x    = (float *)mm[0]->device_ptr->ptr;
-      buf_struct->y    = (float *)mm[1]->device_ptr->ptr;
-      buf_struct->z    = (float *)mm[2]->device_ptr->ptr;
-      buf_struct->px   = (float *)mm[3]->device_ptr->ptr;
-      buf_struct->py   = (float *)mm[4]->device_ptr->ptr;
-      buf_struct->pz   = (float *)mm[5]->device_ptr->ptr;
-      buf_struct->id_1 = (int *)mm[6]->device_ptr->ptr;
-      buf_struct->id_2 = (float *)mm[7]->device_ptr->ptr;
+    else {
+        buf_struct->x    = (float *)mm[0]->device_ptr->ptr;
+        buf_struct->y    = (float *)mm[1]->device_ptr->ptr;
+        buf_struct->z    = (float *)mm[2]->device_ptr->ptr;
+        buf_struct->px   = (float *)mm[3]->device_ptr->ptr;
+        buf_struct->py   = (float *)mm[4]->device_ptr->ptr;
+        buf_struct->pz   = (float *)mm[5]->device_ptr->ptr;
+        buf_struct->id_1 = (int *)mm[6]->device_ptr->ptr;
+        buf_struct->id_2 = (float *)mm[7]->device_ptr->ptr;
     }
 
     return buf_struct;
@@ -514,17 +511,15 @@ main(int argc, char *argv[])
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
-    if(params.dynamic_vfd_by_name)
-    {
-      if (strcmp(params.dynamic_vfd_by_name, "gds") == 0)
-      {
-        enable_gds = 1;
-      }
+    if (params.dynamic_vfd_by_name) {
+        if (strcmp(params.dynamic_vfd_by_name, "gds") == 0) {
+            enable_gds = 1;
+        }
 
-      // printf("dynamic vfd: %s\n", params.dynamic_vfd_by_name);
-      // herr_t ret = H5Pset_driver_by_name(fapl, "gds", NULL);
-      herr_t ret = H5Pset_driver_by_name(fapl, params.dynamic_vfd_by_name, NULL);
-      assert(ret >= 0);
+        // printf("dynamic vfd: %s\n", params.dynamic_vfd_by_name);
+        // herr_t ret = H5Pset_driver_by_name(fapl, "gds", NULL);
+        herr_t ret = H5Pset_driver_by_name(fapl, params.dynamic_vfd_by_name, NULL);
+        assert(ret >= 0);
     }
 
     hsize_t dims[64] = {0};
@@ -538,11 +533,11 @@ main(int argc, char *argv[])
         file_id = H5Fopen(mpi_rank_output_file_path, H5F_ACC_RDONLY, fapl);
     }
     else {
-      H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+        H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
 #if H5_VERSION_GE(1, 10, 0)
-      H5Pset_all_coll_metadata_ops(fapl, true);
-      H5Pset_coll_metadata_write(fapl, true);
-      H5Pset_all_coll_metadata_ops(gapl, true);
+        H5Pset_all_coll_metadata_ops(fapl, true);
+        H5Pset_coll_metadata_write(fapl, true);
+        H5Pset_all_coll_metadata_ops(gapl, true);
 #endif
         file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     }
