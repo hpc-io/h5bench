@@ -519,13 +519,13 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
     ierr =
         H5Dwrite_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->z, ts->es_data);
     ierr = H5Dwrite_async(dset_ids[3], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->px,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->py,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->pz,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[6], H5T_NATIVE_INT, memspace, filespace, plist_id, data_in->id_1,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->id_2,
                           ts->es_data);
 
@@ -610,19 +610,19 @@ data_write_interleaved_to_contig(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
     unsigned t2 = get_time_usec();
 
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[1], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[2], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[3], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[4], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[5], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[6], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                   ts->es_data);
+                          ts->es_data);
     ierr = H5Dwrite_async(dset_ids[7], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
                           ts->es_data);
 

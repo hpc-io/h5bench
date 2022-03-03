@@ -264,12 +264,13 @@ set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t *
 int
 _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
                     unsigned long *total_data_size_out, unsigned long *raw_read_time_out,
-                    unsigned long *inner_metadata_time, unsigned long *h2d_time_total, unsigned long *d2h_time_total)
+                    unsigned long *inner_metadata_time, unsigned long *h2d_time_total,
+                    unsigned long *d2h_time_total)
 {
     *raw_read_time_out               = 0;
     *inner_metadata_time             = 0;
-    *h2d_time_total            = 0;
-    *d2h_time_total            = 0;
+    *h2d_time_total                  = 0;
+    *d2h_time_total                  = 0;
     int                nts           = params.cnt_time_step;
     unsigned long long read_elem_cnt = params.try_num_particles;
     hid_t              grp;
@@ -419,17 +420,17 @@ data_contig_md *
 prepare_data_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3)
 {
 
-  // MetaMemory
-  mm = (metamem **)malloc(8 * sizeof(metamem *));
-  for (int i = 0; i < 8; i++) {
+    // MetaMemory
+    mm = (metamem **)malloc(8 * sizeof(metamem *));
+    for (int i = 0; i < 8; i++) {
 #if defined(METAMEM_USE_CUDA)
-    mm[i] = metamem_init(METAMEM_CUDA);
+        mm[i] = metamem_init(METAMEM_CUDA);
 #elif defined(METAMEM_USE_HIP)
-    mm[i] = metamem_init(METAMEM_HIP);
+        mm[i] = metamem_init(METAMEM_HIP);
 #else
-    mm[i] = metamem_init(METAMEM_POSIX);
+        mm[i] = metamem_init(METAMEM_POSIX);
 #endif
-  }
+    }
 
     data_contig_md *buf_struct       = (data_contig_md *)malloc(sizeof(data_contig_md));
     buf_struct->dim_1                = dim_1;
@@ -621,7 +622,6 @@ main(int argc, char *argv[])
     metamem_shutdown(mm[5]);
     metamem_shutdown(mm[6]);
     metamem_shutdown(mm[7]);
-
 
     if (MY_RANK == 0) {
         char *mode_str = NULL;
