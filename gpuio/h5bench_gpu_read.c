@@ -506,16 +506,16 @@ main(int argc, char *argv[])
 
     hsize_t dims[64] = {0};
 
-    hid_t         file_id;
+    hid_t file_id;
     if (params.file_per_proc) {
-      char mpi_rank_output_file_path[4096];
-      sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(file_name), MY_RANK,
-        get_file_name_from_path(file_name));
+        char mpi_rank_output_file_path[4096];
+        sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(file_name), MY_RANK,
+                get_file_name_from_path(file_name));
 
-      file_id = H5Fopen(mpi_rank_output_file_path, H5F_ACC_RDONLY, fapl);
+        file_id = H5Fopen(mpi_rank_output_file_path, H5F_ACC_RDONLY, fapl);
     }
     else {
-      file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+        file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     }
     hid_t         filespace       = get_filespace(file_id);
     int           dims_cnt        = H5Sget_simple_extent_dims(filespace, dims, NULL);
