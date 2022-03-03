@@ -111,17 +111,24 @@ if(MEM_CUDA_SUPPORT)
   target_include_directories(cuda_memapi PRIVATE ./gpuio/mem/include/)
   target_link_libraries(cuda_memapi PRIVATE CUDA::cudart CUDA::cuda_driver)
 
-  add_executable(h5bench_cuda_write gpuio/h5bench_write.c)
+  add_executable(h5bench_cuda_write gpuio/h5bench_gpu_write.c)
   target_include_directories(h5bench_cuda_write PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
   set_target_properties(h5bench_cuda_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
   target_link_libraries(h5bench_cuda_write h5bench_util hdf5 z MPI::MPI_C CUDA::cudart CUDA::cuda_driver cuda_memapi)
+
+  add_executable(h5bench_cuda_read gpuio/h5bench_gpu_read.c)
+  target_include_directories(h5bench_cuda_read PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  set_target_properties(h5bench_cuda_read PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_CUDA)
+  target_link_libraries(h5bench_cuda_read h5bench_util hdf5 z MPI::MPI_C CUDA::cudart CUDA::cuda_driver cuda_memapi)
 
   # BUILD ctests
   enable_testing()
   # 1 GPU, cuda, tested on summit
   add_test( h5bench_cuda_write_00 jsrun --nrs 1 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
+  add_test( h5bench_cuda_read_01 jsrun --nrs 1 -c1 -g1 ./h5bench_cuda_read ../gpuio/sample_config/sample_read_cc1d_fileperproc.cfg ./test.h5 )
+
   # 6 GPU, cuda, tested on summit
-  # add_test( h5bench_cuda_write_01 jsrun --nrs 6 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
+  # add_test( h5bench_cuda_write_02 jsrun --nrs 6 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
 
 endif(MEM_CUDA_SUPPORT)
 
