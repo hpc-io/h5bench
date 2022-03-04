@@ -50,15 +50,33 @@ if(WITH_ASYNC_VOL)
 endif()
 # =================================================================
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # ===========  Build h5bench_patterns: h5bench_write and h5bench_read ===========
 set(h5bench_write_src h5bench_patterns/h5bench_write.c)
+set(h5bench_write_unlimited_src h5bench_patterns/h5bench_write_unlimited.c)
 set(h5bench_read_src h5bench_patterns/h5bench_read.c)
 
 add_executable(h5bench_write ${h5bench_write_src})
 target_link_libraries(h5bench_write h5bench_util hdf5 z MPI::MPI_C) 
 
+add_executable(h5bench_write_unlimited ${h5bench_write_unlimited_src})
+target_link_libraries(h5bench_write_unlimited h5bench_util hdf5 z MPI::MPI_C) 
+
 add_executable(h5bench_read ${h5bench_read_src})
 target_link_libraries(h5bench_read h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_overwrite ===========
+set(h5bench_overwrite_src h5bench_patterns/h5bench_overwrite.c)
+
+add_executable(h5bench_overwrite ${h5bench_overwrite_src})
+target_link_libraries(h5bench_overwrite h5bench_util hdf5 z MPI::MPI_C)
+
+# ===========  Build h5bench_patterns: h5bench_append ===========
+set(h5bench_append_src h5bench_patterns/h5bench_append.c)
+
+add_executable(h5bench_append ${h5bench_append_src})
+target_link_libraries(h5bench_append h5bench_util hdf5 z MPI::MPI_C)
 
 # ===========  Build exerciser ===========
 set(exerciser_src exerciser/h5bench_exerciser.c)
@@ -87,13 +105,13 @@ add_subdirectory(amrex)
 set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
 
 add_executable(h5bench_amrex_sync ${amrex_src})
-target_link_libraries(h5bench_amrex_sync hdf5 z m amrex MPI::MPI_C)
+target_link_libraries(h5bench_amrex_sync hdf5 z m amrex pthread MPI::MPI_C)
 
 if(WITH_ASYNC_VOL)
 	set(AMReX_HDF5_ASYNC YES)
 	
 	add_executable(h5bench_amrex_async ${amrex_src})
-	target_link_libraries(h5bench_amrex_async hdf5 z m amrex asynchdf5 h5async MPI::MPI_C)
+	target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async MPI::MPI_C)
 endif()
 	
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
@@ -110,6 +128,40 @@ ExternalProject_Add(h5bench_e3sm
     LOG_BUILD 1
 )
 
+# ===========  Build OpenPMD ===========
+set(openPMD_USE_MPI ON)
+set(openPMD_USE_HDF5 ON)
+set(openPMD_USE_ADIOS1 OFF)
+set(openPMD_USE_ADIOS2 OFF)
+set(openPMD_USE_JSON OFF)
+set(openPMD_USE_PYTHON OFF)
+set(openPMD_INSTALL OFF)
+set(openPMD_BUILD_TESTING OFF)
+set(openPMD_BUILD_EXAMPLES OFF)
+set(openPMD_BUILD_CLI_TOOLS OFF)
+
+add_subdirectory(openpmd)
+
+add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
+target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_write PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+add_executable(h5bench_openpmd_read openpmd/examples/8b_benchmark_read_parallel.cpp)
+target_link_libraries(h5bench_openpmd_read openPMD hdf5 MPI::MPI_C)
+set_target_properties(h5bench_openpmd_read PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
+configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+
+# =================================================================
+
+# =========== Install binaries ===========
 install(
 	FILES
 	h5bench
@@ -120,9 +172,14 @@ install(
 install(
 	TARGETS 
 	h5bench_write 
+	h5bench_write_unlimited
 	h5bench_read 
+	h5bench_overwrite
+	h5bench_append
 	h5bench_exerciser 
-	h5bench_hdf5_iotest
+	h5bench_hdf5_iotest 
+	h5bench_openpmd_write
+	h5bench_openpmd_read
 	h5bench_amrex_sync
 	#h5bench_vl_stream_hl
 	DESTINATION bin

@@ -44,7 +44,11 @@ Assume that the repo is cloned and now you are in the source directory h5bench, 
 	cd build
 	cmake ..
 	make
+	make install
 
+.. warning::
+
+	If you want to specify the installation directory, you can pass ``-DCMAKE_INSTALL_PREFIX`` to ``cmake``. If you are not installing it, make sure when you run ``h5bench``, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
 
 Build to run in async
 ---------------------------------------------------
@@ -57,6 +61,7 @@ To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the develop br
 	cd build
 	cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"
 	make
+	make install
 
 Necessary environment variable setting:
 

@@ -1,0 +1,39 @@
+h5bench version 1.2
+===================
+
+
+INTRODUCTION
+============
+
+h5bench is a suite of parallel I/O benchmarks or kernels representing
+I/O patterns that are commonly used in HDF5 applications on high
+performance computing systems.  h5bench measures I/O performance from
+various aspects, including the I/O overhead, observed I/O rate, etc.
+
+You can access the full documentation at:
+
+     https://h5bench.readthedocs.io
+
+If you have any questions or comments, please send them to:
+
+     jlbez@lbl.gov, sbyna@lbl.gov
+
+
+RELEASE
+=======
+
+- h5bench v.1.2
+
+  - Include AMReX benchmark
+  - Include OpenPMD benchmark
+  - Include h5bench_overwrite pattern benchmark
+  - Include h5bench_append pattern benchmark
+  - Include h5bench_write_unlimited pattern benchmark
+  - Bug fix on Python wrapper
+  - Bug fix on time units for H5Fcreate, H5Fflush, and H5Fclose
+  - Update mode for h5bench write and read (ASYNC and SYNC)
+
+- h5bench v.1.1
+
+  - New flexible JSON configuration framework to run workflows
+  - Update documention

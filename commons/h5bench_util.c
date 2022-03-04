@@ -572,7 +572,8 @@ _set_io_pattern(bench_params *params_in_out)
             printf("%s() failed on line %d\n", __func__, __LINE__);
         }
     }
-    else if (params_in_out->io_op == IO_READ) { // file --> mem
+    else if ((params_in_out->io_op == IO_READ) || (params_in_out->io_op == IO_OVERWRITE) ||
+             (params_in_out->io_op == IO_APPEND)) { // file --> mem
         if (params_in_out->mem_pattern == PATTERN_CONTIG) {
             if (params_in_out->file_pattern == PATTERN_CONTIG) {
                 switch (params_in_out->num_dims) {
@@ -640,6 +641,12 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         }
         else if (strcmp(val, "WRITE") == 0) {
             params_in_out->io_op = IO_WRITE;
+        }
+        else if (strcmp(val, "OVERWRITE") == 0) {
+            params_in_out->io_op = IO_OVERWRITE;
+        }
+        else if (strcmp(val, "APPEND") == 0) {
+            params_in_out->io_op = IO_APPEND;
         }
         else {
             printf("Unknown value for \"IO_OPERATION\": %s\n", val);
@@ -943,7 +950,7 @@ has_vol_connector()
 #if H5_VERSION_GE(1, 13, 0)
     char *connector = getenv("HDF5_VOL_CONNECTOR");
 
-    if (connector != NULL) {
+    if (connector != NULL && strstr(connector, "async")) {
         return 1;
     }
 #endif
@@ -1002,6 +1009,12 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
     if (ret < 0)
         return ret;
 
+    if (params_out->io_op == IO_WRITE || params_out->io_op == IO_OVERWRITE ||
+        params_out->io_op == IO_APPEND ||
+        (params_out->io_op == IO_READ && params_out->try_num_particles == 0)) {
+        (*params_out).num_particles = params_out->dim_1 * params_out->dim_2 * params_out->dim_3;
+    }
+
     if (params_out->io_mem_limit > 0) {
         if (params_out->num_particles * PARTICLE_SIZE >= params_out->io_mem_limit) {
             printf("Requested memory (%llu particles, %llu, PARTICLE_SIZE = %ld) is larger than specified "
@@ -1020,7 +1033,8 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
             }
         }
     }
-    else if (params_out->io_op == IO_READ) {                        // read
+    else if ((params_out->io_op == IO_READ) || (params_out->io_op == IO_OVERWRITE) ||
+             (params_out->io_op == IO_APPEND)) {                    // read-based operations
         if (params_out->access_pattern.pattern_read == CONTIG_1D) { // read whole file
             if (params_out->num_particles > 1)
                 params_out->try_num_particles = params_out->num_particles;

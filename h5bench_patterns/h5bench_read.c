@@ -275,12 +275,15 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     if (actual_read_cnt < 1)
         return -1;
 
-    if (MY_RANK == 0) {
 #if H5_VERSION_GE(1, 13, 0)
-        if (H5VLis_connector_registered_by_name("async")) {
+    if (H5VLis_connector_registered_by_name("async")) {
+        if (MY_RANK == 0) {
             printf("Using 'async' VOL connector\n");
         }
+    }
 #endif
+
+    if (MY_RANK == 0) {
         print_params(&params);
     }
 
@@ -402,6 +405,12 @@ main(int argc, char *argv[])
         return 0;
     }
 
+    if (params.io_op != IO_READ) {
+        if (MY_RANK == 0)
+            printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
+        return 0;
+    }
+
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
@@ -414,7 +423,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 0) {
         for (int i = 0; i < dims_cnt; i++) {
             if (MY_RANK == 0)
-                printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
+                printf("dims[%d] = %lu (total number for the file)\n", i, dims[i]);
             total_particles *= dims[i];
         }
     }
@@ -436,7 +445,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 1) { // 2D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_2(%lu) is greater than file dimension(%llu).\n",
+                printf("Failed: Required dimension_2(%lu) is greater than file dimension(%lu).\n",
                        params.dim_2, dims[1]);
             goto error;
         }
@@ -444,7 +453,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 2) { // 3D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_3(%lu) is greater than file dimension(%llu).\n",
+                printf("Failed: Required dimension_3(%lu) is greater than file dimension(%lu).\n",
                        params.dim_3, dims[2]);
             goto error;
         }

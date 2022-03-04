@@ -36,6 +36,10 @@ The main script will handle setting and unsetting environment variables, launchi
 
 If you run it with the ``--debug`` option, h5bench will also print log messages ``stdout``. The default behavior is to store it in a file. 
 
+.. warning::
+
+   Make sure you do not call `srun`, `mpirun`, etc directly but instead define that in the JSON configuration file. You should **always** call h5bench directly.  
+
 Configuration
 -------------
 
@@ -108,24 +112,23 @@ For the ``write`` pattern of ``h5bench``, you should provide the ``file`` and th
 .. code-block::
 
    {
-      "write": {
-         "file": "test.h5",
-         "configuration": {
-            "MEM_PATTERN": "CONTIG",
-            "FILE_PATTERN": "CONTIG",
-            "NUM_PARTICLES": "16 M",
-            "TIMESTEPS": "5",
-            "DELAYED_CLOSE_TIMESTEPS": "2",
-            "COLLECTIVE_DATA": "NO",
-            "COLLECTIVE_METADATA": "NO",
-            "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
-            "NUM_DIMS": "1",
-            "DIM_1": "16777216",
-            "DIM_2": "1",
-            "DIM_3": "1",
-            "MODE": "SYNC",
-            "CSV_FILE": "output.csv"
-         }
+      "benchmark": "write",
+      "file": "test.h5",
+      "configuration": {
+         "MEM_PATTERN": "CONTIG",
+         "FILE_PATTERN": "CONTIG",
+         "NUM_PARTICLES": "16 M",
+         "TIMESTEPS": "5",
+         "DELAYED_CLOSE_TIMESTEPS": "2",
+         "COLLECTIVE_DATA": "NO",
+         "COLLECTIVE_METADATA": "NO",
+         "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+         "NUM_DIMS": "1",
+         "DIM_1": "16777216",
+         "DIM_2": "1",
+         "DIM_3": "1",
+         "MODE": "SYNC",
+         "CSV_FILE": "output.csv"
       }
    }
 
@@ -136,24 +139,23 @@ This way, you can configure a workflow with multiple interleaving files, e.g., `
 .. code-block::
 
    {
-      "read": {
-         "file": "test.h5",
-         "configuration": {
-            "MEM_PATTERN": "CONTIG",
-            "FILE_PATTERN": "CONTIG",
-            "NUM_PARTICLES": "16 M",
-            "TIMESTEPS": "5",
-            "DELAYED_CLOSE_TIMESTEPS": "2",
-            "COLLECTIVE_DATA": "NO",
-            "COLLECTIVE_METADATA": "NO",
-            "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
-            "NUM_DIMS": "1",
-            "DIM_1": "16777216",
-            "DIM_2": "1",
-            "DIM_3": "1",
-            "MODE": "SYNC",
-            "CSV_FILE": "output.csv"
-         }
+      "benchmark": "read": {
+      "file": "test.h5",
+      "configuration": {
+         "MEM_PATTERN": "CONTIG",
+         "FILE_PATTERN": "CONTIG",
+         "NUM_PARTICLES": "16 M",
+         "TIMESTEPS": "5",
+         "DELAYED_CLOSE_TIMESTEPS": "2",
+         "COLLECTIVE_DATA": "NO",
+         "COLLECTIVE_METADATA": "NO",
+         "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+         "NUM_DIMS": "1",
+         "DIM_1": "16777216",
+         "DIM_2": "1",
+         "DIM_3": "1",
+         "MODE": "SYNC",
+         "CSV_FILE": "output.csv"
       }
    }
 
@@ -162,23 +164,22 @@ For the ``metadata`` stress benchmark, ``file`` and ``configuration`` properties
 .. code-block::
 
    {
-      "metadata": {
-         "file": "hdf5_iotest.h5",
-         "configuration": {
-            "version": "0",
-            "steps": "20",
-            "arrays": "500",
-            "rows": "100",
-            "columns": "200",
-            "process-rows": "2",
-            "process-columns": "2",
-            "scaling": "weak",
-            "dataset-rank": "4",
-            "slowest-dimension": "step",
-            "layout": "contiguous",
-            "mpi-io": "independent",       
-            "csv-file": "hdf5_iotest.csv"
-         }
+      "benchmark": "metadata",
+      "file": "hdf5_iotest.h5",
+      "configuration": {
+         "version": "0",
+         "steps": "20",
+         "arrays": "500",
+         "rows": "100",
+         "columns": "200",
+         "process-rows": "2",
+         "process-columns": "2",
+         "scaling": "weak",
+         "dataset-rank": "4",
+         "slowest-dimension": "step",
+         "layout": "contiguous",
+         "mpi-io": "independent",       
+         "csv-file": "hdf5_iotest.csv"
       }
    }
 
@@ -187,7 +188,7 @@ For the ``exerciser`` benchmark, you need to provide the required runtime option
 .. code-block::
 
    {
-      "exerciser": {
+      "benchmark": "exerciser",
       "configuration": {
          "numdims": "2",
          "minels": "8 8",
@@ -227,6 +228,12 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
 
 Cori
 ^^^^
+
+In Cori you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark that is not required. 
+
+.. code-block::
+
+   module load python
 
 In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads, make sure you define:
 

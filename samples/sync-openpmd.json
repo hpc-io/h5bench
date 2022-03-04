@@ -1,0 +1,35 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --oversubscribe -np 2"
+    },
+    "vol": {
+
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "openpmd",
+            "configuration": {
+                "operation": "write",
+                "dim": "3",
+                "balanced": "true",
+                "ratio": "1",
+                "steps": "1",
+                "minBlock": "8 16 16",
+                "grid": "16 16 8"
+            }
+        },
+        {
+            "benchmark": "openpmd",
+            "configuration": {
+                "operation": "read",
+                "pattern": "sy"
+            }
+        }
+    ]
+}
