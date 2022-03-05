@@ -634,7 +634,6 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-
     def run_e3sm(self, id, setup):
         """Run the E3SM benchmark."""
         try:
