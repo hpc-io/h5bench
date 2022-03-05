@@ -13,7 +13,7 @@
     "directory": "storage",
     "benchmarks": [
         {
-            "benchmark": "es3m",
+            "benchmark": "e3sm",
             "file": "test.h5",
             "configuration": {
                 "k": "",
