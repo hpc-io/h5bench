@@ -13,16 +13,15 @@
     "directory": "storage",
     "benchmarks": [
         {
-            "e3sm": {
-                "file": "coisa.h5",
-                "configuration": {
-                    "k": "",
-                    "x": "blob",
-                    "a": "hdf5",
-                    "r": "25",
-                    "o": "ON",
-                    "netcdf": "../../e3sm/datasets/f_case_866x72_16p.nc"
-                }
+            "benchmark": "write-unlimited",
+            "file": "test.h5",
+            "configuration": {
+                "k": "",
+                "x": "blob",
+                "a": "hdf5",
+                "r": "25",
+                "o": "ON",
+                "netcdf": "../../e3sm/datasets/f_case_866x72_16p.nc"
             }
         }
     ]
