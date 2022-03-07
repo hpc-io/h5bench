@@ -651,6 +651,10 @@ class H5bench:
                 if key in ['i', 'o']:
                     parameters.append('-{} {}/{}/{} '.format(key, self.directory, id, setup['file']))
 
+            # Temporarily overwrite -x and -a to only supported patterns
+            parameters.append('-{} {}'.format('a', 'hdf5'))
+            parameters.append('-{} {}'.format('x', 'blob'))
+
             file = '{}/{}'.format(self.directory, configuration['netcdf'])
 
             command = '{} {} {} {}'.format(

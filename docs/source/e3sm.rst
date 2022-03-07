@@ -23,6 +23,10 @@ You can configure the ES3M-IO benchmark with the following options. Notice that 
 ``netcdf``             Define the HDF5 compression algorithm to use                                
 ====================== ==============================================================================
 
+.. warning::
+
+    h5bench temporarily only supports ``-x blob`` and ``-a hdf5``. If you set other options, they will be overwritten to the supported version.
+
 JSON Configuration (recomended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
