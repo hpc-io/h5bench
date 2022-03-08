@@ -165,7 +165,7 @@ configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 #
 # https://github.com/Parallel-NetCDF/E3SM-IO
 
-if(H5BENCH_E3SM)
+if(H5BENCH_E3SM OR H5BENCH_ALL)
 	ExternalProject_Add(h5bench_e3sm
 	    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
 	    CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-pnetcdf=${PNETCDF_HOME} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
