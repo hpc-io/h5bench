@@ -108,7 +108,9 @@ jobs:
           mkdir build-sync
           cd build-sync
 
-          cmake .. -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
+          cmake .. \
+            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
+            -DH5BENCH_ALL=ON
           make
 
       - name: Build h5bench ASYNC
@@ -125,7 +127,8 @@ jobs:
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I/$current/vol-async/src -L/$current/vol-async/src" \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
+            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
+            -DH5BENCH_ALL=ON
           make
 
       - name: Configure for MPICH

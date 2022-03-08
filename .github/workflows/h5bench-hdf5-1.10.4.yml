@@ -43,7 +43,7 @@ jobs:
           
           mkdir build
           cd build
-          CC=mpicc cmake ..
+          CC=mpicc cmake .. -DH5BENCH_ALL=ON
           make -j 8
 
       - name: Test h5bench SYNC write/read
