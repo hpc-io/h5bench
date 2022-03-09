@@ -65,7 +65,7 @@ set(h5bench_util_src
 )
 add_library(h5bench_util ${h5bench_util_src})
 if(WITH_ASYNC_VOL)
-	target_link_libraries(h5bench_util asynchdf5 h5async)
+	target_link_libraries(h5bench_util hdf5_vol_async)
 endif()
 # =================================================================
 
