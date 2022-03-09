@@ -156,7 +156,7 @@ if(WITH_ASYNC_VOL)
 	set(AMReX_HDF5_ASYNC YES)
 	
 	add_executable(h5bench_amrex_async ${amrex_src})
-	target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async MPI::MPI_C)
+	target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthreadhdf5_vol_async MPI::MPI_C)
 endif()
 	
 configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
