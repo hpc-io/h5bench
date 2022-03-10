@@ -240,8 +240,10 @@ class H5bench:
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] += vol['path']
 
-                self.logger.info('HDF5_PLUGIN_PATH: %s', self.vol_environment['HDF5_PLUGIN_PATH'])
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
+
+            if 'HDF5_PLUGIN_PATH' in vol:
+                self.logger.info('HDF5_PLUGIN_PATH: %s', self.vol_environment['HDF5_PLUGIN_PATH'])
 
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
