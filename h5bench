@@ -235,6 +235,12 @@ class H5bench:
         """Prepare the environment variables for the VOL."""
 
         if vol is not None:
+            if 'LD_LIBRARY_PATH' not in self.vol_environment:
+                self.vol_environment['LD_LIBRARY_PATH'] = ''
+
+            if 'DYLD_LIBRARY_PATH' not in self.vol_environment:
+                self.vol_environment['DYLD_LIBRARY_PATH'] = ''
+
             if 'library' in vol:
                 self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
