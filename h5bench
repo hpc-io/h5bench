@@ -6,7 +6,7 @@ import time
 import uuid
 import shlex
 import errno
-import distutils
+import distutils.spawn
 import argparse
 import collections
 import subprocess
