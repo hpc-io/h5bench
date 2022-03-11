@@ -6,6 +6,7 @@ import time
 import uuid
 import shlex
 import errno
+import distutils
 import argparse
 import collections
 import subprocess
@@ -381,8 +382,20 @@ class H5bench:
 
             exit(-1)
 
+    def is_available(self, executable):
+        """Check if binary is available."""
+        return distutils.spawn.find_executable(
+            executable,
+            path=os.environ['PATH'] + ':.'
+        )
+
     def run_exerciser(self, id, setup):
         """Run the exerciser benchmark."""
+        if not self.is_available(self.H5BENCH_EXERCISER):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_EXERCISER))
+
+            return
+
         try:
             start = time.time()
 
@@ -432,6 +445,11 @@ class H5bench:
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
+        if not self.is_available(self.H5BENCH_METADATA):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_METADATA))
+
+            return
+
         try:
             start = time.time()
 
@@ -492,6 +510,11 @@ class H5bench:
 
     def run_amrex(self, id, setup, vol):
         """Run the AMReX benchmark."""
+        if not self.is_available(self.H5BENCH_AMREX_SYNC):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_AMREX_SYNC))
+
+            return
+
         try:
             start = time.time()
 
@@ -568,6 +591,16 @@ class H5bench:
 
     def run_openpmd(self, id, setup):
         """Run the OpenPMD kernel benchmark."""
+        if not self.is_available(self.H5BENCH_OPENPMD_WRITE):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_WRITE))
+
+            return
+
+        if not self.is_available(self.H5BENCH_OPENPMD_READ):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_READ))
+
+            return
+
         try:
             start = time.time()
 
@@ -643,6 +676,11 @@ class H5bench:
 
     def run_e3sm(self, id, setup):
         """Run the E3SM benchmark."""
+        if not self.is_available(self.H5BENCH_E3SM):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_E3SM))
+
+            return
+
         try:
             start = time.time()
 
