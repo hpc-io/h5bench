@@ -105,9 +105,9 @@ h5bench will automatically set the environment variables required to run the asy
 	export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 	export HDF5_PLUGIN_PATH="$ASYNC_HOME"
 
-	// Linux
+	# Linux
 	export LD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
-	// MacOS
+	# MacOS
 	export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
 
 -----------------------------------
