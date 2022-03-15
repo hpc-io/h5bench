@@ -5,10 +5,22 @@ Build Instructions
 Build with CMake (recommended)
 -----------------------------------
 
+First, clone the h5bench GitHub repository and ensure you are cloning the submodules:
+
+.. code-block:: bash
+
+	git clone --recurse-submodules https://github.com/hpc-io/h5bench
+
+If you are upadting your h5bench, ensure you have the latest submodules that could be included in new releases:
+
+.. code-block:: bash
+
+	git submodule update --init
+
 Dependency and environment variable settings
 ---------------------------------------------------
 
-H5bench depends on MPI and Parallel HDF5.
+H5bench depends on MPI and parallel HDF5.
 
 +++++++++++++++++++++++++++++++++
 Use system provided by HDF5 
@@ -26,55 +38,77 @@ You can also load any paralel HDF5 provided on your system, and you are good to 
 Use your own installed HDF5
 +++++++++++++++++++++++++++++++++
 
-Make sure to unload any system provided HDF5 version, and set an environment variable to specify the HDF5 install path:
+Make sure to unload any system provided HDF5 version:, and set an environment variable to specify the HDF5 install path:
 
 .. code-block:: bash
 
-	HDF5_HOME: the location you installed HDF5. It should point to a path that look like /path_to_my_hdf5_build/hdf5 and contains include/, lib/ and bin/ subdirectories.
+	export HDF5_HOME=/path/to/your/hdf5/installation
 
+It should point to a path that contains the ``include/``, ``lib/``, and ``bin/`` subdirectories.
 
 Compile with CMake
 ---------------------------------------------------
 
-Assume that the repo is cloned and now you are in the source directory h5bench, run the following simple steps:
+In the source directory of your cloned h5bench repository, run the following:
 
 .. code-block:: bash
 
 	mkdir build
 	cd build
+
 	cmake ..
+
 	make
 	make install
+
+By default, h5bench will only compile the base write and read benchmarks. To enable the additional benchmarks, you need to explicitly enable them before building h5bench. You can also enable all the benchmarks with ``-DH5BENCH_ALL=ON``. Notice that some of them have additional dependencies.
+
+==================== =========================== ===============================
+**Benchmark**        **Name**                    **Build**                     
+==================== =========================== ===============================
+h5bench write        ``h5bench_write``           Always   
+h5bench read         ``h5bench_read``            Always   
+Metadata Stress      ``h5bench_hdf5_iotest``     ``-DH5BENCH_METADATA=ON``
+AMReX                ``h5bench_amrex``           ``-DH5BENCH_AMREX=ON``   
+Exerciser            ``h5bench_exerciser``       ``-DH5BENCH_EXERCISER=ON``
+OpenPMD (write)      ``h5bench_openpmd_write``   ``-DH5BENCH_OPENPMD=ON``
+OpenPMD (read)       ``h5bench_openpmd_read``    ``-DH5BENCH_OPENPMD=ON``
+E3SM-IO              ``h5bench_e3sm``            ``-DH5BENCH_E3SM=ON`` 
+==================== =========================== ===============================
 
 .. warning::
 
 	If you want to specify the installation directory, you can pass ``-DCMAKE_INSTALL_PREFIX`` to ``cmake``. If you are not installing it, make sure when you run ``h5bench``, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
 
-Build to run in async
+Build with HDF5 ASYNC VOL connector support
 ---------------------------------------------------
 
-To run h5bench_vpicio or h5bench_bdcatsio in async mode, you need the develop branchs of BOTH HDF5 and Async-VOL and build H5bench separately.
+To run ``_async`` benchmarks, you need the develop branch of **both** HDF5 and ASYNC-VOL. When building h5bench you need to specify the ``-DWITH_ASYNC_VOL:BOOL=ON`` option and have already compiled the VOL connector in the ``$ASYNC_VOL`` directory:
 
 .. code-block:: bash
 
 	mkdir build
 	cd build
-	cmake .. -DWITH_ASYNC_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I/$YOUR_ASYNC_VOL/src -L/$YOUR_ASYNC_VOL/src"
+
+	cmake .. -DWITH_ASYNC_VOL=ON -DCMAKE_C_FLAGS="-I/$ASYNC_VOL/src -L/$ASYNC_VOL/src"
+
 	make
 	make install
 
-Necessary environment variable setting:
+h5bench will automatically set the environment variables required to run the asynchronous versions, as long as you specify them in your JSON configuration file. However, if you run the benchmarks manually, you will need to set the following environment variables:
 
 .. code-block:: bash
 
 	export HDF5_HOME="$YOUR_HDF5_DEVELOP_BRANCH_BUILD/hdf5"
 	export ASYNC_HOME="$YOUR_ASYNC_VOL/src"
+
 	export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 	export HDF5_PLUGIN_PATH="$ASYNC_HOME"
+
+	# Linux
+	export LD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
+	# MacOS
 	export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
-
-
-And all the binaries will be built to the build/directory.
 
 -----------------------------------
 Build with Spack

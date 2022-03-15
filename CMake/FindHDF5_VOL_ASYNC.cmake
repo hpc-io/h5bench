@@ -1,0 +1,31 @@
+set(ASYNC_HOME $ENV{ASYNC_HOME})
+
+find_path(HDF5_VOL_ASYNC_INCLUDE_DIR
+    NAMES h5_async_lib.h h5_async_vol.h
+    PATHS "$ASYNC_HOME"
+)
+
+find_library(HDF5_VOL_ASYNC_LIBRARY
+    NAMES asynchdf5 h5async
+    PATHS "$ASYNC_HOME"
+)
+
+message(STATUS ${HDF5_VOL_ASYNC_INCLUDE_DIR})
+message(STATUS ${HDF5_VOL_ASYNC_LIBRARY})
+
+set(HDF5_VOL_ASYNC_INCLUDE_DIRS ${HDF5_VOL_ASYNC_INCLUDE_DIR})
+set(HDF5_VOL_ASYNC_LIBRARIES ${HDF5_VOL_ASYNC_LIBRARY})
+
+include(FindPackageHandleStandardArgs)
+
+find_package_handle_standard_args(
+    HDF5_VOL_ASYNC
+    DEFAULT_MSG
+    HDF5_VOL_ASYNC_LIBRARIES
+    HDF5_VOL_ASYNC_INCLUDE_DIRS
+)
+
+mark_as_advanced(
+    HDF5_VOL_ASYNC_LIBRARY
+    HDF5_VOL_ASYNC_INCLUDE_DIR
+)
