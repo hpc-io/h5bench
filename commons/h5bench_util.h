@@ -193,7 +193,7 @@ void print_params(const bench_params *p);
 void bench_params_free(bench_params *p);
 int  has_vol_connector();
 
-int has_vol_async;
+extern int has_vol_async;
 
 int   file_create_try(const char *path);
 int   file_exist(const char *path);

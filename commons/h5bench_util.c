@@ -29,6 +29,8 @@ int str_to_ull(char *str_in, unsigned long long *num_out);
 int parse_time(char *str_in, duration *time);
 int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
+int has_vol_async;
+
 unsigned long
 get_time_usec()
 {
