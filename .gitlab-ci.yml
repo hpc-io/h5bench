@@ -18,8 +18,9 @@ build:
     script:
         - echo "Build h5bench"
         - module swap PrgEnv-intel PrgEnv-gnu 
-        - module list
+        - module unload gcc
         - module load cmake gcc/8.3.0
+        - module list
         - mkdir ${H5BENCH_BUILD_PATH}
         - cd ${H5BENCH_BUILD_PATH}
         - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}
