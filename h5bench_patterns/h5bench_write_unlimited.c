@@ -1101,23 +1101,20 @@ main(int argc, char *argv[])
         printf("===========================================================\n");
 
         if (params.useCSV) {
-            fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            if (params.data_coll == 1)
-                fprintf(params.csv_fs, "CollectiveWrite, YES\n");
-            else
-                fprintf(params.csv_fs, "CollectiveWrite, NO\n");
-            if (params.meta_coll == 1)
-                fprintf(params.csv_fs, "CollectiveMetaWrite, YES\n");
-            else
-                fprintf(params.csv_fs, "CollectiveMetaWrite, NO\n");
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
-                    total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total_write_size, %lu, GB\n", total_size_gb);
-            fprintf(params.csv_fs, "Raw_write_time, %.3f, sec\n", rwt_s);
-            fprintf(params.csv_fs, "Raw_write_rate, %.3f, GB/sec\n", raw_rate_gbs);
-            fprintf(params.csv_fs, "Core_metadata_time, %.3f, sec\n", meta_time_s);
-            fprintf(params.csv_fs, "Observed_write_rate, %.3f, GB/sec\n", or_gbs);
-            fprintf(params.csv_fs, "Observed_completion_time, %.3f, sec\n", oct_s);
+            fprintf(params.csv_fs, "metric, value, unit\n");
+            fprintf(params.csv_fs, "operation, %s, %s\n", "write unlimited", "");
+            fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+            fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
+            fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
+            fprintf(params.csv_fs, "total compute time, %llu, %s\n",
+                total_sleep_time_us / (1000 * 1000), "seconds"
+            );
+            fprintf(params.csv_fs, "total size, %lu, %s\n", total_size_gb, "GB");
+            fprintf(params.csv_fs, "raw time, %.3f, %s\n", rwt_s, "seconds");
+            fprintf(params.csv_fs, "raw rate, %.3f, %s\n", raw_rate_gbs, "GB/s");
+            fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
+            fprintf(params.csv_fs, "observed rate, %.3f, %s\n", or_gbs, "GB/sec");
+            fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
     }

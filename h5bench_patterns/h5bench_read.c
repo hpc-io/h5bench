@@ -549,16 +549,18 @@ main(int argc, char *argv[])
         printf("%s Observed read rate = %.6f GB/sec\n", mode_str, or_gbs);
 
         if (params.useCSV) {
-            fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
-                    total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total read size, %lu, GB\n", total_size_gb);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
-            fprintf(params.csv_fs, "Raw read time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Observed completion time, %.3f, sec\n", oct_s);
-
-            fprintf(params.csv_fs, "Raw read rate, %.3f, GB/sec\n", raw_rate_gbs);
-            fprintf(params.csv_fs, "Observed read rate, %.3f, GB/sec\n", or_gbs);
+            fprintf(params.csv_fs, "metric, value, unit\n");
+            fprintf(params.csv_fs, "operation, %s, %s\n", "read", "");
+            fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+            fprintf(params.csv_fs, "total compute time, %llu, %s\n",
+                total_sleep_time_us / (1000 * 1000), "seconds"
+            );
+            fprintf(params.csv_fs, "total size, %lu, %s\n", total_size_gb, "GB");
+            fprintf(params.csv_fs, "raw time, %.3f, %s\n", rrt_s, "seconds");
+            fprintf(params.csv_fs, "raw rate, %.3f, %s\n", raw_rate_gbs, "GB/s");
+            fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
+            fprintf(params.csv_fs, "observed rate, %.3f, %s\n", or_gbs, "GB/sec");
+            fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
     }
