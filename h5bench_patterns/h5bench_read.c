@@ -519,7 +519,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *mode_str = NULL;
+        char *         mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
@@ -537,7 +537,7 @@ main(int argc, char *argv[])
         printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
         double total_size_bytes = NUM_RANKS * local_data_size;
-        value = format_human_readable(total_size_bytes);
+        value                   = format_human_readable(total_size_bytes);
         printf("Total read size: %.3lf %cB\n", value.value, value.unit);
 
         float rrt_s = (float)raw_read_time / (1000.0 * 1000.0);
@@ -555,7 +555,7 @@ main(int argc, char *argv[])
         printf("%s Raw read rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
 
         float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
-        value = format_human_readable(or_bs);
+        value       = format_human_readable(or_bs);
         printf("%s Observed read rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
 
         if (params.useCSV) {

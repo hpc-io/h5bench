@@ -1267,21 +1267,19 @@ format_human_readable(uint64_t bytes)
 {
     human_readable value;
 
-    char unit[] = {
-        ' ', 'K', 'M', 'G', 'T'
-    };
+    char unit[] = {' ', 'K', 'M', 'G', 'T'};
     char length = sizeof(unit) / sizeof(unit[0]);
 
-    int i = 0;
+    int    i      = 0;
     double format = bytes;
 
     if (bytes >= 1024) {
-        for (i = 0; (bytes / 1024) > 0 && i<length-1; i++, bytes /= 1024)
+        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
             format = bytes / 1024.0;
     }
 
     value.value = format;
-    value.unit = unit[i];
+    value.unit  = unit[i];
 
     return value;
 }

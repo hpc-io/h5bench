@@ -39,7 +39,7 @@ typedef enum time_unit {
 
 typedef struct human_readable {
     double value;
-    char unit;
+    char   unit;
 } human_readable;
 
 typedef struct duration {
