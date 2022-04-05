@@ -239,13 +239,13 @@ class H5bench:
                 self.vol_environment['LD_LIBRARY_PATH'] = ''
 
             if 'DYLD_LIBRARY_PATH' not in self.vol_environment:
-                self.vol_environment['DYLD_LIBRARY_PATH'] = ''
+                self.vol_environment['DYLD_LIBRARY_PATH']
 
             if 'library' in vol:
                 self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
             if 'path' in vol:
-                self.vol_environment['HDF5_PLUGIN_PATH'] += vol['path']
+                self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
 
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
 
