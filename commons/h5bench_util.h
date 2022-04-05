@@ -37,6 +37,11 @@ typedef enum time_unit {
     TIME_US,
 } time_unit;
 
+typedef struct human_readable {
+    double value;
+    char unit;
+} human_readable;
+
 typedef struct duration {
     unsigned long time_num;
     time_unit     unit;
@@ -206,5 +211,7 @@ int argv_print(int argc, char *argv[]);
 
 char *get_file_name_from_path(char *path);
 char *get_dir_from_path(char *path);
+
+human_readable format_human_readable(uint64_t bytes);
 
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

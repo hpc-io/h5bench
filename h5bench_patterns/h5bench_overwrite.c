@@ -485,12 +485,14 @@ main(int argc, char *argv[])
     char *cfg_file_path = argv[1];
     char *file_name     = argv[2]; // data file to read
 
-    if (MY_RANK == 0)
-        printf("config file: %s, read data file: %s\n", argv[1], argv[2]);
+    if (MY_RANK == 0) {
+        printf("Configuration file: %s\n", argv[1]);
+        printf("Rad data file: %s\n", argv[2]);
+    }
     int do_write = 0;
     if (read_config(cfg_file_path, &params, do_write) < 0) {
         if (MY_RANK == 0)
-            printf("Config file read failed. check path: %s\n", cfg_file_path);
+            printf("Configuration file read failed. Please, check %s\n", cfg_file_path);
         return 0;
     }
     ASYNC_MODE    = params.asyncMode;
@@ -520,7 +522,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 0) {
         for (int i = 0; i < dims_cnt; i++) {
             if (MY_RANK == 0)
-                printf("dims[%d] = %lu (total number for the file)\n", i, dims[i]);
+                printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
             total_particles *= dims[i];
         }
     }
@@ -548,7 +550,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 1) { // 2D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_2(%lu) is greater than file dimension(%lu).\n",
+                printf("Failed: Required dimension_2 (%lu) is greater than file dimension (%llu).\n",
                        params.dim_2, dims[1]);
             goto error;
         }
@@ -556,7 +558,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 2) { // 3D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_3(%lu) is greater than file dimension(%lu).\n",
+                printf("Failed: Required dimension_3 (%lu) is greater than file dimension (%llu).\n",
                        params.dim_3, dims[2]);
             goto error;
         }
@@ -599,7 +601,7 @@ main(int argc, char *argv[])
     }
 
     if (MY_RANK == 0)
-        printf("Opened HDF5 file ... [%s]\n", file_name);
+        printf("Opened HDF5 file... [%s]\n", file_name);
 
     unsigned long raw_read_time, metadata_time, local_data_size;
 
@@ -624,6 +626,7 @@ main(int argc, char *argv[])
     free_contig_memory(BUF_STRUCT);
 
     if (MY_RANK == 0) {
+        human_readable value;
         char *mode_str = NULL;
 
         if (has_vol_async) {
@@ -632,40 +635,51 @@ main(int argc, char *argv[])
         else {
             mode_str = "SYNC";
         }
-        printf("\n =================  Performance results  =================\n");
+
+        printf("\n=================== Performance Results ==================\n");
+
+        printf("Total number of ranks: %d\n", NUM_RANKS);
+
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time = %.3lf sec\n"
-               "Total modify size = %lu GB\n",
-               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
+        printf("Total emulated compute time: %.3lf sec\n", total_sleep_time_us / (1000.0 * 1000.0));
 
-        float rrt_s = (float)raw_read_time / (1000 * 1000);
+        unsigned long total_size_bytes = NUM_RANKS * local_data_size;
+        value = format_human_readable(total_size_bytes);
+        printf("Total modify size: %.3lf %cB\n", value.value, value.unit);
 
-        float raw_rate_gbs = total_size_gb / rrt_s;
-        printf("Raw modify time = %.3f sec \n", rrt_s);
+        float rrt_s = (float)raw_read_time / (1000.0 * 1000.0);
 
-        float meta_time_s = (float)metadata_time / (1000 * 1000);
-        printf("Metadata time = %.3f sec\n", meta_time_s);
+        float raw_rate = total_size_bytes / rrt_s;
+        printf("Raw modify time: %.3f sec \n", rrt_s);
 
-        float oct_s = (float)(t4 - t1) / (1000 * 1000);
-        printf("Observed modify completion time = %.3f sec\n", oct_s);
+        float meta_time_s = (float)metadata_time / (1000.0 * 1000.0);
+        printf("Metadata time: %.3f sec\n", meta_time_s);
 
-        printf("%s Raw modify rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
-        double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed modify rate = %.3f GB/sec\n", mode_str, or_gbs);
+        float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
+        printf("Observed modify completion time: %.3f sec\n", oct_s);
+
+        value = format_human_readable(raw_rate);
+        printf("%s Raw modify rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
+
+        float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
+        value = format_human_readable(or_bs);
+        printf("%s Observed modify rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "metric, value, unit\n");
             fprintf(params.csv_fs, "operation, %s, %s\n", "overwrite", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
-            fprintf(params.csv_fs, "total compute time, %llu, %s\n", total_sleep_time_us / (1000 * 1000),
+            fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
-            fprintf(params.csv_fs, "total size, %lu, %s\n", total_size_gb, "GB");
+            value = format_human_readable(total_size_bytes);
+            fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
             fprintf(params.csv_fs, "raw time, %.3f, %s\n", rrt_s, "seconds");
-            fprintf(params.csv_fs, "raw rate, %.3f, %s\n", raw_rate_gbs, "GB/s");
+            value = format_human_readable(raw_rate);
+            fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
             fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
-            fprintf(params.csv_fs, "observed rate, %.3f, %s\n", or_gbs, "GB/sec");
+            value = format_human_readable(or_bs);
+            fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
