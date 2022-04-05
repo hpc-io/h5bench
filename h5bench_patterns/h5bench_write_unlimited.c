@@ -1080,22 +1080,22 @@ main(int argc, char *argv[])
         // printf("Data preparation time = %lu ms\n", data_preparation_time / 1000);
         float rwt_s    = (float)raw_write_time / (1000.0 * 1000.0);
         float raw_rate = (float)total_size_bytes / rwt_s;
-        printf("Raw write time: %.3f sec\n", rwt_s);
+        printf("Raw write time: %.3f s\n", rwt_s);
 
         float meta_time_s = (float)inner_metadata_time / (1000.0 * 1000.0);
-        printf("Metadata time: %.3f sec\n", meta_time_s);
+        printf("Metadata time: %.3f s\n", meta_time_s);
 
         float fcreate_time_s = (float)(tfopen_end - tfopen_start) / (1000.0 * 1000.0);
-        printf("H5Fcreate() time: %.3f sec\n", fcreate_time_s);
+        printf("H5Fcreate() time: %.3f s\n", fcreate_time_s);
 
         float flush_time_s = (float)(tflush_end - tflush_start) / (1000.0 * 1000.0);
-        printf("H5Fflush() time: %.3f sec\n", flush_time_s);
+        printf("H5Fflush() time: %.3f s\n", flush_time_s);
 
         float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000.0 * 1000.0);
-        printf("H5Fclose() time: %.3f sec\n", fclose_time_s);
+        printf("H5Fclose() time: %.3f s\n", fclose_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
-        printf("Observed completion time: %.3f sec\n", oct_s);
+        printf("Observed completion time: %.3f s\n", oct_s);
 
         value = format_human_readable(raw_rate);
         printf("%s Raw write rate: %.3f %cB/s \n", mode_str, value.value, value.unit);

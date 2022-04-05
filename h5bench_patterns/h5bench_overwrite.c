@@ -642,7 +642,7 @@ main(int argc, char *argv[])
 
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        printf("Total emulated compute time: %.3lf sec\n", total_sleep_time_us / (1000.0 * 1000.0));
+        printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
         unsigned long total_size_bytes = NUM_RANKS * local_data_size;
         value                          = format_human_readable(total_size_bytes);
@@ -651,13 +651,13 @@ main(int argc, char *argv[])
         float rrt_s = (float)raw_read_time / (1000.0 * 1000.0);
 
         float raw_rate = total_size_bytes / rrt_s;
-        printf("Raw modify time: %.3f sec \n", rrt_s);
+        printf("Raw modify time: %.3f s \n", rrt_s);
 
         float meta_time_s = (float)metadata_time / (1000.0 * 1000.0);
-        printf("Metadata time: %.3f sec\n", meta_time_s);
+        printf("Metadata time: %.3f s\n", meta_time_s);
 
         float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
-        printf("Observed modify completion time: %.3f sec\n", oct_s);
+        printf("Observed modify completion time: %.3f s\n", oct_s);
 
         value = format_human_readable(raw_rate);
         printf("%s Raw modify rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
