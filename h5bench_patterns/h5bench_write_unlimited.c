@@ -949,7 +949,7 @@ main(int argc, char *argv[])
     output_file         = argv[2];
     if (MY_RANK == 0) {
         printf("Configuration file: %s\n", argv[1]);
-        printf("Rad data file: %s\n", argv[2]);
+        printf("Read data file: %s\n", argv[2]);
     }
     int do_write = 1;
     if (read_config(cfg_file_path, &params, do_write) < 0) {

@@ -487,7 +487,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         printf("Configuration file: %s\n", argv[1]);
-        printf("Rad data file: %s\n", argv[2]);
+        printf("Read data file: %s\n", argv[2]);
     }
     int do_write = 0;
     if (read_config(cfg_file_path, &params, do_write) < 0) {
@@ -665,6 +665,8 @@ main(int argc, char *argv[])
         float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
         value       = format_human_readable(or_bs);
         printf("%s Observed modify rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
+
+        printf("===========================================================\n");
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "metric, value, unit\n");
