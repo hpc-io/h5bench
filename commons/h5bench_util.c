@@ -1057,8 +1057,9 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
 void
 print_params(const bench_params *p)
 {
-    printf("=======================================\n");
-    printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
+    printf("\n");
+    printf("================ Benchmark Configuration ==================\n");
+    printf("File: %s\n", p->data_file_path);
     printf("Number of particles per rank: %llu\n", p->num_particles);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
@@ -1093,8 +1094,8 @@ print_params(const bench_params *p)
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
-
-    printf("=======================================\n");
+    printf("===========================================================\n");
+    printf("\n");
 }
 
 void
@@ -1259,4 +1260,26 @@ get_dir_from_path(char *path)
     char *pDir = substr(path, 0, strlen(path) - strlen(get_file_name_from_path(path)));
 
     return pDir;
+}
+
+human_readable
+format_human_readable(uint64_t bytes)
+{
+    human_readable value;
+
+    char unit[] = {' ', 'K', 'M', 'G', 'T'};
+    char length = sizeof(unit) / sizeof(unit[0]);
+
+    int    i      = 0;
+    double format = bytes;
+
+    if (bytes >= 1024) {
+        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
+            format = bytes / 1024.0;
+    }
+
+    value.value = format;
+    value.unit  = unit[i];
+
+    return value;
 }
