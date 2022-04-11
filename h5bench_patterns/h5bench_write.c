@@ -1066,7 +1066,7 @@ main(int argc, char *argv[])
     }
 #ifdef USE_CACHE_VOL
     H5Fcache_async_close_set(file_id);
-#endif    
+#endif
     unsigned long tfopen_end = get_time_usec();
 
     if (MY_RANK == 0)
