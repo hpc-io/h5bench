@@ -75,7 +75,16 @@ Because some benchmarks inside h5bench do not have support for VOL connectors ye
       "connector": "async under_vol=0;under_info={}"
    }
 
-You should provide the absolute path for all the libraries required by the VOL connector using the ``library`` property, the ``path`` of the VOL connector, and the configuration in ``connector``. The provided example depicts how to configure the HDF5 VOL async connector.
+You should provide the absolute path for all the libraries required by the VOL connector using the ``library`` property, the ``path`` of the VOL connector, and the configuration in ``connector``. The provided example depicts how to configure the HDF5 VOL async connector. For Cache connector,
+
+.. code-block::
+   "vol": {
+      "library": "/hdf5-vol-dir/lib:/argobots/install/lib:/hdf5-install/install:",
+      "path": "/hdf5-vol-dir/lib",
+      "connector": "cache_ext config=cache.cfg;under_vol=512;under_info={under_vol=0;under_info={}}"
+   }
+
+One also has to provide the configuration file for the Cache storage: cache.cfg. 
 
 Directory
 ^^^^^^^^^

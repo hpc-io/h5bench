@@ -238,7 +238,10 @@ class H5bench:
                 self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
-
+            if 'cache_write' in vol:
+                self.vol_environment['HDF5_CACHE_WR'] = vol['cache_write']
+            if 'cache_read' in vol:
+                self.vol_environment['HDF5_CACHE_RD'] = vol['cache_read']
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
 
     def enable_vol(self, vol):
