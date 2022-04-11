@@ -682,19 +682,19 @@ main(int argc, char *argv[])
         value                   = format_human_readable(total_size_bytes);
         printf("Total read size: %.3lf %cB\n", value.value, value.unit);
 
-        float h2d_s            = (float)raw_h2d_time / (1000.0 * 1000.0);
+        float h2d_s        = (float)raw_h2d_time / (1000.0 * 1000.0);
         float raw_h2d_rate = (float)total_size_bytes / h2d_s;
         printf("Raw h2d time = %.3f s\n", h2d_s);
 
-        float d2h_s            = (float)raw_d2h_time / (1000.0 * 1000.0);
+        float d2h_s        = (float)raw_d2h_time / (1000.0 * 1000.0);
         float raw_d2h_rate = (float)total_size_bytes / d2h_s;
         printf("Raw d2h time = %.3f s\n", d2h_s);
 
-        float rrt_s = (float)raw_read_time / (1000.0 * 1000.0);
+        float rrt_s         = (float)raw_read_time / (1000.0 * 1000.0);
         float raw_read_rate = total_size_bytes / rrt_s;
         printf("Raw read time: %.3f s\n", rrt_s);
 
-        float full_rrt_s        = (float)(raw_h2d_time + raw_read_time) / (1000.0 * 1000.0);
+        float full_rrt_s         = (float)(raw_h2d_time + raw_read_time) / (1000.0 * 1000.0);
         float raw_read_full_rate = (float)total_size_bytes / full_rrt_s;
         printf("Raw Full read time (inc. h2d) = %.3f s\n", full_rrt_s);
 

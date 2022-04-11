@@ -1289,19 +1289,19 @@ main(int argc, char *argv[])
         value                   = format_human_readable(total_size_bytes);
         printf("Total write size: %.3lf %cB\n", value.value, value.unit);
 
-        float h2d_s            = (float)raw_h2d_time / (100.0 * 100.0);
+        float h2d_s        = (float)raw_h2d_time / (100.0 * 100.0);
         float raw_h2d_rate = (float)total_size_bytes / h2d_s;
         printf("Raw h2d time = %.3f s\n", h2d_s);
 
-        float d2h_s            = (float)raw_d2h_time / (100.0 * 100.0);
+        float d2h_s        = (float)raw_d2h_time / (100.0 * 100.0);
         float raw_d2h_rate = (float)total_size_bytes / d2h_s;
         printf("Raw d2h time = %.3f s\n", d2h_s);
 
-        float rwt_s    = (float)raw_write_time / (1000.0 * 1000.0);
+        float rwt_s          = (float)raw_write_time / (1000.0 * 1000.0);
         float raw_write_rate = (float)total_size_bytes / rwt_s;
         printf("Raw write time: %.3f s\n", rwt_s);
 
-        float full_rwt_s        = (float)(raw_d2h_time + raw_write_time) / (100.0 * 100.0);
+        float full_rwt_s          = (float)(raw_d2h_time + raw_write_time) / (100.0 * 100.0);
         float raw_full_write_rate = (float)total_size_bytes / full_rwt_s;
         printf("Raw Full write time (inc. d2h) = %.3f s\n", full_rwt_s);
 
