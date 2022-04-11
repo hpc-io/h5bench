@@ -1,0 +1,26 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --oversubscribe -np 8"
+    },
+    "vol": {
+        
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "e3sm",
+            "file": "test.h5",
+            "configuration": {
+                "k": "",
+                "r": "25",
+                "o": "ON",
+                "netcdf": "../../e3sm/datasets/f_case_866x72_16p.nc"
+            }
+        }
+    ]
+}

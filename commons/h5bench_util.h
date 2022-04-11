@@ -37,6 +37,11 @@ typedef enum time_unit {
     TIME_US,
 } time_unit;
 
+typedef struct human_readable {
+    double value;
+    char   unit;
+} human_readable;
+
 typedef struct duration {
     unsigned long time_num;
     time_unit     unit;
@@ -194,7 +199,7 @@ void print_params(const bench_params *p);
 void bench_params_free(bench_params *p);
 int  has_vol_connector();
 
-int has_vol_async;
+extern int has_vol_async;
 
 int   file_create_try(const char *path);
 int   file_exist(const char *path);
@@ -207,5 +212,7 @@ int argv_print(int argc, char *argv[]);
 
 char *get_file_name_from_path(char *path);
 char *get_dir_from_path(char *path);
+
+human_readable format_human_readable(uint64_t bytes);
 
 #endif /* COMMONS_H5BENCH_UTIL_H_ */

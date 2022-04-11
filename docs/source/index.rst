@@ -21,6 +21,7 @@ AMReX                ``h5bench_amrex``           |:white_check_mark:| |:white_ch
 Exerciser            ``h5bench_exerciser``       |:white_check_mark:| |:white_large_square:| 
 OpenPMD (write)      ``h5bench_openpmd_write``   |:white_check_mark:| |:white_large_square:| 
 OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_large_square:|
+E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_large_square:| 
 ==================== =========================== ==================== ========================
 
 .. toctree::
@@ -39,7 +40,8 @@ OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_la
    amrex
    openpmd
    exerciser
-   
+   e3sm
+
 .. toctree::
    :maxdepth: 2
    :caption: Contribute
