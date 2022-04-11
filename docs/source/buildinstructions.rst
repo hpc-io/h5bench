@@ -9,13 +9,13 @@ First, clone the h5bench GitHub repository and ensure you are cloning the submod
 
 .. code-block:: bash
 
-	git clone --recurse-submodules https://github.com/hpc-io/h5bench
+    git clone --recurse-submodules https://github.com/hpc-io/h5bench
 
 If you are upadting your h5bench, ensure you have the latest submodules that could be included in new releases:
 
 .. code-block:: bash
 
-	git submodule update --init
+    git submodule update --init
 
 Dependency and environment variable settings
 ---------------------------------------------------
@@ -29,8 +29,8 @@ Use system provided by HDF5
 For instance on the Cori system at NERSC:
 
 .. code-block:: bash
-	
-	module load cray-hdf5-parallel
+    
+    module load cray-hdf5-parallel
 
 You can also load any paralel HDF5 provided on your system, and you are good to go.
 
@@ -42,7 +42,7 @@ Make sure to unload any system provided HDF5 version:, and set an environment va
 
 .. code-block:: bash
 
-	export HDF5_HOME=/path/to/your/hdf5/installation
+    export HDF5_HOME=/path/to/your/hdf5/installation
 
 It should point to a path that contains the ``include/``, ``lib/``, and ``bin/`` subdirectories.
 
@@ -53,13 +53,13 @@ In the source directory of your cloned h5bench repository, run the following:
 
 .. code-block:: bash
 
-	mkdir build
-	cd build
+    mkdir build
+    cd build
 
-	cmake ..
+    cmake ..
 
-	make
-	make install
+    make
+    make install
 
 By default, h5bench will only compile the base write and read benchmarks. To enable the additional benchmarks, you need to explicitly enable them before building h5bench. You can also enable all the benchmarks with ``-DH5BENCH_ALL=ON``. Notice that some of them have additional dependencies.
 
@@ -78,7 +78,7 @@ E3SM-IO              ``h5bench_e3sm``            ``-DH5BENCH_E3SM=ON``
 
 .. warning::
 
-	If you want to specify the installation directory, you can pass ``-DCMAKE_INSTALL_PREFIX`` to ``cmake``. If you are not installing it, make sure when you run ``h5bench``, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
+    If you want to specify the installation directory, you can pass ``-DCMAKE_INSTALL_PREFIX`` to ``cmake``. If you are not installing it, make sure when you run ``h5bench``, you update your environment variables to include the `build` directory. Otherwise, h5bench will not be able to find all the benchmarks.
 
 Build with HDF5 ASYNC VOL connector support
 ---------------------------------------------------
@@ -87,28 +87,28 @@ To run ``_async`` benchmarks, you need the develop branch of **both** HDF5 and A
 
 .. code-block:: bash
 
-	mkdir build
-	cd build
+    mkdir build
+    cd build
 
-	cmake .. -DWITH_ASYNC_VOL=ON -DCMAKE_C_FLAGS="-I/$ASYNC_VOL/src -L/$ASYNC_VOL/src"
+    cmake .. -DWITH_ASYNC_VOL=ON -DCMAKE_C_FLAGS="-I/$ASYNC_VOL/src -L/$ASYNC_VOL/src"
 
-	make
-	make install
+    make
+    make install
 
 h5bench will automatically set the environment variables required to run the asynchronous versions, as long as you specify them in your JSON configuration file. However, if you run the benchmarks manually, you will need to set the following environment variables:
 
 .. code-block:: bash
 
-	export HDF5_HOME="$YOUR_HDF5_DEVELOP_BRANCH_BUILD/hdf5"
-	export ASYNC_HOME="$YOUR_ASYNC_VOL/src"
+    export HDF5_HOME="$YOUR_HDF5_DEVELOP_BRANCH_BUILD/hdf5"
+    export ASYNC_HOME="$YOUR_ASYNC_VOL/src"
 
-	export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
-	export HDF5_PLUGIN_PATH="$ASYNC_HOME"
+    export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
+    export HDF5_PLUGIN_PATH="$ASYNC_HOME"
 
-	# Linux
-	export LD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
-	# MacOS
-	export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
+    # Linux
+    export LD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
+    # MacOS
+    export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
 
 
 
@@ -141,63 +141,60 @@ On Linux platform, replace DYLD_LIBRARY_PATH with LD_LIBRARY_PATH. Please follow
 Build with Spack
 -----------------------------------
 
-You can also use Spack to install h5bench. However, notice that the current versions in Spack do not have support for the HDF5 VOL async/cache connectors yet.
+You can also use Spack to install h5bench:
 
 .. code-block:: bash
 
-	spack install h5bench
+    spack install h5bench
 
 There are some variants available as described bellow:
 
 .. code-block:: bash
 
-	CMakePackage:   h5bench
+    CMakePackage:   h5bench
 
-	Description:
-	    A benchmark suite for measuring HDF5 performance.
+    Description:
+        A benchmark suite for measuring HDF5 performance.
 
-	Homepage: https://github.com/hpc-io/h5bench
+    Homepage: https://github.com/hpc-io/h5bench
 
-	Maintainers: @jeanbez @sbyna
+    Preferred version:  
+        1.2        [git] https://github.com/hpc-io/h5bench.git at commit 866af6777573d20740d02acc47a9080de093e4ad
 
-	Externally Detectable: 
-	    False
+    Safe versions:  
+        develop    [git] https://github.com/hpc-io/h5bench.git on branch develop
+        1.2        [git] https://github.com/hpc-io/h5bench.git at commit 866af6777573d20740d02acc47a9080de093e4ad
+        1.1        [git] https://github.com/hpc-io/h5bench.git at commit 1276530a128025b83a4d9e3814a98f92876bb5c4
+        1.0        [git] https://github.com/hpc-io/h5bench.git at commit 9d3438c1bc66c5976279ef203bd11a8d48ade724
+        latest     [git] https://github.com/hpc-io/h5bench.git on branch master
 
-	Tags: 
-	    None
+    Deprecated versions:  
+        None
 
-	Preferred version:  
-	    1.1        https://github.com/hpc-io/h5bench/archive/refs/tags/1.1.tar.gz
+    Variants:
+        Name [Default]                 When       Allowed values          Description
+        ===========================    =======    ====================    ==================================
 
-	Safe versions:  
-	    develop    [git] https://github.com/hpc-io/h5bench.git on branch develop
-	    master     [git] https://github.com/hpc-io/h5bench.git on branch master
-	    1.1        https://github.com/hpc-io/h5bench/archive/refs/tags/1.1.tar.gz
-	    1.0        https://github.com/hpc-io/h5bench/archive/refs/tags/1.0.tar.gz
+        all [off]                      @1.2:      on, off                 Enables all h5bench benchmarks
+        amrex [off]                    @1.2:      on, off                 Enables AMReX benchmark
+        build_type [RelWithDebInfo]    --         Debug, Release,         CMake build type
+                                                  RelWithDebInfo,         
+                                                  MinSizeRel              
+        e3sm [off]                     @1.2:      on, off                 Enables E3SM benchmark
+        exerciser [off]                @1.2:      on, off                 Enables exerciser benchmark
+        ipo [off]                      --         on, off                 CMake interprocedural optimization
+        metadata [off]                 @1.2:      on, off                 Enables metadata benchmark
+        openpmd [off]                  @1.2:      on, off                 Enables OpenPMD benchmark
 
-	Deprecated versions:  
-	    None
+    Build Dependencies:
+        cmake  hdf5  mpi  parallel-netcdf
 
-	Variants:
-	    Name [Default]                 When    Allowed values          Description
-	    ===========================    ====    ====================    ==================================
+    Link Dependencies:
+        hdf5  mpi  parallel-netcdf
 
-	    build_type [RelWithDebInfo]    --      Debug, Release,         CMake build type
-						   RelWithDebInfo,         
-						   MinSizeRel              
-	    ipo [off]                      --      on, off                 CMake interprocedural optimization
+    Run Dependencies:
+        None
 
-	Installation Phases:
-	    cmake    build    install
+.. warning::
 
-	Build Dependencies:
-	    cmake  hdf5  mpi
-
-	Link Dependencies:
-	    hdf5  mpi
-
-	Run Dependencies:
-	    None
-
-	Virtual Packages: 
-	    None
+    Current h5bench versions in Spack do not have support for the HDF5 VOL async/cache connectors yet.
