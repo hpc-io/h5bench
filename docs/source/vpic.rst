@@ -220,7 +220,7 @@ Known Issues
 
 .. warning::
 
-	In Cori/NERSC or similar platforms that use Cray-MPICH library, if you encouter a failed assertion regarding support for ``MPI_THREAD_MULTIPLE`` you should define the following environment variable:
+	In Cori/NERSC and Theta/ALCF, or similar platforms that use Cray-MPICH library, if you encouter a failed assertion regarding support for ``MPI_THREAD_MULTIPLE`` you should define the following environment variable:
 
 	.. code-block:: bash
 
@@ -228,8 +228,10 @@ Known Issues
 
 .. warning::
 
-	If you're trying to run the benchmark with the HDF5 VOL ASYNC connector in MacOS and are getting segmentation fault (from ``ABT_thread_create``), please try to set the following environment variable:
+	If you're trying to run the benchmark with the HDF5 VOL ASYNC in MacOS (or any other platforms) and are getting segmentation fault (from ``ABT_thread_create``), please try to set the following environment variable:
 
 	.. code-block:: bash
 
 		export ABT_THREAD_STACKSIZE=100000
+
+	If you run the benchmark with the HDF5 VOL CACHE connector, we set this value automatically inside the VOL connector. 

@@ -18,7 +18,7 @@ ARGS = PARSER.parse_args()
 HDF5_DIR = os.getenv('HDF5_DIR')
 ABT_DIR = os.getenv('ABT_DIR')
 ASYNC_DIR = os.getenv('ASYNC_DIR')
-
+VOL_DIR = os.getenv('VOL_DIR')
 
 if HDF5_DIR is None:
 	print('HDF5_DIR enviroment variable is not set!')
@@ -32,16 +32,28 @@ if ASYNC_DIR is None:
 	print('ASYNC_DIR enviroment variable is not set!')
 	exit(-1)
 
+
 with open(ARGS.setup, 'r') as f:
     data = json.load(f, object_pairs_hook=collections.OrderedDict)
+    
+if VOL_DIR is not None:
+        ''' multiple vol connectors case '''
+        data['vol']['library'] = '{}:{}:{}'.format(
+	        '/'.join([VOL_DIR, 'lib']),
+	        '/'.join([ABT_DIR, 'lib']),
+	        '/'.join([HDF5_DIR, 'lib'])
+        )
+        
+        data['vol']['path'] = '/'.join([VOL_DIR, 'lib']),
+else:
+        ''' single vol connector case '''
+        data['vol']['library'] = '{}:{}:{}'.format(
+	        ASYNC_DIR,
+	        '/'.join([ABT_DIR, 'lib']),
+	        '/'.join([HDF5_DIR, 'lib'])
+        )
 
-data['vol']['library'] = '{}:{}:{}'.format(
-	ASYNC_DIR,
-	'/'.join([ABT_DIR, 'lib']),
-	'/'.join([HDF5_DIR, 'lib'])
-)
-
-data['vol']['path'] = ASYNC_DIR
+        data['vol']['path'] = ASYNC_DIR
 
 with open(ARGS.setup, 'w') as f:
     json.dump(data, f, indent=4, sort_keys=False)
