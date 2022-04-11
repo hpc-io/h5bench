@@ -113,10 +113,10 @@ You can use this property to configure some file system options. For now, you ca
 Benchmarks
 ^^^^^^^^^^
 
-You can specify which benchmarks ``h5bench`` should run in this property, their order, and configuration.
-You can choose between: ``write``, ``read``, ``metadata``, and ``exerciser``. 
+You can specify which benchmarks ``h5bench`` should run using this property, their order, and configuration.
+You can choose between: ``write``, ``write-unlimited``, ``overwrite``, ``append``, ``read``, ``metadata``, ``exerciser``, ``openpmd``, ``amrex``, ``e3sm``. 
 
-For the ``write`` pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``:
+For each pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``:
 
 .. code-block::
 
@@ -141,7 +141,6 @@ For the ``write`` pattern of ``h5bench``, you should provide the ``file`` and th
       }
    }
 
-For the ``read`` pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``. 
 If you provide the same ``file`` name used for a previous ``write`` execution, it will read from that file.
 This way, you can configure a workflow with multiple interleaving files, e.g., ``write`` file-01, ``write`` file-02, ``read`` file-02, ``read`` file-01.
 
@@ -207,7 +206,7 @@ For the ``exerciser`` benchmark, you need to provide the required runtime option
       }
    }
 
-You can refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
+You can find several samples of configuration file with all the optins in the our [GitHub repository] (https://github.com/hpc-io/h5bench/tree/master/samples). You can also refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
 
 .. literalinclude:: ../../configuration.json
    :language: json

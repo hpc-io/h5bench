@@ -5,3 +5,7 @@
 [submodule "openpmd"]
 	path = openpmd
 	url = https://github.com/openPMD/openPMD-api
+
+[submodule "e3sm"]
+	path = e3sm
+	url = https://github.com/Parallel-NetCDF/E3SM-IO

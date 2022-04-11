@@ -10,6 +10,7 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 These are the benchmarks and kernels currently available in h5bench:
 
+<<<<<<< HEAD
 ==================== =========================== ==================== ======================== ========================
 **Benchmark**        **Name**                    **SYNC**             **ASYNC VOL**            **CACHE VOL**
 ==================== =========================== ==================== ======================== ========================
@@ -21,6 +22,20 @@ Exerciser            ``h5bench_exerciser``       |:white_check_mark:| |:white_la
 OpenPMD (write)      ``h5bench_openpmd_write``   |:white_check_mark:| |:white_large_square:|   |:white_large_square:|
 OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_large_square:|   |:white_large_square:|
 ==================== =========================== ==================== ======================== =======================
+=======
+==================== =========================== ==================== ========================
+**Benchmark**        **Name**                    **SYNC**             **ASYNC VOL**          
+==================== =========================== ==================== ========================
+h5bench write        ``h5bench_write``           |:white_check_mark:| |:white_check_mark:|   
+h5bench read         ``h5bench_read``            |:white_check_mark:| |:white_check_mark:|   
+Metadata Stress      ``h5bench_hdf5_iotest``     |:white_check_mark:| |:white_large_square:| 
+AMReX                ``h5bench_amrex``           |:white_check_mark:| |:white_check_mark:|   
+Exerciser            ``h5bench_exerciser``       |:white_check_mark:| |:white_large_square:| 
+OpenPMD (write)      ``h5bench_openpmd_write``   |:white_check_mark:| |:white_large_square:| 
+OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_large_square:|
+E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_large_square:| 
+==================== =========================== ==================== ========================
+>>>>>>> f21f1e0709454a7a30598f58068ffa788a523da3
 
 .. toctree::
    :maxdepth: 2
@@ -38,7 +53,8 @@ OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_la
    amrex
    openpmd
    exerciser
-   
+   e3sm
+
 .. toctree::
    :maxdepth: 2
    :caption: Contribute

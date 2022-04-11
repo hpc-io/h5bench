@@ -6,6 +6,7 @@ import time
 import uuid
 import shlex
 import errno
+import distutils.spawn
 import argparse
 import collections
 import subprocess
@@ -29,6 +30,7 @@ class H5bench:
     H5BENCH_AMREX_ASYNC = PREFIX + 'h5bench_amrex_async'
     H5BENCH_OPENPMD_WRITE = PREFIX + 'h5bench_openpmd_write'
     H5BENCH_OPENPMD_READ = PREFIX + 'h5bench_openpmd_read'
+    H5BENCH_E3SM = PREFIX + 'h5bench_e3sm'
 
     def __init__(self, setup, debug, abort, validate):
         """Initialize the suite."""
@@ -202,8 +204,10 @@ class H5bench:
                 self.run_amrex(id, benchmark, setup['vol'])
             elif name == 'openpmd':
                 self.run_openpmd(id, benchmark)
+            elif name == 'e3sm':
+                self.run_e3sm(id, benchmark)
             else:
-                self.logger.error('{} - Unsupported benchmark/kernel')
+                self.logger.critical('{} - Unsupported benchmark/kernel')
 
             self.logger.info('h5bench [{}] - Complete'.format(name))
 
@@ -231,11 +235,15 @@ class H5bench:
         """Prepare the environment variables for the VOL."""
 
         if vol is not None:
-            if 'library' in vol:
-                self.logger.info('Environment: %s', vol['library'])
+            if 'LD_LIBRARY_PATH' not in self.vol_environment:
+                self.vol_environment['LD_LIBRARY_PATH'] = ''
 
-                self.vol_environment['LD_LIBRARY_PATH'] = vol['library']
-                self.vol_environment['DYLD_LIBRARY_PATH'] = vol['library']
+            if 'DYLD_LIBRARY_PATH' not in self.vol_environment:
+                self.vol_environment['DYLD_LIBRARY_PATH'] = ''
+
+            if 'library' in vol:
+                self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
+                self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
             if 'cache_write' in vol:
@@ -243,6 +251,15 @@ class H5bench:
             if 'cache_read' in vol:
                 self.vol_environment['HDF5_CACHE_RD'] = vol['cache_read']
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
+
+            if 'HDF5_PLUGIN_PATH' in self.vol_environment:
+                self.logger.debug('HDF5_PLUGIN_PATH: %s', self.vol_environment['HDF5_PLUGIN_PATH'])
+
+        if 'LD_LIBRARY_PATH' in self.vol_environment:
+            self.logger.debug('LD_LIBRARY_PATH: %s', self.vol_environment['LD_LIBRARY_PATH'])
+
+        if 'DYLD_LIBRARY_PATH' in self.vol_environment:
+            self.logger.debug('DYLD_LIBRARY_PATH: %s', self.vol_environment['DYLD_LIBRARY_PATH'])
 
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
@@ -374,8 +391,20 @@ class H5bench:
 
             exit(-1)
 
+    def is_available(self, executable):
+        """Check if binary is available."""
+        return distutils.spawn.find_executable(
+            executable,
+            path=os.environ['PATH'] + ':.'
+        )
+
     def run_exerciser(self, id, setup):
         """Run the exerciser benchmark."""
+        if not self.is_available(self.H5BENCH_EXERCISER):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_EXERCISER))
+
+            return
+
         try:
             start = time.time()
 
@@ -425,6 +454,11 @@ class H5bench:
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
+        if not self.is_available(self.H5BENCH_METADATA):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_METADATA))
+
+            return
+
         try:
             start = time.time()
 
@@ -485,6 +519,11 @@ class H5bench:
 
     def run_amrex(self, id, setup, vol):
         """Run the AMReX benchmark."""
+        if not self.is_available(self.H5BENCH_AMREX_SYNC):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_AMREX_SYNC))
+
+            return
+
         try:
             start = time.time()
 
@@ -561,6 +600,16 @@ class H5bench:
 
     def run_openpmd(self, id, setup):
         """Run the OpenPMD kernel benchmark."""
+        if not self.is_available(self.H5BENCH_OPENPMD_WRITE):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_WRITE))
+
+            return
+
+        if not self.is_available(self.H5BENCH_OPENPMD_READ):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_READ))
+
+            return
+
         try:
             start = time.time()
 
@@ -634,7 +683,68 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-            exit(-1)
+    def run_e3sm(self, id, setup):
+        """Run the E3SM benchmark."""
+        if not self.is_available(self.H5BENCH_E3SM):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_E3SM))
+
+            return
+
+        try:
+            start = time.time()
+
+            configuration = setup['configuration']
+
+            parameters = []
+
+            # Create the configuration parameter list
+            for key in configuration:
+                if key not in ['i', 'o', 'netcdf']:
+                    parameters.append('-{} {} '.format(key, configuration[key]))
+
+                if key in ['i', 'o']:
+                    parameters.append('-{} {}/{}/{} '.format(key, self.directory, id, setup['file']))
+
+            # Temporarily overwrite -x and -a to only supported patterns
+            parameters.append('-{} {}'.format('a', 'hdf5'))
+            parameters.append('-{} {}'.format('x', 'blob'))
+
+            file = '{}/{}'.format(self.directory, configuration['netcdf'])
+
+            command = '{} {} {} {}'.format(
+                self.mpi,
+                self.H5BENCH_E3SM,
+                ' '.join(parameters),
+                file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
 
 
 PARSER = argparse.ArgumentParser(

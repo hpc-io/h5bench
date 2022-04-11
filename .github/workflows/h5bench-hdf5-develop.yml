@@ -26,6 +26,11 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git
 
+          # PnetCDF
+          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
+          tar -zxf pnetcdf-1.12.2.tar.gz
+          mv pnetcdf-1.12.2 pnetcdf
+
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -37,6 +42,18 @@ jobs:
 
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+
+          make -j 8
+          make install
+
+      - name: Build PnetCDF
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export PNETCDF_DIR=/opt/pnetcdf
+
+          cd pnetcdf
+
+          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
 
           make -j 8
           make install
@@ -105,12 +122,16 @@ jobs:
       - name: Build h5bench SYNC
         run: |
           current="$PWD"
+
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
 
           mkdir build-sync
           cd build-sync
 
-          cmake .. -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
+          cmake .. \
+            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
+            -DH5BENCH_ALL=ON
           make
 
       - name: Build h5bench ASYNC
@@ -118,6 +139,7 @@ jobs:
           current="$PWD"
 
           export HDF5_HOME=/opt/hdf5
+          export PNETCDF_HOME=/opt/pnetcdf
           export ASYNC_HOME=$current/vol-async/src
           
           mkdir build-async
@@ -126,7 +148,8 @@ jobs:
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I/$current/vol-async/src -L/$current/vol-async/src" \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
+            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
+            -DH5BENCH_ALL=ON
           make
 
       - name: Test h5bench SYNC write/read
@@ -243,6 +266,13 @@ jobs:
         run: |
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
+      - name: Test h5bench SYNC e3sm
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
       - name: Test h5bench ASYNC write/read
         run: |

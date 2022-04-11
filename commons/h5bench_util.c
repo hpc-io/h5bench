@@ -33,6 +33,8 @@ int str_to_ull(char *str_in, unsigned long long *num_out);
 int parse_time(char *str_in, duration *time);
 int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
+int has_vol_async;
+
 unsigned long
 get_time_usec()
 {
@@ -948,7 +950,11 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         return 1;
     }
 #endif
-
+#if H5_VERSION_GE(1, 13, 1)
+    if (connector != NULL && strstr(connector, "cache_ext")) {
+        return 1;
+    }
+#endif    
         return 0;
     }
 
@@ -1055,14 +1061,29 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         return 0;
     }
 
-    // print all fields of params
-    void print_params(const bench_params *p)
-    {
-        printf("=======================================\n");
-        printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
-        printf("Number of particles per rank: %llu\n", p->num_particles);
-        printf("Number of time steps: %d\n", p->cnt_time_step);
-        printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
+// print all fields of params
+void
+print_params(const bench_params *p)
+{
+    printf("\n");
+    printf("================ Benchmark Configuration ==================\n");
+    printf("File: %s\n", p->data_file_path);
+    printf("Number of particles per rank: %llu\n", p->num_particles);
+    printf("Number of time steps: %d\n", p->cnt_time_step);
+    printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
+
+    printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
+    printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
+    printf("Collective buffering for data operations: %s\n", p->data_coll == 1 ? "YES" : "NO");
+
+    printf("Number of dimensions: %d\n", p->num_dims);
+    printf("    Dim_1: %lu\n", p->dim_1);
+    if (p->num_dims >= 2) {
+        printf("    Dim_2: %lu\n", p->dim_2);
+    }
+    if (p->num_dims >= 3) {
+        printf("    Dim_3: %lu\n", p->dim_3);
+    }
 
         printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
         printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
@@ -1076,13 +1097,10 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         if (p->num_dims >= 3) {
             printf("    Dim_3: %lu\n", p->dim_3);
         }
-
-        if (p->access_pattern.pattern_read == STRIDED_1D ||
-            p->access_pattern.pattern_write == CONTIG_CONTIG_STRIDED_1D) {
-            printf("Strided access settings:\n");
-            printf("    Stride size = %ld\n", p->stride);
-            printf("    Block size = %ld\n", p->block_size);
-        }
+    }
+    printf("===========================================================\n");
+    printf("\n");
+}
 
         if (p->useCompress) {
             printf("Use compression: %d\n", p->useCompress);
@@ -1242,12 +1260,27 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         return sub;
     }
 
-    char *get_dir_from_path(char *path)
-    {
-        if (path == NULL)
-            return NULL;
+    return pDir;
+}
 
-        char *pDir = substr(path, 0, strlen(path) - strlen(get_file_name_from_path(path)));
+human_readable
+format_human_readable(uint64_t bytes)
+{
+    human_readable value;
 
-        return pDir;
+    char unit[] = {' ', 'K', 'M', 'G', 'T'};
+    char length = sizeof(unit) / sizeof(unit[0]);
+
+    int    i      = 0;
+    double format = bytes;
+
+    if (bytes >= 1024) {
+        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
+            format = bytes / 1024.0;
     }
+
+    value.value = format;
+    value.unit  = unit[i];
+
+    return value;
+}
