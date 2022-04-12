@@ -136,7 +136,7 @@ jobs:
           cp -r $current/vol-async/src/*.h $current/vol/include/
           export LD_LIBRARY_PATH=$HDF5_VOL_DIR/lib:$HDF5_ROOT/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
           cd $current/vol-cache/src
-          make all install
+          make all
 
       - name: Build h5bench SYNC
         run: |
