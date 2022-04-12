@@ -297,7 +297,7 @@ class H5bench:
             file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
 
-            if vol['connector'] != '':
+            if 'connector' in vol.keys():
                 self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
