@@ -1001,6 +1001,14 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
+#if H5_VERSION_GE(1, 13, 1)
+    if (H5VLis_connector_registered_by_name("cache_ext")) {
+        if (MY_RANK == 0) {
+            printf("Using 'cache_ext' VOL connector\n");
+        }
+    }
+#endif
+
 #if H5_VERSION_GE(1, 13, 0)
     if (H5VLis_connector_registered_by_name("async")) {
         if (MY_RANK == 0) {
