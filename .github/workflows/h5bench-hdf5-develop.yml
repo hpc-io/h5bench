@@ -179,10 +179,11 @@ jobs:
           export PNETCDF_HOME=/opt/pnetcdf
           export HDF5_VOL_DIR=$current/vol
           mkdir build-cache
+          cd build-cache
           cmake .. \
             -DWITH_CACHE_VOL:BOOL=ON \
             -DWITH_ASYNC_VOL:BOOL=ON \
-            -DCMAKE_C_FLAGS="-I/$HDF5_VOL_DIR/include -L/$HDF5_VOL_DIR/lib"
+            -DCMAKE_C_FLAGS="-I/$HDF5_VOL_DIR/include -L/$HDF5_VOL_DIR/lib" \
             -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
           make
 
