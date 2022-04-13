@@ -44,7 +44,7 @@ if VOL_DIR is not None:
 	        '/'.join([HDF5_DIR, 'lib'])
         )
         
-        data['vol']['path'] = '/'.join([VOL_DIR, 'lib']),
+        data['vol']['path'] = VOL_DIR+'/lib'
 else:
         ''' single vol connector case '''
         data['vol']['library'] = '{}:{}:{}'.format(
