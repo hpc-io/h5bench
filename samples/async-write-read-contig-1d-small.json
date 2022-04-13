@@ -2,7 +2,7 @@
     "mpi": {
         "command": "mpirun",
         "ranks": "4",
-        "configuration": "--allow-run-as-root --oversubscribe"
+        "configuration": "--allow-run-as-root --np 2 --oversubscribe"
     },
     "vol": {
         "library": "/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:",

@@ -604,7 +604,7 @@ jobs:
           export HDF5_ROOT=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots/install
           export ASYNC_DIR=$current/vol-async/src
-          export VOL_DIR=$current/vol
+          export HDF5_VOL_DIR=$current/vol
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
           cd build-cache
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
@@ -619,7 +619,7 @@ jobs:
           export HDF5_ROOT=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots/install
           export ASYNC_DIR=$current/vol-async/src
-          export VOL_DIR=$current/vol
+          export HDF5_VOL_DIR=$current/vol
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
           cd build-cache
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
@@ -634,7 +634,7 @@ jobs:
           export HDF5_ROOT=/opt/hdf5
           export ABT_DIR=$current/vol-async/argobots/install
           export ASYNC_DIR=$current/vol-async/src
-          export VOL_DIR=$current/vol
+          export HDF5_VOL_DIR=$current/vol
           export LD_PRELOAD=$ABT_DIR/lib/libabt.so
           cd build-cache
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
