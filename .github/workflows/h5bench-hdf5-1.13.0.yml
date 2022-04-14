@@ -81,7 +81,7 @@ jobs:
 
           cd $VOL_DIR/test
           tail -n 47 Makefile.summit > Makefile
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
           make -j 8
 
       - name: Test VOL-ASYNC
@@ -264,7 +264,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -281,7 +281,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -298,7 +298,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -315,7 +315,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -332,7 +332,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -349,7 +349,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -366,7 +366,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -383,7 +383,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -400,7 +400,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -417,7 +417,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -434,7 +434,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -451,7 +451,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -468,7 +468,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -485,7 +485,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -502,7 +502,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -519,7 +519,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
@@ -536,7 +536,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
 
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
 
           cd build-async
 
