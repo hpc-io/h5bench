@@ -487,9 +487,9 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
-    
+
     if (MY_RANK == 0)
-        printf ("    %s: Finished writing time step \n", __func__);
+        printf("    %s: Finished writing time step \n", __func__);
 }
 
 void
