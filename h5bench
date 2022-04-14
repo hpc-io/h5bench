@@ -293,7 +293,7 @@ class H5bench:
             lines = stderr_file.readlines()
 
             for line in lines:
-                if 'Error detected in HDF5':
+                if 'Error detected in HDF5' in line:
                     has_error_message = True
 
                     self.logger.error(line.strip())
