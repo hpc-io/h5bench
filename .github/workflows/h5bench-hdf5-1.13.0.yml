@@ -81,7 +81,7 @@ jobs:
 
           cd $VOL_DIR/test
           tail -n 47 Makefile.summit > Makefile
-          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
+          export LD_PRELOAD="$ABT_DIR/lib/libabt.so"
           make -j 8
 
       - name: Test VOL-ASYNC
