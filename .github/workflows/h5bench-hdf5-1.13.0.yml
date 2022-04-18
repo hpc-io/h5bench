@@ -11,6 +11,9 @@ jobs:
     container:
       image: hpcio/hdf5-1.13.0
     timeout-minutes: 60
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - uses: actions/checkout@v2
@@ -84,7 +87,7 @@ jobs:
 
           cd $VOL_DIR/build
           
-          export LD_PRELOAD=$ASYNC_DIR/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+          export LD_PRELOAD=$ASYNC_DIR/build/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           ctest
 
