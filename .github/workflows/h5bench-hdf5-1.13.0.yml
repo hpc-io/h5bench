@@ -113,7 +113,10 @@ jobs:
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
           export ASYNC_HOME=$current/vol-async/src
-          
+
+          export LD_LIBRARY_PATH=$VOL_DIR/src:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+          export LD_PRELOAD=$ASYNC_DIR/build/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
           mkdir build-async
           cd build-async
 
