@@ -62,8 +62,10 @@ jobs:
           export VOL_DIR=$current/vol-async
           
           cd $VOL_DIR
-          cd src
-          tail -n 48 Makefile.summit > Makefile
+          mkdir build
+          cd build
+
+          cmake ..
           make
 
       - name: Build VOL-ASYNC Tests
@@ -79,10 +81,11 @@ jobs:
           export HDF5_PLUGIN_PATH="$VOL_DIR/src"
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
-          cd $VOL_DIR/test
-          tail -n 47 Makefile.summit > Makefile
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
-          make -j 8
+          cd $VOL_DIR/build
+          
+          export LD_PRELOAD=$ASYNC_DIR/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
+          ctest
 
       - name: Test VOL-ASYNC
         run: |
