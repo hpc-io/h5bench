@@ -58,7 +58,6 @@ jobs:
           current="$PWD"
 
           export HDF5_DIR=/opt/hdf5
-          export HDF5_HOME=$HDF5_DIR
           export ABT_DIR=$current/vol-async/argobots/install
           export VOL_DIR=$current/vol-async
           
@@ -66,7 +65,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake ..
+          cmake .. -DCMAKE_PREFIX_PATH=$HDF5_DIR
           make
 
       - name: Test VOL-ASYNC
