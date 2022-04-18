@@ -17,9 +17,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Dependencies
         run: |
           # VOL-ASYNC
@@ -145,7 +142,7 @@ jobs:
           export VOL_DIR=$current/vol-async
           export ASYNC_DIR=$VOL_DIR/src
           
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD=$ASYNC_DIR/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
