@@ -91,6 +91,8 @@ jobs:
 
           ctest
 
+          unset LD_PRELOAD
+
       - name: Build h5bench SYNC
         run: |
           current="$PWD"
@@ -126,6 +128,8 @@ jobs:
             -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make
+
+          unset LD_PRELOAD
 
       - name: Test h5bench ASYNC write/read
         run: |
