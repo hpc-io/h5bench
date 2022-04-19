@@ -92,8 +92,6 @@ jobs:
 
       - name: Build h5bench SYNC
         run: |
-          current="$PWD"
-
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
 
@@ -112,14 +110,14 @@ jobs:
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
 
-          export LD_LIBRARY_PATH=$ASYNC_HOME/src:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$ASYNC_HOME/build/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-async
           cd build-async
 
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
-            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/src -L$ASYNC_HOME/src" \
+            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/src -L$ASYNC_HOME/build/lib" \
             -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make
