@@ -46,7 +46,7 @@ jobs:
         run: |
           export ABT_DIR=/opt/argobots
           
-          cd $ABT_DIR
+          cd /opt/vol-async/argobots
 
           ./autogen.sh
           ./configure --prefix=$ABT_DIR
