@@ -117,7 +117,6 @@ jobs:
           export ASYNC_HOME=$current/vol-async/src
 
           export LD_LIBRARY_PATH=$VOL_DIR/src:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
-          export LD_PRELOAD=$ASYNC_DIR/build/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           mkdir build-async
           cd build-async
@@ -128,8 +127,6 @@ jobs:
             -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make
-
-          unset LD_PRELOAD
 
       - name: Test h5bench ASYNC write/read
         run: |
@@ -149,6 +146,8 @@ jobs:
           cat ../samples/async-write-read-contig-1d-small.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
+
+          unset LD_PRELOAD
 
       - name: Test h5bench SYNC write/read
         run: |
