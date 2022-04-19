@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
-      c: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - uses: actions/checkout@v2
