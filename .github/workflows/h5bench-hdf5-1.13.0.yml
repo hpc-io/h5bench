@@ -119,7 +119,7 @@ jobs:
 
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
-            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/build -L$ASYNC_HOME/src" \
+            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/src -L$ASYNC_HOME/src" \
             -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make
