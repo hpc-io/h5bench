@@ -84,7 +84,11 @@ jobs:
 
           cd $ASYNC_DIR/build
           
+          export LD_PRELOAD=$ASYNC_DIR/build/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
           ctest
+
+          unset LD_PRELOAD
 
       - name: Build h5bench SYNC
         run: |
