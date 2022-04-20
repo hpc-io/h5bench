@@ -114,6 +114,7 @@ jobs:
 
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
+            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
           make -j 2
 
