@@ -25,6 +25,8 @@ class H5bench:
     H5BENCH_PATTERNS_OVERWRITE = PREFIX + 'h5bench_overwrite'
     H5BENCH_PATTERNS_READ = PREFIX + 'h5bench_read'
     H5BENCH_EXERCISER = PREFIX + 'h5bench_exerciser'
+    H5BENCH_CUDA_WRITE = PREFIX + 'h5bench_cuda_write'
+    H5BENCH_CUDA_READ = PREFIX + 'h5bench_cuda_read'
     H5BENCH_METADATA = PREFIX + 'h5bench_hdf5_iotest'
     H5BENCH_AMREX_SYNC = PREFIX + 'h5bench_amrex_sync'
     H5BENCH_AMREX_ASYNC = PREFIX + 'h5bench_amrex_async'
@@ -198,6 +200,12 @@ class H5bench:
                 self.run_pattern(id, name, benchmark, setup['vol'])
             elif name == 'exerciser':
                 self.run_exerciser(id, benchmark)
+
+            elif name == 'cuda_write':
+                self.run_cuda_write(id, benchmark)
+            elif name == 'cuda_read':
+                self.run_cuda_read(id, benchmark)
+
             elif name == 'metadata':
                 self.run_metadata(id, benchmark)
             elif name == 'amrex':
@@ -448,6 +456,145 @@ class H5bench:
             self.logger.error('Unable to run the benchmark: %s', e)
 
             exit(-1)
+
+
+    def run_cuda_write(self, id, setup):
+        """Run the CUDA Write benchmark."""
+        if not self.is_available(self.H5BENCH_CUDA_WRITE):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_CUDA_WRITE))
+
+            return
+
+        try:
+            start = time.time()
+
+            # Define the output file (should be a .h5 file)
+            file = '{}/{}'.format(self.directory, setup['file'])
+            configuration = setup['configuration']
+
+            configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
+
+            # Create the configuration file for this benchmark
+            with open(configuration_file, 'w+') as f:
+                for key in configuration:
+                    # Make sure the CSV file is generated in the temporary path
+                    if key == 'CSV_FILE':
+                        configuration[key] = '{}/{}/{}'.format(self.directory, id, configuration[key])
+
+                    if key == 'MODE':
+                        continue
+
+                    f.write('{}={}\n'.format(key, configuration[key]))
+                f.write('IO_OPERATION=WRITE\n')
+
+            benchmark_path = self.H5BENCH_CUDA_WRITE
+            #  benchmark_path = self.H5BENCH_CUDA_READ
+
+            command = '{} {} {} {}'.format(
+                self.mpi,
+                benchmark_path,
+                configuration_file,
+                file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
+
+    def run_cuda_read(self, id, setup):
+        """Run the CUDA Read benchmark."""
+        if not self.is_available(self.H5BENCH_CUDA_READ):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_CUDA_READ))
+
+            return
+
+        try:
+            start = time.time()
+
+            # Define the output file (should be a .h5 file)
+            file = '{}/{}'.format(self.directory, setup['file'])
+            configuration = setup['configuration']
+
+            configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
+
+            # Create the configuration file for this benchmark
+            with open(configuration_file, 'w+') as f:
+                for key in configuration:
+                    # Make sure the CSV file is generated in the temporary path
+                    if key == 'CSV_FILE':
+                        configuration[key] = '{}/{}/{}'.format(self.directory, id, configuration[key])
+
+                    if key == 'MODE':
+                        continue
+
+                    f.write('{}={}\n'.format(key, configuration[key]))
+                f.write('IO_OPERATION=READ\n')
+
+            benchmark_path = self.H5BENCH_CUDA_READ
+
+            command = '{} {} {} {}'.format(
+                self.mpi,
+                benchmark_path,
+                configuration_file,
+                file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0:
+                    self.logger.info('SUCCESS')
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        exit(-1)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+            exit(-1)
+
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
