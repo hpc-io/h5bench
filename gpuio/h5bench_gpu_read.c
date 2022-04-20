@@ -571,7 +571,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 1) { // 2D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_2 (%lu) is greater than file dimension (%llu).\n",
+                printf("Failed: Required dimension_2 (%lu) is greater than file dimension (%lu).\n",
                        params.dim_2, dims[1]);
             goto error;
         }
@@ -579,7 +579,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 2) { // 3D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_3 (%lu) is greater than file dimension (%llu).\n",
+                printf("Failed: Required dimension_3 (%lu) is greater than file dimension (%lu).\n",
                        params.dim_3, dims[2]);
             goto error;
         }

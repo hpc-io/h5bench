@@ -23,6 +23,8 @@ option(H5BENCH_EXERCISER        "Enable Exerciser benchmark"        OFF)
 option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
+option(H5BENCH_CUDA             "Enable CUDA benchmark"             OFF)
+
 
 message(STATUS "h5bench baseline: ON")
 
@@ -34,6 +36,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_AMREX ON)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
+    set(H5BENCH_CUDA ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -41,6 +44,7 @@ message(STATUS "h5bench EXERCISER: ${H5BENCH_EXERCISER}")
 message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
+message(STATUS "h5bench CUDA: ${H5BENCH_CUDA}")
 
 if(H5BENCH_E3SM)
     set(PNETCDF_HOME $ENV{PNETCDF_HOME})
@@ -128,18 +132,12 @@ add_executable(h5bench_append ${h5bench_append_src})
 target_link_libraries(h5bench_append h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C)
 
 # ===========  GPUIO test: h5bench_write_cuda ===========
-set(MEM_CUDA_SUPPORT OFF)
-set(MEM_HIP_SUPPORT OFF)
 
-find_package(CUDAToolkit)
-if(CUDAToolkit_FOUND)
+if(H5BENCH_CUDA)
+
+  find_package(CUDAToolkit REQUIRED)
   enable_language(CUDA)
-  set(MEM_CUDA_SUPPORT ON)
-endif(CUDAToolkit_FOUND)
 
-message(STATUS "MEM_CUDA_SUPPORT=" ${MEM_CUDA_SUPPORT})
-
-if(MEM_CUDA_SUPPORT)
   file (GLOB MEM_API_CUDA_SRCS
     ./gpuio/mem/include/*.h
     ./gpuio/mem/src/*.c
@@ -170,43 +168,7 @@ if(MEM_CUDA_SUPPORT)
 
   # 6 GPU, cuda, tested on summit
   # add_test( h5bench_cuda_write_02 jsrun --nrs 6 -c1 -g1 ./h5bench_cuda_write ../gpuio/sample_config/sample_write_cc1d_fileperproc.cfg ./test.h5 )
-
-endif(MEM_CUDA_SUPPORT)
-
-
-# Search for rocm in common locations
-list(APPEND CMAKE_PREFIX_PATH /opt/rocm/hip /opt/rocm)
-
-# Find hip
-find_package(HIP)
-if(HIP_VERSION)
-  set(MEM_HIP_SUPPORT ON)
-  set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
-  set(CMAKE_CXX_LINKER   ${HIP_HIPCC_EXECUTABLE})
-endif(HIP_VERSION)
-
-message(STATUS "MEM_HIP_SUPPORT=" ${MEM_HIP_SUPPORT})
-
-if(MEM_HIP_SUPPORT)
-  file (GLOB MEM_API_HIP_SRCS
-    ./gpuio/mem/include/*.h
-    ./gpuio/mem/src/*.c
-    ./gpuio/mem/src/hip/*.c
-  )
-
-  set(ORIGINAL_CMAKE_C_COMPILER ${CMAKE_C_COMPILER})
-  set(CMAKE_C_COMPILER amdclang) # TODO: hardcoded c compiler for now..
-  add_library(hip_memapi SHARED ${MEM_API_HIP_SRCS})
-  set_target_properties(hip_memapi PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
-  target_include_directories(hip_memapi PRIVATE ${HIP_ROOT_DIR}/include)
-  target_include_directories(hip_memapi PRIVATE ./gpuio/mem/include/)
-  target_link_libraries(hip_memapi hip::host)
-
-  set(CMAKE_C_COMPILER ${ORIGINAL_CMAKE_C_COMPILER})
-  add_executable(h5bench_hip_write gpuio/h5bench_write.c)
-  set_target_properties(h5bench_hip_write PROPERTIES COMPILE_DEFINITIONS METAMEM_USE_HIP)
-  target_link_libraries(h5bench_hip_write h5bench_util hdf5 z MPI::MPI_C hip::host hip_memapi)
-endif(MEM_HIP_SUPPORT)
+endif(H5BENCH_CUDA)
 # =================================================================
 
 # h5bench READ ################################################################
@@ -342,6 +304,19 @@ if(H5BENCH_EXERCISER)
     install(
         TARGETS
         h5bench_exerciser 
+        DESTINATION bin
+    )
+endif()
+
+if(H5BENCH_CUDA)
+    install(
+        TARGETS
+        h5bench_cuda_write
+        DESTINATION bin
+    )
+    install(
+        TARGETS
+        h5bench_cuda_read
         DESTINATION bin
     )
 endif()
