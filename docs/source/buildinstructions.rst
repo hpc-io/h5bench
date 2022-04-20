@@ -75,18 +75,19 @@ In the source directory of your cloned h5bench repository, run the following:
 
 By default, h5bench will only compile the base write and read benchmarks. To enable the additional benchmarks, you need to explicitly enable them before building h5bench. You can also enable all the benchmarks with ``-DH5BENCH_ALL=ON``. Notice that some of them have additional dependencies.
 
-==================== =========================== ===============================
-**Benchmark**        **Name**                    **Build**                     
-==================== =========================== ===============================
-h5bench write        ``h5bench_write``           Always   
-h5bench read         ``h5bench_read``            Always   
-Metadata Stress      ``h5bench_hdf5_iotest``     ``-DH5BENCH_METADATA=ON``
-AMReX                ``h5bench_amrex``           ``-DH5BENCH_AMREX=ON``   
-Exerciser            ``h5bench_exerciser``       ``-DH5BENCH_EXERCISER=ON``
-OpenPMD (write)      ``h5bench_openpmd_write``   ``-DH5BENCH_OPENPMD=ON``
-OpenPMD (read)       ``h5bench_openpmd_read``    ``-DH5BENCH_OPENPMD=ON``
-E3SM-IO              ``h5bench_e3sm``            ``-DH5BENCH_E3SM=ON`` 
-==================== =========================== ===============================
+==================== ============================================ ===============================
+**Benchmark**        **Name**                                     **Build**                     
+==================== ============================================ ===============================
+h5bench write        ``h5bench_write``                            Always   
+h5bench read         ``h5bench_read``                             Always   
+Metadata Stress      ``h5bench_hdf5_iotest``                      ``-DH5BENCH_METADATA=ON``
+AMReX                ``h5bench_amrex``                            ``-DH5BENCH_AMREX=ON``   
+Exerciser            ``h5bench_exerciser``                        ``-DH5BENCH_EXERCISER=ON``
+OpenPMD (write)      ``h5bench_openpmd_write``                    ``-DH5BENCH_OPENPMD=ON``
+OpenPMD (read)       ``h5bench_openpmd_read``                     ``-DH5BENCH_OPENPMD=ON``
+E3SM-IO              ``h5bench_e3sm``                             ``-DH5BENCH_E3SM=ON`` 
+GPU-IO (cuda)        ``h5bench_cuda_read`` ``h5bench_cuda_write`` ``-DH5BENCH_CUDA=ON`` 
+==================== ============================================ ===============================
 
 .. warning::
 

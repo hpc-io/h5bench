@@ -10,19 +10,19 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 
 These are the benchmarks and kernels currently available in h5bench:
 
-==================== =========================== ==================== ========================
-**Benchmark**        **Name**                    **SYNC**             **ASYNC VOL**          
-==================== =========================== ==================== ========================
-h5bench write        ``h5bench_write``           |:white_check_mark:| |:white_check_mark:|   
-h5bench read         ``h5bench_read``            |:white_check_mark:| |:white_check_mark:|   
-h5bench write CUDA   ``h5bench_write_cuda``      |:white_check_mark:| |:white_large_square:|
-Metadata Stress      ``h5bench_hdf5_iotest``     |:white_check_mark:| |:white_large_square:| 
-AMReX                ``h5bench_amrex``           |:white_check_mark:| |:white_check_mark:|   
-Exerciser            ``h5bench_exerciser``       |:white_check_mark:| |:white_large_square:| 
-OpenPMD (write)      ``h5bench_openpmd_write``   |:white_check_mark:| |:white_large_square:| 
-OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_large_square:|
-E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_large_square:| 
-==================== =========================== ==================== ========================
+==================== ============================================= ==================== ========================
+**Benchmark**        **Name**                                      **SYNC**             **ASYNC VOL**          
+==================== ============================================= ==================== ========================
+h5bench write        ``h5bench_write``                             |:white_check_mark:| |:white_check_mark:|   
+h5bench read         ``h5bench_read``                              |:white_check_mark:| |:white_check_mark:|   
+GPU-IO (CUDA)        ``h5bench_read_cuda`` ``h5bench_write_cuda``  |:white_check_mark:| |:white_large_square:|
+Metadata Stress      ``h5bench_hdf5_iotest``                       |:white_check_mark:| |:white_large_square:| 
+AMReX                ``h5bench_amrex``                             |:white_check_mark:| |:white_check_mark:|   
+Exerciser            ``h5bench_exerciser``                         |:white_check_mark:| |:white_large_square:| 
+OpenPMD (write)      ``h5bench_openpmd_write``                     |:white_check_mark:| |:white_large_square:| 
+OpenPMD (read)       ``h5bench_openpmd_read``                      |:white_check_mark:| |:white_large_square:|
+E3SM-IO              ``h5bench_e3sm``                              |:white_check_mark:| |:white_large_square:| 
+==================== ============================================= ==================== ========================
 
 .. toctree::
    :maxdepth: 2
@@ -41,6 +41,7 @@ E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_la
    openpmd
    exerciser
    e3sm
+   gpuio
 
 .. toctree::
    :maxdepth: 2
