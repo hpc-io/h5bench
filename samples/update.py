@@ -40,6 +40,12 @@ data['vol']['library'] = '{}:{}:{}'.format(
 	'/'.join([HDF5_DIR, 'lib'])
 )
 
+data['vol']['preload'] = '{}:{}:{}'.format(
+	'/'.join([ASYNC_DIR, 'lib', 'libh5async.so']),
+	'/'.join([ABT_DIR, 'lib', 'libabt.so']),
+	'/'.join([HDF5_DIR, 'lib', 'libhdf5.so'])
+)
+
 data['vol']['path'] = '/'.join([ASYNC_DIR, 'lib'])
 
 with open(ARGS.setup, 'w') as f:
