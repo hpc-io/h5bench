@@ -40,7 +40,7 @@ data['vol']['library'] = '{}:{}:{}'.format(
 	'/'.join([HDF5_DIR, 'lib'])
 )
 
-data['vol']['path'] = ASYNC_DIR
+data['vol']['path'] = '/'.join([ASYNC_DIR, 'lib'])
 
 with open(ARGS.setup, 'w') as f:
     json.dump(data, f, indent=4, sort_keys=False)
