@@ -96,7 +96,6 @@ jobs:
           cd build-sync
 
           cmake .. \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make -j 2
 
@@ -128,11 +127,15 @@ jobs:
           
           cd build-async
 
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
 
           cat ../samples/async-write-read-contig-1d-small.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
+
+          unset LD_PRELOAD
 
       - name: Test h5bench SYNC write/read
         run: |
