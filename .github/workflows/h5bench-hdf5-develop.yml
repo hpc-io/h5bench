@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.13.0) 
+name: h5bench (HDF5 develop) 
 
 on:
   pull_request:
@@ -7,9 +7,7 @@ on:
 
 jobs:
   h5bench:
-    runs-on: ubuntu-20.04
-    container:
-      image: hpcio/hdf5-1.13.0
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -22,6 +20,12 @@ jobs:
 
       - name: Dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install cmake gcc libtool zlib1g-dev python3 libopenmpi-dev -y
+          
+          # HDF5
+          git clone https://github.com/HDFGroup/hdf5.git
+
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
@@ -29,6 +33,21 @@ jobs:
           wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
           tar -zxf pnetcdf-1.12.2.tar.gz
           mv pnetcdf-1.12.2 pnetcdf
+
+      - name: Build HDF5 develop
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_LIBTOOL=/usr/bin/libtoolize
+          
+          mkdir $HDF5_DIR
+
+          cd hdf5
+
+          ./autogen.sh
+          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+
+          make -j 2
+          make install
 
       - name: Build PnetCDF
         run: |
@@ -99,6 +118,8 @@ jobs:
 
       - name: Build h5bench ASYNC
         run: |
+          current="$PWD"
+
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
           export ABT_HOME=/opt/argobots
