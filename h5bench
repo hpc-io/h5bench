@@ -242,6 +242,9 @@ class H5bench:
             if 'DYLD_LIBRARY_PATH' not in self.vol_environment:
                 self.vol_environment['DYLD_LIBRARY_PATH'] = ''
 
+            if 'LD_PRELOAD' not in self.vol_environment:
+                self.vol_environment['LD_PRELOAD'] = ''
+
             if 'library' in vol:
                 self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
@@ -260,6 +263,9 @@ class H5bench:
 
         if 'DYLD_LIBRARY_PATH' in self.vol_environment:
             self.logger.debug('DYLD_LIBRARY_PATH: %s', self.vol_environment['DYLD_LIBRARY_PATH'])
+
+        if 'LD_PRELOAD' in self.vol_environment:
+            self.logger.debug('LD_PRELOAD: %s', self.vol_environment['LD_PRELOAD'])
 
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
