@@ -19,7 +19,6 @@ HDF5_DIR = os.getenv('HDF5_DIR')
 ABT_DIR = os.getenv('ABT_DIR')
 ASYNC_DIR = os.getenv('ASYNC_DIR')
 
-
 if HDF5_DIR is None:
 	print('HDF5_DIR enviroment variable is not set!')
 	exit(-1)
@@ -36,7 +35,7 @@ with open(ARGS.setup, 'r') as f:
     data = json.load(f, object_pairs_hook=collections.OrderedDict)
 
 data['vol']['library'] = '{}:{}:{}'.format(
-	ASYNC_DIR,
+	'/'.join([ASYNC_DIR, 'lib']),
 	'/'.join([ABT_DIR, 'lib']),
 	'/'.join([HDF5_DIR, 'lib'])
 )
