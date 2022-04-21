@@ -119,8 +119,6 @@ jobs:
 
       - name: Test h5bench ASYNC write/read
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
@@ -261,14 +259,11 @@ jobs:
 
       - name: Test h5bench ASYNC write/read
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -278,16 +273,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 1D contiguous (memory) strided (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -295,16 +289,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-strided.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 1D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -312,16 +305,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 1D contiguous (memory) interleaved (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -329,16 +321,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-interleaved.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 1D interleaved (memory) contiguous (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -346,16 +337,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-contig.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 1D interleaved (memory) interleaved (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -363,16 +353,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-interleaved.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 2D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -380,16 +369,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 2D contiguous (memory) interleaved (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -397,16 +385,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-interleaved.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 2D interleaved (memory) contiguous (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -414,16 +401,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-contig.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 2D interleaved (memory) interleaved (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -431,16 +417,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-interleaved.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC write 3D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -448,16 +433,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-3d-contig-contig.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) full
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -465,16 +449,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-full.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) partial
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -482,16 +465,15 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-partial.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) strided
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -499,33 +481,31 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-strided.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC read 2D contiguous (memory) contiguous (file) full
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+          unset LD_PRELOAD
 
       - name: Test h5bench ASYNC read 3D contiguous (memory) contiguous (file) full
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
@@ -533,22 +513,23 @@ jobs:
 
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
 
+          unset LD_PRELOAD
+
       - name: Test h5bench ASYNC amrex
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
+          export ASYNC_DIR=/opt/vol-async
 
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           cd build-async
 
           python3 ../samples/update.py ../samples/async-amrex.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
+
+          unset LD_PRELOAD
 
       - name: Upload artifact
         if: always()
