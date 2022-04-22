@@ -124,9 +124,10 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 int
 _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t *filespace_in, hid_t *memspace_out)
 {
+    hsize_t count[1] = {1};
     *memspace_out = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, NULL);
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        (hsize_t *)&read_elem_cnt, NULL);
+                        count, (hsize_t *)&read_elem_cnt);
     return read_elem_cnt;
 }
 
@@ -171,14 +172,15 @@ _set_dataspace_seq_2D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
-    hsize_t file_starts[2], count[2];   // select start point and range in each dimension.
+    hsize_t count[2] = {1, 1};
+    hsize_t file_starts[2], block[2];   // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK); // file offset for each rank
     file_starts[1] = 0;
 
-    count[0]      = dim_1;
-    count[1]      = dim_2;
+    block[0]      = dim_1;
+    block[1]      = dim_2;
     *memspace_out = H5Screate_simple(2, mem_dims, NULL);
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, block);
     return dim_1 * dim_2;
 }
 
@@ -195,6 +197,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
 
+    hsize_t count[3] = {1, 1, 1};
     hsize_t file_starts[3], file_range[3]; // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -205,7 +208,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 
     *memspace_out = H5Screate_simple(3, mem_dims, NULL);
 
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, file_range);
     return dim_1 * dim_2 * dim_3;
 }
 
