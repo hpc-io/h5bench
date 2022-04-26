@@ -860,7 +860,7 @@ set_globals(const bench_params *params)
 {
     NUM_PARTICLES = params->num_particles;
     NUM_TIMESTEPS = params->cnt_time_step;
-    // following variables only used to generate data
+    // Following variables only used to generate data
     X_DIM                       = X_RAND;
     Y_DIM                       = Y_RAND;
     Z_DIM                       = Z_RAND;
