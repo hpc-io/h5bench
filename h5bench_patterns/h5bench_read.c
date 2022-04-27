@@ -125,7 +125,7 @@ int
 _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t *filespace_in, hid_t *memspace_out)
 {
     hsize_t count[1] = {1};
-    *memspace_out = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, NULL);
+    *memspace_out    = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, NULL);
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
                         (hsize_t *)&read_elem_cnt);
     return read_elem_cnt;

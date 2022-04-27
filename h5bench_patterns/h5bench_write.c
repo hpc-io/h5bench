@@ -341,8 +341,8 @@ int
 set_select_spaces_default(hid_t *filespace_out, hid_t *memspace_out)
 {
     hsize_t count[1] = {1};
-    *filespace_out = H5Screate_simple(1, (hsize_t *)&TOTAL_PARTICLES, NULL);
-    *memspace_out  = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, NULL);
+    *filespace_out   = H5Screate_simple(1, (hsize_t *)&TOTAL_PARTICLES, NULL);
+    *memspace_out    = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, NULL);
     H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
                         (hsize_t *)&NUM_PARTICLES);
     //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
