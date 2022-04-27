@@ -323,8 +323,8 @@ set_select_spaces_default(bench_params params, hid_t *filespace_out, hid_t *mems
         *memspace_out   = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, fdim);
     }
 
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        count, (hsize_t *)&NUM_PARTICLES);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
+                        (hsize_t *)&NUM_PARTICLES);
     //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
     return 0;
 }
