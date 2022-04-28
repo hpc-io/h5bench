@@ -102,7 +102,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
                          ts->es_data);
     ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
                          ts->es_data);
