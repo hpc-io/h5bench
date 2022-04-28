@@ -442,6 +442,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
+
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
             printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
@@ -490,7 +491,9 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
-    //    if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
+
+    if (MY_RANK == 0)
+        printf("    %s: Finished writing time step \n", __func__);
 }
 
 void
@@ -814,8 +817,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
 
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts->dset_ids[j] != 0) {
+                    H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+                }
+            }
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
 
             ts->status = TS_READY;
@@ -1074,7 +1080,7 @@ main(int argc, char *argv[])
 
     if (stat < 0) {
         if (MY_RANK == 0)
-            printf("=============== Benchmark failed ================\n");
+            printf("\n==================== Benchmark Failed ====================\n");
         assert(0);
     }
 
