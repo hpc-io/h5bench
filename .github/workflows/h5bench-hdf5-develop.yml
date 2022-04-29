@@ -109,18 +109,23 @@ jobs:
 
       - name: Build VOL-CACHE
         run: |
-          current="$PWD"
           export HDF5_ROOT=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots/install
-          [ -e $current/vol ] || mkdir $current/vol
-          [ -e $current/vol/bin ] || mkdir $current/vol/bin
-          [ -e $current/vol/lib ] || mkdir $current/vol/lib
-          [ -e $current/vol/include ] || mkdir $current/vol/include
-          export HDF5_VOL_DIR=$current/vol/
-          cp -r $current/vol-async/src/*.so $current/vol-async/src/*.a $current/vol/lib/
-          cp -r $current/vol-async/src/*.h $current/vol/include/
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_DIR=/opt/vol-connectors
+
+          [ -e $HDF5_VOL_DIR ] || mkdir $HDF5_VOL_DIR
+          [ -e $HDF5_VOL_DIR/bin ] || mkdir $HDF5_VOL_DIR/bin
+          [ -e $HDF5_VOL_DIR/lib ] || mkdir $HDF5_VOL_DIR/lib
+          [ -e $HDF5_VOL_DIR/include ] || mkdir $HDF5_VOL_DIR/include
+
+          cp -r $ASYNC_DIR/lib/*.so $ASYNC_DIR/lib/*.a $HDF5_VOL_DIR/lib/
+          cp -r $ASYNC_DIR/include/*.h $HDF5_VOL_DIR/include/
+
           export LD_LIBRARY_PATH=$HDF5_VOL_DIR/lib:$HDF5_ROOT/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
-          cd $current/vol-cache/src
+
+          cd $HDF5_VOL_DIR/src
+
           make all
 
       - name: Build h5bench SYNC
@@ -137,8 +142,6 @@ jobs:
 
       - name: Build h5bench ASYNC
         run: |
-          current="$PWD"
-
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
           export ABT_HOME=/opt/argobots
@@ -157,19 +160,20 @@ jobs:
 
       - name: Build h5bench CACHE
         run: |
-          current="$PWD"
           export HDF5_ROOT=/opt/hdf5
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
-          export HDF5_VOL_DIR=$current/vol
+          export HDF5_VOL_HOME=/opt/vol-connectors
+
           mkdir build-cache
           cd build-cache
+
           cmake .. \
             -DWITH_CACHE_VOL:BOOL=ON \
             -DWITH_ASYNC_VOL:BOOL=ON \
-            -DCMAKE_C_FLAGS="-I/$HDF5_VOL_DIR/include -L/$HDF5_VOL_DIR/lib" \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
-          make
+            -DCMAKE_C_FLAGS="-I/$HDF5_VOL_HOME/include -L/$HDF5_VOL_HOME/lib" \
+            -DH5BENCH_ALL=ON
+          make -j 2
 
       - name: Test h5bench SYNC write/read
         run: |
@@ -379,8 +383,6 @@ jobs:
 
       - name: Test h5bench ASYNC write 2D contiguous (memory) interleaved (file)
         run: |
-          current="$PWD"
-
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
@@ -501,47 +503,53 @@ jobs:
 
       - name: Test h5bench CACHE write 3D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
           export HDF5_DIR=/opt/hdf5
-          export HDF5_ROOT=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots/install
-          export ASYNC_DIR=$current/vol-async/src
-          export HDF5_VOL_DIR=$current/vol
-          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_HOME=/opt/vol-connectors
+    
           cd build-cache
+          
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
           [ -e SSD ] || mkdir SSD
+          
           python3 ../samples/update.py ../samples/cache-write-3d-contig-contig.json
+          
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-3d-contig-contig.json
 
       - name: Test h5bench CACHE write 2D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
           export HDF5_DIR=/opt/hdf5
-          export HDF5_ROOT=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots/install
-          export ASYNC_DIR=$current/vol-async/src
-          export HDF5_VOL_DIR=$current/vol
-          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_HOME=/opt/vol-connectors
+          
           cd build-cache
+          
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
           python3 ../samples/update.py ../samples/cache-write-2d-contig-contig.json
+          
           [ -e SSD ] || mkdir SSD
+          
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-2d-contig-contig.json
 
       - name: Test h5bench CACHE write 1D contiguous (memory) contiguous (file)
         run: |
-          current="$PWD"
           export HDF5_DIR=/opt/hdf5
-          export HDF5_ROOT=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots/install
-          export ASYNC_DIR=$current/vol-async/src
-          export HDF5_VOL_DIR=$current/vol
-          export LD_PRELOAD="$ABT_DIR/lib/libabt.so $ASYNC_DIR/libh5async.so"
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_HOME=/opt/vol-connectors
+          
           cd build-cache
+          
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
           python3 ../samples/update.py ../samples/cache-write-1d-contig-contig.json
+          
           [ -e SSD ] || mkdir SSD
+          
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-1d-contig-contig.json
 
       - name: Upload artifact
