@@ -315,6 +315,7 @@ set_dspace_plist(hid_t *plist_id_out, int data_collective)
 int
 set_select_spaces_default(bench_params params, hid_t *filespace_out, hid_t *memspace_out)
 {
+    hsize_t count[1] = {1};
 
     if (params.useCompress) {
         hsize_t fdim[1] = {H5S_UNLIMITED};
@@ -322,8 +323,8 @@ set_select_spaces_default(bench_params params, hid_t *filespace_out, hid_t *mems
         *memspace_out   = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, fdim);
     }
 
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        (hsize_t *)&NUM_PARTICLES, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
+                        (hsize_t *)&NUM_PARTICLES);
     //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
     return 0;
 }
@@ -367,11 +368,12 @@ set_select_space_2D_array(bench_params params, hid_t *filespace_out, hid_t *mems
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
-    hsize_t file_starts[2], count[2];   // select start point and range in each dimension.
+    hsize_t count[2] = {1, 1};
+    hsize_t file_starts[2], block[2];   // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK); // file offset for each rank
     file_starts[1] = 0;
-    count[0]       = dim_1;
-    count[1]       = dim_2;
+    block[0]       = dim_1;
+    block[1]       = dim_2;
 
     if (params.useCompress) {
         hsize_t fdim[1] = {H5S_UNLIMITED};
@@ -380,9 +382,9 @@ set_select_space_2D_array(bench_params params, hid_t *filespace_out, hid_t *mems
     }
 
     if (MY_RANK == 0)
-        printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n", dim_1,
-               dim_2, file_starts[0], file_starts[1], count[0], count[1]);
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
+        printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_blk = %llu, y_blk = %llu\n", dim_1,
+               dim_2, file_starts[0], file_starts[1], block[0], block[1]);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, block);
     return 0;
 }
 
@@ -398,6 +400,8 @@ set_select_space_multi_3D_array(bench_params params, hid_t *filespace_out, hid_t
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS;
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
+
+    hsize_t count[3] = {1, 1, 1};
     hsize_t file_starts[3], file_range[3]; // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -412,7 +416,7 @@ set_select_space_multi_3D_array(bench_params params, hid_t *filespace_out, hid_t
         *memspace_out   = H5Screate_simple(3, mem_dims, fdim);
     }
 
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, file_range);
     return 0;
 }
 
@@ -789,8 +793,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts->dset_ids[j] != 0) {
+                    H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+                }
+            }
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
             ts->status = TS_READY;
             t4         = get_time_usec();
@@ -1037,7 +1044,7 @@ main(int argc, char *argv[])
 
     if (stat < 0) {
         if (MY_RANK == 0)
-            printf("=============== Benchmark failed ===============\n");
+            printf("\n==================== Benchmark Failed ====================\n");
         assert(0);
     }
 
