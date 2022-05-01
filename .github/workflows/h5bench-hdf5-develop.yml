@@ -500,7 +500,8 @@ jobs:
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
 
-      - name: Test h5bench CACHE write 3D contiguous (memory) contiguous (file)
+      
+      - name: Test h5bench CACHE write 1D contiguous (memory) strided (file)
         run: |
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
@@ -513,43 +514,233 @@ jobs:
           
           [ -e SSD ] || mkdir SSD
           
-          python3 ../samples/update.py ../samples/cache-write-3d-contig-contig.json
-          
-          ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-3d-contig-contig.json
+          python3 ../samples/update.py ../samples/async-write-1d-contig-strided.json
 
-      - name: Test h5bench CACHE write 2D contiguous (memory) contiguous (file)
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=/opt/argobots
-          export ASYNC_DIR=/opt/vol-async
-          export HDF5_VOL_DIR=/opt/vol-cache
-          
-          cd build-cache
-          
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
-          
-          python3 ../samples/update.py ../samples/cache-write-2d-contig-contig.json
-          
-          [ -e SSD ] || mkdir SSD
-          
-          ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-2d-contig-contig.json
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-strided.json
 
       - name: Test h5bench CACHE write 1D contiguous (memory) contiguous (file)
         run: |
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
-          export HDF5_VOL_DIR=/opt/vol-cache
-          
+    
           cd build-cache
           
           printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
           
-          python3 ../samples/update.py ../samples/cache-write-1d-contig-contig.json
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig.json
+
+      - name: Test h5bench CACHE write 1D contiguous (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-interleaved.json
+
+      - name: Test h5bench CACHE write 1D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
           
-          ./h5bench --debug --abort-on-failure --validate-mode ../samples/cache-write-1d-contig-contig.json
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-contig.json
+
+      - name: Test h5bench CACHE write 1D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-interleaved.json
+
+      - name: Test h5bench CACHE write 2D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig.json
+
+      - name: Test h5bench CACHE write 2D contiguous (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-interleaved.json
+
+      - name: Test h5bench CACHE write 2D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-contig.json
+
+      - name: Test h5bench CACHE write 2D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-interleaved.json
+
+      - name: Test h5bench CACHE write 3D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-3d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-3d-contig-contig.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-partial.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench CACHE read 2D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench CACHE read 3D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
 
       - name: Upload artifact
         if: always()
