@@ -11,6 +11,9 @@ jobs:
     container:
       image: hpcio/hdf5-1.10.4
     timeout-minutes: 60
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - uses: actions/checkout@v1
@@ -33,7 +36,7 @@ jobs:
 
           ./configure --prefix=${PNETCDF_DIR} CC=mpicc
 
-          make -j 8
+          make -j 2
           make install
 
       - name: Build h5bench
@@ -43,8 +46,10 @@ jobs:
           
           mkdir build
           cd build
-          CC=mpicc cmake .. -DH5BENCH_ALL=ON
-          make -j 8
+
+          cmake .. \
+            -DH5BENCH_ALL=ON
+          make -j 2
 
       - name: Test h5bench SYNC write/read
         run: |

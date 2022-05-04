@@ -66,7 +66,8 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
     hsize_t dims[3];
     hsize_t dims_memory[3];
     hsize_t start[3];
-    hsize_t count[3];
+    hsize_t count[3] = {1, 1, 1};
+    hsize_t block[3];
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 
@@ -136,17 +137,17 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
     dims[0]        = 2 * params.dim_1;
     dims_memory[0] = params.dim_1;
     start[0]       = params.dim_1;
-    count[0]       = params.dim_1;
+    block[0]       = params.dim_1;
 
     dims[1]        = params.dim_2;
     dims_memory[1] = params.dim_2;
     start[1]       = 0;
-    count[1]       = params.dim_2;
+    block[1]       = params.dim_2;
 
     dims[2]        = params.dim_3;
     dims_memory[2] = params.dim_3;
     start[2]       = 0;
-    count[2]       = params.dim_3;
+    block[2]       = params.dim_3;
 
     t1 = get_time_usec();
 
@@ -174,7 +175,7 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
     H5Dset_extent(dset_ids[6], dims);
     H5Dset_extent(dset_ids[7], dims);
     filespace = H5Dget_space(dset_ids[0]);
-    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, block);
 
     switch (params.access_pattern.pattern_read) {
         case CONTIG_1D:
@@ -255,12 +256,13 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
 int
 _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t *filespace_in, hid_t *memspace_out)
 {
+    hsize_t count[1] = {1};
     /* Append to dataset, set dim to H5S_UNLIMITED. */
     hsize_t fdim[1] = {H5S_UNLIMITED};
     *memspace_out   = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, fdim);
 
-    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        (hsize_t *)&read_elem_cnt, NULL);
+    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
+                        (hsize_t *)&read_elem_cnt);
     return read_elem_cnt;
 }
 
@@ -305,14 +307,15 @@ _set_dataspace_seq_2D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
-    hsize_t file_starts[2], count[2];   // select start point and range in each dimension.
+    hsize_t count[2] = {1, 1};
+    hsize_t file_starts[2], block[2];   // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK); // file offset for each rank
     file_starts[1] = 0;
 
-    count[0]      = dim_1;
-    count[1]      = dim_2;
+    block[0]      = dim_1;
+    block[1]      = dim_2;
     *memspace_out = H5Screate_simple(2, mem_dims, NULL);
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, block);
     return dim_1 * dim_2;
 }
 
@@ -329,6 +332,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
 
+    hsize_t count[3] = {1, 1, 1};
     hsize_t file_starts[3], file_range[3]; // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -339,7 +343,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 
     *memspace_out = H5Screate_simple(3, mem_dims, NULL);
 
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, file_range);
     return dim_1 * dim_2 * dim_3;
 }
 
@@ -446,8 +450,11 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts->dset_ids[j] != 0) {
+                    H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+                }
+            }
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
             ts->status = TS_READY;
             t4         = get_time_usec();
