@@ -20,7 +20,7 @@ def pytest_configure(config):
             data = json.load(f)
 
             data['vol']['library'] = '{}:{}:{}'.format(
-                ASYNC_DIR,
+                '/'.join([ABT_DIR, 'lib']),
                 '/'.join([ABT_DIR, 'lib']),
                 '/'.join([HDF5_DIR, 'lib'])
             )

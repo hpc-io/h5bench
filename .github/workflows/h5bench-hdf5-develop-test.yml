@@ -120,8 +120,6 @@ jobs:
 
       - name: Build h5bench ASYNC
         run: |
-          current="$PWD"
-
           export HDF5_HOME=/opt/hdf5
           export PNETCDF_HOME=/opt/pnetcdf
           export ABT_HOME=/opt/argobots
@@ -140,12 +138,20 @@ jobs:
 
       - name: Test h5bench SYNC
         run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
           cd build-sync
 
           ctest --verbose .
 
       - name: Test h5bench ASYNC
         run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
           cd build-async
 
           ctest --verbose .
