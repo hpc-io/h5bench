@@ -34,7 +34,7 @@ jobs:
           tar -zxf pnetcdf-1.12.2.tar.gz
           mv pnetcdf-1.12.2 pnetcdf
 
-          pip install pytest
+          python3 -m pip install pytest
 
       - name: Build HDF5 develop
         run: |
