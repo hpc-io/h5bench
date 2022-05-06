@@ -1,4 +1,4 @@
-name: h5bench (HDF5 develop) 
+name: h5bench (HDF5 develop test) 
 
 on:
   pull_request:
