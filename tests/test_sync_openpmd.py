@@ -10,7 +10,6 @@ DEBUG = True
 ABORT = True
 VALIDATE = True
 
-PREFIX = '../build'
 BINARY_WRITE = 'h5bench_openpmd_write'
 BINARY_READ = 'h5bench_openpmd_read'
 
@@ -18,8 +17,8 @@ samples = glob.glob('sync-openpmd*.json')
 
 @pytest.mark.parametrize('configuration', samples)
 @pytest.mark.skipif(
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_WRITE)) == False or
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_READ)) == False,
+	os.path.isfile(BINARY_WRITE) == False or
+	os.path.isfile(BINARY_READ) == False,
 	reason="OpenPMD is disabled"
 )
 def test_benchmark(configuration):
@@ -27,7 +26,7 @@ def test_benchmark(configuration):
 
 	benchmark = h5bench.H5bench(
 		configuration,
-		PREFIX,
+		None,
 		DEBUG,
 		ABORT,
 		VALIDATE

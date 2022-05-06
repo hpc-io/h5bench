@@ -10,14 +10,13 @@ DEBUG = True
 ABORT = True
 VALIDATE = True
 
-PREFIX = '../build'
 BINARY = 'h5bench_exerciser'
 
 samples = glob.glob('sync-exerciser*.json')
 
 @pytest.mark.parametrize('configuration', samples)
 @pytest.mark.skipif(
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY)) == False,
+	os.path.isfile(BINARY) == False,
 	reason="Exerciser is disabled"
 )
 def test_benchmark(configuration):
@@ -25,7 +24,7 @@ def test_benchmark(configuration):
 
 	benchmark = h5bench.H5bench(
 		configuration,
-		PREFIX,
+		None,
 		DEBUG,
 		ABORT,
 		VALIDATE

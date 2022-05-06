@@ -10,8 +10,7 @@ DEBUG = True
 ABORT = True
 VALIDATE = True
 
-PREFIX = '../build'
-BINARY_WRITE = 'h5bench_write'
+BINARY_WRITE = 'h5bench_ cwrite'
 BINARY_APPEND = 'h5bench_append'
 BINARY_OVERWRITE = 'h5bench_overwrite'
 BINARY_UNLIMITED = 'h5bench_write_unlimited'
@@ -24,10 +23,10 @@ samples = \
 
 @pytest.mark.parametrize('configuration', samples)
 @pytest.mark.skipif(
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_WRITE)) == False or
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_APPEND)) == False or
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_OVERWRITE)) == False or
-	os.path.isfile('{}/{}'.format(PREFIX, BINARY_UNLIMITED)) == False,
+	os.path.isfile(BINARY_WRITE) == False or
+	os.path.isfile(BINARY_APPEND) == False or
+	os.path.isfile(BINARY_OVERWRITE) == False or
+	os.path.isfile(BINARY_UNLIMITED) == False,
 	reason="Benchmarks (ASYNC) are disabled"
 )
 def test_benchmark(configuration):
@@ -35,7 +34,7 @@ def test_benchmark(configuration):
 
 	benchmark = h5bench.H5bench(
 		configuration,
-		PREFIX,
+		None,
 		DEBUG,
 		ABORT,
 		VALIDATE
