@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import json
 import time
 import uuid
@@ -58,7 +59,7 @@ class H5bench:
                 if m in shell:
                     print('You should not call MPI directly when running h5bench.')
 
-                    exit(-1)
+                    sys.exit(os.EX_USAGE)
         else:
             shell = None
 
@@ -161,7 +162,7 @@ class H5bench:
             if p not in setup:
                 self.logger.critical('JSON configuration file is invalid: "{}" property is missing'.format(p))
 
-                exit(-1)
+                sys.exit(os.EX_DATAERR)
 
     def run(self):
         """Run all the benchmarks/kernels."""
@@ -173,7 +174,7 @@ class H5bench:
         except Exception:
             self.logger.critical('Unable to find and parse the input configuration file')
 
-            exit(-1)
+            sys.exit(os.EX_NOINPUT)
 
         self.validate_json(setup)
         self.prepare(setup)
@@ -241,11 +242,16 @@ class H5bench:
             if 'DYLD_LIBRARY_PATH' not in self.vol_environment:
                 self.vol_environment['DYLD_LIBRARY_PATH'] = ''
 
+            if 'LD_PRELOAD' not in self.vol_environment:
+                self.vol_environment['LD_PRELOAD'] = ''
+
             if 'library' in vol:
                 self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
                 self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
+            if 'preload' in vol:
+                self.vol_environment['LD_PRELOAD'] += vol['preload']
 
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
 
@@ -257,6 +263,9 @@ class H5bench:
 
         if 'DYLD_LIBRARY_PATH' in self.vol_environment:
             self.logger.debug('DYLD_LIBRARY_PATH: %s', self.vol_environment['DYLD_LIBRARY_PATH'])
+
+        if 'LD_PRELOAD' in self.vol_environment:
+            self.logger.debug('LD_PRELOAD: %s', self.vol_environment['LD_PRELOAD'])
 
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
@@ -284,6 +293,23 @@ class H5bench:
 
             if 'ABT_THREAD_STACKSIZE' in self.vol_environment:
                 del self.vol_environment['ABT_THREAD_STACKSIZE']
+
+    def check_for_hdf5_error(self, stderr_file_name):
+        has_error_message = False
+
+        with open(stderr_file_name, mode='r') as stderr_file:
+            lines = stderr_file.readlines()
+
+            for line in lines:
+                if 'Error detected in HDF5' in line:
+                    has_error_message = True
+
+                    self.logger.error(line.strip())
+                    self.logger.error('Check %s for detailed log', stderr_file_name)
+
+                    sys.exit(os.EX_IOERR)
+
+        return has_error_message
 
     def run_pattern(self, id, operation, setup, vol):
         """Run the h5bench_patterns (write/read) benchmarks."""
@@ -354,7 +380,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -362,7 +388,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 
@@ -389,7 +415,7 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-            exit(-1)
+            sys.exit(os.EX_SOFTWARE)
 
     def is_available(self, executable):
         """Check if binary is available."""
@@ -434,7 +460,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -442,7 +468,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 
@@ -450,7 +476,7 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-            exit(-1)
+            sys.exit(os.EX_SOFTWARE)
 
     def run_metadata(self, id, setup):
         """Run the metadata stress benchmark."""
@@ -499,7 +525,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -507,7 +533,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 
@@ -515,7 +541,7 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-            exit(-1)
+            sys.exit(os.EX_SOFTWARE)
 
     def run_amrex(self, id, setup, vol):
         """Run the AMReX benchmark."""
@@ -577,7 +603,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -585,7 +611,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 
@@ -596,7 +622,7 @@ class H5bench:
         except Exception as e:
             self.logger.error('Unable to run the benchmark: %s', e)
 
-            exit(-1)
+            sys.exit(os.EX_SOFTWARE)
 
     def run_openpmd(self, id, setup):
         """Run the OpenPMD kernel benchmark."""
@@ -653,7 +679,7 @@ class H5bench:
             else:
                 self.logger.error('Unsupported operation for OpenPMD benchmark')
 
-                exit(-1)
+                sys.exit(os.EX_SOFTWARE)
 
             self.logger.info(command)
 
@@ -667,7 +693,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -675,7 +701,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 
@@ -730,7 +756,7 @@ class H5bench:
                 s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
                 sOutput, sError = s.communicate()
 
-                if s.returncode == 0:
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
                     self.logger.info('SUCCESS')
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
@@ -738,7 +764,7 @@ class H5bench:
                     if self.abort:
                         self.logger.critical('h5bench execution aborted upon first error')
 
-                        exit(-1)
+                        sys.exit(os.EX_SOFTWARE)
 
             end = time.time()
 

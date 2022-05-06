@@ -340,10 +340,11 @@ set_dspace_plist(hid_t *plist_id_out, int data_collective)
 int
 set_select_spaces_default(hid_t *filespace_out, hid_t *memspace_out)
 {
-    *filespace_out = H5Screate_simple(1, (hsize_t *)&TOTAL_PARTICLES, NULL);
-    *memspace_out  = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, NULL);
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        (hsize_t *)&NUM_PARTICLES, NULL);
+    hsize_t count[1] = {1};
+    *filespace_out   = H5Screate_simple(1, (hsize_t *)&TOTAL_PARTICLES, NULL);
+    *memspace_out    = H5Screate_simple(1, (hsize_t *)&NUM_PARTICLES, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
+                        (hsize_t *)&NUM_PARTICLES);
     //    printf("TOTAL_PARTICLES = %d, NUM_PARTICLES = %d \n", TOTAL_PARTICLES, NUM_PARTICLES);
     return 0;
 }
@@ -382,18 +383,19 @@ set_select_space_2D_array(hid_t *filespace_out, hid_t *memspace_out, unsigned lo
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
-    hsize_t file_starts[2], count[2];   // select start point and range in each dimension.
+    hsize_t count[2] = {1, 1};
+    hsize_t file_starts[2], block[2];   // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK); // file offset for each rank
     file_starts[1] = 0;
-    count[0]       = dim_1;
-    count[1]       = dim_2;
+    block[0]       = dim_1;
+    block[1]       = dim_2;
 
     *filespace_out = H5Screate_simple(2, file_dims, NULL);
     *memspace_out  = H5Screate_simple(2, mem_dims, NULL);
     if (MY_RANK == 0)
-        printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_cnt = %llu, y_cnt = %llu\n", dim_1,
-               dim_2, file_starts[0], file_starts[1], count[0], count[1]);
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
+        printf("%lu * %lu 2D array, my x_start = %llu, y_start = %llu, x_blk = %llu, y_blk = %llu\n", dim_1,
+               dim_2, file_starts[0], file_starts[1], block[0], block[1]);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, block);
     return 0;
 }
 
@@ -409,6 +411,8 @@ set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, unsig
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS;
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
+
+    hsize_t count[3] = {1, 1, 1};
     hsize_t file_starts[3], file_range[3]; // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -420,7 +424,7 @@ set_select_space_multi_3D_array(hid_t *filespace_out, hid_t *memspace_out, unsig
     *filespace_out = H5Screate_simple(3, file_dims, NULL);
     *memspace_out  = H5Screate_simple(3, mem_dims, NULL);
 
-    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
+    H5Sselect_hyperslab(*filespace_out, H5S_SELECT_SET, file_starts, NULL, count, file_range);
     return 0;
 }
 
@@ -438,6 +442,7 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
         dcpl = COMPRESS_INFO.dcpl_id;
     else
         dcpl = H5P_DEFAULT;
+
     if (MY_RANK == 0) {
         if (COMPRESS_INFO.USE_COMPRESS)
             printf("Parallel compressed: chunk_dim1 = %llu, chunk_dim2 = %llu\n", COMPRESS_INFO.chunk_dims[0],
@@ -486,7 +491,9 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
     *metadata_time = t2 - t1;
     *data_time     = t3 - t2;
-    //    if (MY_RANK == 0) printf ("    %s: Finished writing time step \n", __func__);
+
+    if (MY_RANK == 0)
+        printf("    %s: Finished writing time step \n", __func__);
 }
 
 void
@@ -810,8 +817,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
 
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts->dset_ids[j] != 0) {
+                    H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+                }
+            }
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
 
             ts->status = TS_READY;
@@ -856,7 +866,7 @@ set_globals(const bench_params *params)
 {
     NUM_PARTICLES = params->num_particles;
     NUM_TIMESTEPS = params->cnt_time_step;
-    // following variables only used to generate data
+    // Following variables only used to generate data
     X_DIM                       = X_RAND;
     Y_DIM                       = Y_RAND;
     Z_DIM                       = Z_RAND;
@@ -1070,7 +1080,7 @@ main(int argc, char *argv[])
 
     if (stat < 0) {
         if (MY_RANK == 0)
-            printf("=============== Benchmark failed ================\n");
+            printf("\n==================== Benchmark Failed ====================\n");
         assert(0);
     }
 
