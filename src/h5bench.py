@@ -37,7 +37,7 @@ class H5bench:
         self.check_parallel()
 
         self.configure_log(debug)
-        
+
         self.prefix = prefix
         self.setup = setup
         self.abort = abort
@@ -801,6 +801,7 @@ def main():
 
     BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate)
     BENCH.run()
+
 
 if __name__ == '__main__':
     main()
