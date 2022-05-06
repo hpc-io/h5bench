@@ -34,7 +34,7 @@ def test_benchmark(configuration):
 
 	benchmark = h5bench.H5bench(
 		configuration,
-		PREFIX,
+		None,
 		DEBUG,
 		ABORT,
 		VALIDATE
