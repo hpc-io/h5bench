@@ -10,7 +10,7 @@ DEBUG = True
 ABORT = True
 VALIDATE = True
 
-BINARY_WRITE = 'h5bench_ cwrite'
+BINARY_WRITE = 'h5bench_write'
 BINARY_APPEND = 'h5bench_append'
 BINARY_OVERWRITE = 'h5bench_overwrite'
 BINARY_UNLIMITED = 'h5bench_write_unlimited'

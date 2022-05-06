@@ -10,7 +10,7 @@ DEBUG = True
 ABORT = True
 VALIDATE = True
 
-BINARY = 'h5bench_metadata'
+BINARY = 'h5bench_hdf5_iotest'
 
 samples = glob.glob('sync-metadata*.json')
 

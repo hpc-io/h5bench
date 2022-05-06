@@ -12,7 +12,7 @@ VALIDATE = True
 
 BINARY = 'h5bench_amrex_sync'
 
-samples = glob.glob('samples/async-amrex*.json')
+samples = glob.glob('sync-amrex*.json')
 
 @pytest.mark.parametrize('configuration', samples)
 @pytest.mark.skipif(
