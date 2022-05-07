@@ -20,12 +20,18 @@ def pytest_configure(config):
             data = json.load(f)
 
             data['vol']['library'] = '{}:{}:{}'.format(
-                '/'.join([ABT_DIR, 'lib']),
+                '/'.join([ASYNC_DIR, 'lib']),
                 '/'.join([ABT_DIR, 'lib']),
                 '/'.join([HDF5_DIR, 'lib'])
             )
 
-            data['vol']['path'] = ASYNC_DIR
+            data['vol']['preload'] = '{}:{}:{}'.format(
+                '/'.join([ASYNC_DIR, 'lib', 'libh5async.so']),
+                '/'.join([ABT_DIR, 'lib', 'libabt.so']),
+                '/'.join([HDF5_DIR, 'lib', 'libhdf5.so'])
+            )
+
+            data['vol']['path'] = '/'.join([ASYNC_DIR, 'lib'])
 
             with open(file, 'w') as f:
                 json.dump(data, f, indent=4, sort_keys=False)
