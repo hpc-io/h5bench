@@ -115,25 +115,6 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
 
-      - name: Test h5bench ASYNC write/read
-        run: |
-          current="$PWD"
-
-          export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=$current/vol-async/argobots/install
-          export VOL_DIR=$current/vol-async
-          export ASYNC_DIR=$VOL_DIR/src
-          
-          export LD_PRELOAD=$ABT_DIR/lib/libabt.so
-
-          cd build-async
-
-          python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
-
-          cat ../samples/async-write-read-contig-1d-small.json
-
-          ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
-
       - name: Test h5bench SYNC write/read
         run: |
           cd build-sync
@@ -265,8 +246,6 @@ jobs:
           cd build-async
 
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
-
-          cat ../samples/async-write-read-contig-1d-small.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
 
