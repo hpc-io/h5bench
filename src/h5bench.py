@@ -11,6 +11,7 @@ import distutils.spawn
 import argparse
 import collections
 import subprocess
+import version
 import logging
 import logging.handlers
 
@@ -820,7 +821,7 @@ def main():
         '-V',
         '--version',
         action='version',
-        version='%(prog)s (version 1.1)'
+        version='%(prog)s ' + version.__version__
     )
 
     ARGS = PARSER.parse_args()

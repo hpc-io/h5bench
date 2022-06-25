@@ -254,7 +254,14 @@ configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench CO
 
 install(
     FILES
-    h5bench
+    src/h5bench.py RENAME h5bench
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    src/version.py
     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     DESTINATION bin
 )
