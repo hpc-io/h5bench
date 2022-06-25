@@ -249,6 +249,7 @@ if(H5BENCH_OPENPMD)
 endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/version.py ${CMAKE_BINARY_DIR}/version.py COPYONLY)
 
 # Install binaries ############################################################
 
