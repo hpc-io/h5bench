@@ -11,8 +11,8 @@ import distutils.spawn
 import argparse
 import collections
 import subprocess
-import h5bench_version as version
-import h5bench_configuration as configuration
+import h5bench_version
+import h5bench_configuration
 import logging
 import logging.handlers
 
@@ -20,18 +20,18 @@ import logging.handlers
 class H5bench:
     """H5bench benchmark suite."""
 
-    H5BENCH_PATTERNS_WRITE = configuration.__install__ + 'h5bench_write'
-    H5BENCH_PATTERNS_WRITE_UNLIMITED = configuration.__install__ + 'h5bench_write_unlimited'
-    H5BENCH_PATTERNS_APPEND = configuration.__install__ + 'h5bench_append'
-    H5BENCH_PATTERNS_OVERWRITE = configuration.__install__ + 'h5bench_overwrite'
-    H5BENCH_PATTERNS_READ = configuration.__install__ + 'h5bench_read'
-    H5BENCH_EXERCISER = configuration.__install__ + 'h5bench_exerciser'
-    H5BENCH_METADATA = configuration.__install__ + 'h5bench_hdf5_iotest'
-    H5BENCH_AMREX_SYNC = configuration.__install__ + 'h5bench_amrex_sync'
-    H5BENCH_AMREX_ASYNC = configuration.__install__ + 'h5bench_amrex_async'
-    H5BENCH_OPENPMD_WRITE = configuration.__install__ + 'h5bench_openpmd_write'
-    H5BENCH_OPENPMD_READ = configuration.__install__ + 'h5bench_openpmd_read'
-    H5BENCH_E3SM = configuration.__install__ + 'h5bench_e3sm'
+    H5BENCH_PATTERNS_WRITE = 'h5bench_write'
+    H5BENCH_PATTERNS_WRITE_UNLIMITED = 'h5bench_write_unlimited'
+    H5BENCH_PATTERNS_APPEND = 'h5bench_append'
+    H5BENCH_PATTERNS_OVERWRITE = 'h5bench_overwrite'
+    H5BENCH_PATTERNS_READ = 'h5bench_read'
+    H5BENCH_EXERCISER = 'h5bench_exerciser'
+    H5BENCH_METADATA = 'h5bench_hdf5_iotest'
+    H5BENCH_AMREX_SYNC = 'h5bench_amrex_sync'
+    H5BENCH_AMREX_ASYNC = 'h5bench_amrex_async'
+    H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
+    H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
+    H5BENCH_E3SM = 'h5bench_e3sm'
 
     def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None):
         """Initialize the suite."""
@@ -362,7 +362,7 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + benchmark_path
             else:
-                benchmark_path = configuration.__install__ + '/' + benchmark_path
+                benchmark_path = h5bench_configuration.__install__ + '/' + benchmark_path
 
             command = '{} {} {} {}'.format(
                 self.mpi,
@@ -448,7 +448,7 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER
             else:
-                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_EXERCISER
+                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -518,7 +518,7 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_METADATA
             else:
-                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_METADATA
+                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -604,7 +604,7 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.binary
             else:
-                benchmark_path = configuration.__install__ + '/' + binary
+                benchmark_path = h5bench_configuration.__install__ + '/' + binary
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -684,7 +684,7 @@ class H5bench:
                 if self.prefix:
                     benchmark_path = self.prefix + '/' + binary
                 else:
-                    benchmark_path = configuration.__install__ + '/' + binary
+                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
 
                 command = '{} {} {}'.format(
                     self.mpi,
@@ -697,7 +697,7 @@ class H5bench:
                 if self.prefix:
                     benchmark_path = self.prefix + '/' + binary
                 else:
-                    benchmark_path = configuration.__install__ + '/' + binary
+                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
 
                 file_path = '{}/8a_parallel_3Db'.format(self.directory)
 
@@ -771,7 +771,7 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
             else:
-                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_E3SM
+                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM
 
             command = '{} {} {} {}'.format(
                 self.mpi,
@@ -856,7 +856,7 @@ def main():
         '-V',
         '--version',
         action='version',
-        version='%(prog)s ' + version.__version__
+        version='%(prog)s ' + h5bench_version.__version__
     )
 
     ARGS = PARSER.parse_args()
