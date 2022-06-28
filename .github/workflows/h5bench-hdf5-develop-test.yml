@@ -118,6 +118,12 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
 
+      - name: Install h5bench SYNC
+        run: |
+          cd build-sync
+
+          make install
+
       - name: Build h5bench ASYNC
         run: |
           export HDF5_HOME=/opt/hdf5
@@ -135,6 +141,12 @@ jobs:
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
           make -j 2
+
+      - name: Install h5bench ASYNC
+        run: |
+          cd build-Async
+
+          make install
 
       - name: Test h5bench SYNC
         run: |
