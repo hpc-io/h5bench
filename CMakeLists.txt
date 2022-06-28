@@ -256,6 +256,16 @@ install(
     DESTINATION bin
 )
 
+install(
+    TARGETS
+    h5bench_write
+    h5bench_write_unlimited
+    h5bench_overwrite
+    h5bench_append
+    h5bench_read
+    DESTINATION bin
+)
+
 if(H5BENCH_EXERCISER)
     install(
         TARGETS
