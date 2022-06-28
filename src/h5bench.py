@@ -701,7 +701,6 @@ class H5bench:
                     else:
                         benchmark_path = binary
 
-
                 command = '{} {} {}'.format(
                     self.mpi,
                     benchmark_path,
