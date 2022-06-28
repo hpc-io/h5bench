@@ -50,11 +50,6 @@ jobs:
           cmake .. \
             -DH5BENCH_ALL=ON
           make -j 2
-
-      - name: Install h5bench
-        run: |
-          cd build
-
           make install
 
       - name: Test h5bench SYNC write/read
