@@ -11,7 +11,8 @@ import distutils.spawn
 import argparse
 import collections
 import subprocess
-import version
+import h5bench_version as version
+import h5bench_configuration as configuration
 import logging
 import logging.handlers
 
@@ -19,18 +20,18 @@ import logging.handlers
 class H5bench:
     """H5bench benchmark suite."""
 
-    H5BENCH_PATTERNS_WRITE = 'h5bench_write'
-    H5BENCH_PATTERNS_WRITE_UNLIMITED = 'h5bench_write_unlimited'
-    H5BENCH_PATTERNS_APPEND = 'h5bench_append'
-    H5BENCH_PATTERNS_OVERWRITE = 'h5bench_overwrite'
-    H5BENCH_PATTERNS_READ = 'h5bench_read'
-    H5BENCH_EXERCISER = 'h5bench_exerciser'
-    H5BENCH_METADATA = 'h5bench_hdf5_iotest'
-    H5BENCH_AMREX_SYNC = 'h5bench_amrex_sync'
-    H5BENCH_AMREX_ASYNC = 'h5bench_amrex_async'
-    H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
-    H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
-    H5BENCH_E3SM = 'h5bench_e3sm'
+    H5BENCH_PATTERNS_WRITE = configuration.__install__ + 'h5bench_write'
+    H5BENCH_PATTERNS_WRITE_UNLIMITED = configuration.__install__ + 'h5bench_write_unlimited'
+    H5BENCH_PATTERNS_APPEND = configuration.__install__ + 'h5bench_append'
+    H5BENCH_PATTERNS_OVERWRITE = configuration.__install__ + 'h5bench_overwrite'
+    H5BENCH_PATTERNS_READ = configuration.__install__ + 'h5bench_read'
+    H5BENCH_EXERCISER = configuration.__install__ + 'h5bench_exerciser'
+    H5BENCH_METADATA = configuration.__install__ + 'h5bench_hdf5_iotest'
+    H5BENCH_AMREX_SYNC = configuration.__install__ + 'h5bench_amrex_sync'
+    H5BENCH_AMREX_ASYNC = configuration.__install__ + 'h5bench_amrex_async'
+    H5BENCH_OPENPMD_WRITE = configuration.__install__ + 'h5bench_openpmd_write'
+    H5BENCH_OPENPMD_READ = configuration.__install__ + 'h5bench_openpmd_read'
+    H5BENCH_E3SM = configuration.__install__ + 'h5bench_e3sm'
 
     def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None):
         """Initialize the suite."""
@@ -283,10 +284,6 @@ class H5bench:
     def reset_vol(self):
         """Reset the environment variables for the VOL."""
         if self.vol_environment is not None:
-            if 'LD_LIBRARY_PATH' in self.vol_environment:
-                del self.vol_environment['LD_LIBRARY_PATH']
-            if 'DYLD_LIBRARY_PATH' in self.vol_environment:
-                del self.vol_environment['DYLD_LIBRARY_PATH']
             if 'HDF5_PLUGIN_PATH' in self.vol_environment:
                 del self.vol_environment['HDF5_PLUGIN_PATH']
             if 'HDF5_VOL_CONNECTOR' in self.vol_environment:
@@ -320,6 +317,9 @@ class H5bench:
             # Define the output file (should be a .h5 file)
             file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
+
+            # Disable any user-defined VOL connectors as we will be handling that
+            self.disable_vol(vol)
 
             if configuration['MODE'] == 'ASYNC':
                 self.enable_vol(vol)
@@ -556,6 +556,9 @@ class H5bench:
 
             directory = '{}/{}/{}'.format(self.directory, id, setup['file'])
             configuration = setup['configuration']
+
+            # Disable any user-defined VOL connectors as we will be handling that
+            self.disable_vol(vol)
 
             if configuration['mode'] == 'ASYNC':
                 self.enable_vol(vol)

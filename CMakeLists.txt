@@ -249,7 +249,8 @@ if(H5BENCH_OPENPMD)
 endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
-configure_file(${CMAKE_SOURCE_DIR}/src/version.py ${CMAKE_BINARY_DIR}/version.py COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
 
 # Install binaries ############################################################
 
@@ -262,8 +263,25 @@ install(
 
 install(
     FILES
-    src/version.py
+    src/h5bench_version.py
     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    ${CMAKE_BINARY_DIR}/h5bench_configuration.py
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    TARGETS
+    h5bench_write
+    h5bench_write_unlimited
+    h5bench_overwrite
+    h5bench_append
+    h5bench_read
     DESTINATION bin
 )
 
