@@ -296,7 +296,7 @@ main(int argc, char *argv[])
     struct timeval time;
     gettimeofday(&time, NULL);
     srand(((unsigned int)time.tv_sec * 1000) + ((unsigned int)time.tv_usec / 1000));
-	sprintf(testFileName,"hdf5TestFile-%d",rand());
+    sprintf(testFileName, "hdf5TestFile-%d", rand());
     MPI_Bcast(testFileName, NAME_LENGTH, MPI_CHAR, 0, comm);
     char dataSetName1[NAME_LENGTH] = "hdf5DataSet1";
 
