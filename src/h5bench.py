@@ -362,7 +362,10 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + benchmark_path
             else:
-                benchmark_path = h5bench_configuration.__install__ + '/' + benchmark_path
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + benchmark_path):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + benchmark_path
+                else:
+                    benechmark_path = benchmark_path
 
             command = '{} {} {} {}'.format(
                 self.mpi,
@@ -448,7 +451,10 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER
             else:
-                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER
+                else:
+                    benechmark_path = self.H5BENCH_EXERCISER
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -518,7 +524,10 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_METADATA
             else:
-                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
+                else:
+                    benechmark_path = self.H5BENCH_EXERCISER
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -604,7 +613,10 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.binary
             else:
-                benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                else:
+                    benechmark_path = binary
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -684,7 +696,11 @@ class H5bench:
                 if self.prefix:
                     benchmark_path = self.prefix + '/' + binary
                 else:
-                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                        benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    else:
+                        benechmark_path = binary
+
 
                 command = '{} {} {}'.format(
                     self.mpi,
@@ -697,7 +713,10 @@ class H5bench:
                 if self.prefix:
                     benchmark_path = self.prefix + '/' + binary
                 else:
-                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                        benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    else:
+                        benechmark_path = binary
 
                 file_path = '{}/8a_parallel_3Db'.format(self.directory)
 
@@ -771,7 +790,10 @@ class H5bench:
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
             else:
-                benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM
+                else:
+                    benechmark_path = self.H5BENCH_E3SM
 
             command = '{} {} {} {}'.format(
                 self.mpi,
