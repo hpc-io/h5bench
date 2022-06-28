@@ -361,6 +361,8 @@ class H5bench:
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + benchmark_path
+            else:
+                benchmark_path = configuration.__install__ + '/' + benchmark_path
 
             command = '{} {} {} {}'.format(
                 self.mpi,
@@ -443,9 +445,14 @@ class H5bench:
             for key in configuration:
                 parameters.append('--{} {} '.format(key, configuration[key]))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER
+            else:
+                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_EXERCISER
+
             command = '{} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_EXERCISER,
+                benchmark_path,
                 ' '.join(parameters)
             )
 
@@ -508,9 +515,14 @@ class H5bench:
 
                 f.write('hdf5-file = {}\n'.format(file))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_METADATA
+            else:
+                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_METADATA
+
             command = '{} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_METADATA,
+                benchmark_path,
                 configuration_file
             )
 
@@ -589,9 +601,14 @@ class H5bench:
 
                 # f.write('directory = {}\n'.format(directory))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.binary
+            else:
+                benchmark_path = configuration.__install__ + '/' + binary
+
             command = '{} {} {}'.format(
                 self.mpi,
-                binary,
+                benchmark_path,
                 configuration_file
             )
 
@@ -664,19 +681,29 @@ class H5bench:
             if configuration['operation'] == 'write':
                 binary = self.H5BENCH_OPENPMD_WRITE
 
+                if self.prefix:
+                    benchmark_path = self.prefix + '/' + binary
+                else:
+                    benchmark_path = configuration.__install__ + '/' + binary
+
                 command = '{} {} {}'.format(
                     self.mpi,
-                    binary,
+                    benchmark_path,
                     configuration_file
                 )
             elif configuration['operation'] == 'read':
                 binary = self.H5BENCH_OPENPMD_READ
 
+                if self.prefix:
+                    benchmark_path = self.prefix + '/' + binary
+                else:
+                    benchmark_path = configuration.__install__ + '/' + binary
+
                 file_path = '{}/8a_parallel_3Db'.format(self.directory)
 
                 command = '{} {} {} {}'.format(
                     self.mpi,
-                    binary,
+                    benchmark_path,
                     file_path,
                     configuration['pattern']
                 )
@@ -741,9 +768,14 @@ class H5bench:
 
             file = '{}/{}'.format(self.directory, configuration['netcdf'])
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
+            else:
+                benchmark_path = configuration.__install__ + '/' + self.H5BENCH_E3SM
+
             command = '{} {} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_E3SM,
+                benchmark_path,
                 ' '.join(parameters),
                 file
             )
