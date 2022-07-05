@@ -108,8 +108,11 @@ jobs:
 
       - name: Build h5bench SYNC
         run: |
-          export HDF5_HOME=/opt/hdf5
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_HOME=$HDF5_DIR
           export PNETCDF_HOME=/opt/pnetcdf
+
+          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$PNETCDF_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-sync
           cd build-sync
@@ -126,7 +129,7 @@ jobs:
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
 
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$PNETCDF_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-async
           cd build-async
