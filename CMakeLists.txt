@@ -6,11 +6,16 @@ project(
 )
 
 include(ExternalProject)
+include(CTest)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
+find_package(Python REQUIRED)
 find_package(MPI REQUIRED)
+
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+enable_testing()
 
 # Options and Variants ########################################################
 #
@@ -188,8 +193,6 @@ if(H5BENCH_AMREX)
         add_executable(h5bench_amrex_async ${amrex_src})
         target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async ${CMAKE_DL_LIBS} MPI::MPI_C)
     endif()
-        
-    configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 endif()
 
 # E3SM ########################################################################
@@ -245,13 +248,29 @@ if(H5BENCH_OPENPMD)
     )
 endif()
 
-configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
 
 # Install binaries ############################################################
 
 install(
     FILES
-    h5bench
+    src/h5bench.py RENAME h5bench
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    src/h5bench_version.py
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    ${CMAKE_BINARY_DIR}/h5bench_configuration.py
     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     DESTINATION bin
 )
@@ -306,3 +325,7 @@ if(H5BENCH_AMREX)
         )
     endif()
 endif()
+
+# Testing #####################################################################
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
