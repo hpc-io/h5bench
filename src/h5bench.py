@@ -387,7 +387,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -475,7 +475,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -548,7 +548,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -637,7 +637,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -743,7 +743,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -814,7 +814,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
