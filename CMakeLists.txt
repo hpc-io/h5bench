@@ -68,6 +68,16 @@ message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
+find_file (H5FDsubfiling_H H5FDsubfiling.h PATHS ${HDF5_INCLUDE_DIRS})
+if(NOT H5FDsubfiling_H)
+  set(HAVE_subfiling 0)
+else()
+   set(HAVE_subfiling 1)
+   add_definitions(-DHAVE_SUBFILING)
+endif()
+
+message("   Detected HDF5 subfiling support: ${HAVE_subfiling}")
+
 # VOL ASYNC Dependency ########################################################
 #
 

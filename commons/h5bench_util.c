@@ -898,6 +898,17 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).file_per_proc = 0;
     }
+    else if (strcmp(key, "SUBFILING") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y') {
+#ifndef HAVE_SUBFILING
+            printf("HDF5 version does not support SUBFILING \n");
+            return -1;
+#endif
+            (*params_in_out).subfiling = 1;
+        }
+        else
+            (*params_in_out).subfiling = 0;
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -928,6 +939,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).meta_coll    = 0;
     (*params_out).data_coll    = 0;
     (*params_out).asyncMode    = MODE_SYNC;
+    (*params_out).subfiling    = 0;
 
     (*params_out).cnt_time_step         = 0;
     (*params_out).cnt_time_step_delay   = 0;
@@ -1076,7 +1088,9 @@ print_params(const bench_params *p)
     printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
     printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
     printf("Collective buffering for data operations: %s\n", p->data_coll == 1 ? "YES" : "NO");
-
+    if (p->subfiling) {
+        printf("Use Subfiling: %s\n", p->subfiling == 1 ? "YES" : "NO");
+    }
     printf("Number of dimensions: %d\n", p->num_dims);
     printf("    Dim_1: %lu\n", p->dim_1);
     if (p->num_dims >= 2) {

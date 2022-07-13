@@ -48,7 +48,10 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
-
+#ifdef HAVE_SUBFILING
+#include "H5FDsubfiling.h"
+#include "H5FDioc.h"
+#endif
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -91,6 +94,8 @@ typedef struct Particle {
     int   id_1;
     float id_2;
 } particle;
+
+int subfiling = 0;
 
 void
 timestep_es_id_set()
@@ -1003,6 +1008,9 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
+    if (params.subfiling)
+        subfiling = 1;
+
 #if H5_VERSION_GE(1, 13, 0)
     if (H5VLis_connector_registered_by_name("async")) {
         if (MY_RANK == 0) {
@@ -1041,11 +1049,15 @@ main(int argc, char *argv[])
         printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
-
     if (params.file_per_proc) {
     }
     else {
-        H5Pset_fapl_mpio(fapl, comm, info);
+#ifdef HAVE_SUBFILING
+        if (params.subfiling == 1)
+            H5Pset_fapl_subfiling(fapl, NULL);
+        else
+#endif
+            H5Pset_fapl_mpio(fapl, comm, info);
         set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
     }
 
