@@ -913,7 +913,7 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
 
     if (meta_collective == 1) {
         if (MY_RANK == 0)
-            printf("Collective write: ON\n");
+            printf("Collective Metadata operations: ON\n");
 #if H5_VERSION_GE(1, 10, 0)
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
@@ -921,7 +921,7 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
     }
     else {
         if (MY_RANK == 0)
-            printf("Collective write: OFF\n");
+            printf("Collective Metadata operations: OFF\n");
     }
 
     // Defer metadata flush
