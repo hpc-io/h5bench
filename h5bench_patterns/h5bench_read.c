@@ -47,6 +47,11 @@
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
 
+#ifdef HAVE_SUBFILING
+#include "H5FDsubfiling.h"
+#include "H5FDioc.h"
+#endif
+
 // Global Variables and dimensions
 long long  NUM_PARTICLES = 0, FILE_OFFSET = 0;
 long long  TOTAL_PARTICLES = 0;
@@ -54,6 +59,7 @@ async_mode ASYNC_MODE;
 int        NUM_RANKS, MY_RANK, NUM_TIMESTEPS;
 hid_t      PARTICLE_COMPOUND_TYPE;
 hid_t      PARTICLE_COMPOUND_TYPE_SEPARATES[8];
+int        subfiling = 0;
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
@@ -361,15 +367,22 @@ void
 set_pl(hid_t *fapl, hid_t *gapl)
 {
     *fapl = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(*fapl, true);
-    H5Pset_coll_metadata_write(*fapl, true);
-#endif
     *gapl = H5Pcreate(H5P_GROUP_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(*gapl, true);
+#ifdef HAVE_SUBFILING
+    if (subfiling == 1)
+        H5Pset_fapl_subfiling(*fapl, NULL);
+    else
 #endif
+      {
+        H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+#if H5_VERSION_GE(1, 10, 0)
+        H5Pset_all_coll_metadata_ops(*fapl, true);
+        H5Pset_coll_metadata_write(*fapl, true);
+#endif
+#if H5_VERSION_GE(1, 10, 0)
+        H5Pset_all_coll_metadata_ops(*gapl, true);
+#endif
+      }
 }
 
 void
@@ -417,6 +430,11 @@ main(int argc, char *argv[])
         if (MY_RANK == 0)
             printf("Make sure the configuration file has IO_OPERATION=READ defined\n");
         return 0;
+    }
+
+    if (params.subfiling) {
+        subfiling = 1;
+        params.data_coll = 0;
     }
 
     hid_t fapl, gapl;
