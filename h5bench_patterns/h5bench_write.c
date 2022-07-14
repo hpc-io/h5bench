@@ -1167,6 +1167,7 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
             fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
+            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
             value = format_human_readable(total_size_bytes);

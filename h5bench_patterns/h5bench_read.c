@@ -587,6 +587,7 @@ main(int argc, char *argv[])
         if (params.useCSV) {
             fprintf(params.csv_fs, "metric, value, unit\n");
             fprintf(params.csv_fs, "operation, %s, %s\n", "read", "");
+            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
