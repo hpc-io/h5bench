@@ -1071,6 +1071,11 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
             }
         }
     }
+    if (params_out->subfiling > 0 && params_out->data_coll == 1) {
+       printf("Subfiling does not support collective data buffering for data.\n");
+       return -1;
+    }
+
     return 0;
 }
 
