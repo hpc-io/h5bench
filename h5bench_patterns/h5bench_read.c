@@ -376,8 +376,8 @@ set_pl(hid_t *fapl, hid_t *gapl)
         H5Pset_fapl_mpio(*fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
 
 #if H5_VERSION_GE(1, 10, 0)
-        H5Pset_all_coll_metadata_ops(*fapl, true);
-        H5Pset_coll_metadata_write(*fapl, true);
+    H5Pset_all_coll_metadata_ops(*fapl, true);
+    H5Pset_coll_metadata_write(*fapl, true);
 #endif
 }
 
@@ -428,10 +428,8 @@ main(int argc, char *argv[])
         return 0;
     }
 
-    if (params.subfiling) {
+    if (params.subfiling)
         subfiling = 1;
-        params.data_coll = 0;
-    }
 
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
