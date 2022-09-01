@@ -248,8 +248,8 @@ class H5bench:
                 self.vol_environment['LD_PRELOAD'] = ''
 
             if 'library' in vol:
-                self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
-                self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
+                self.vol_environment['LD_LIBRARY_PATH'] += ':' + vol['library']
+                self.vol_environment['DYLD_LIBRARY_PATH'] += ':' + vol['library']
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
             if 'preload' in vol:
