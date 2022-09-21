@@ -72,7 +72,7 @@ Exerciser Basics
 In the simplest case, the Exerciser code will simply write and then read an n-dimensional double-precision dataset in parallel (with all the necessary HDF5 steps in between). At a minimum, the user must specify the number of dimensions to use for this dataset (using the ``numdims`` flag), and the size of each dimension (using the ``minels`` flag). By default, the maximum number of dimensions allowed by the code is set by ``MAX_DIM`` (currently 4, but can be modified easily). Note that the user is specifying the number of elements to use in each dimension with ``minels``. Therefore, the local buffer size is the product of the dimension sizes and ``sizeof(double)`` (and the global dataset in the file is a product of the total MPI ranks and the local buffer size). As illustrated in Fig. 1, the mapping of ranks to hyper-slabs in the global dataset can be specified with the ``dimranks`` flag (here, Example 1 is the default decomposition, while Example 2 corresponds to: ``"dimranks": "2 2"``). This flag simply allows the user to list the number of spatial decompositions in each dimension of the global dataset, and requires that the product of the input to be equal to the total number of MPI ranks.
 
 
-.. figure:: ../source/images/dimranks.png
+.. figure:: ../source/_static/images/dimranks.png
 	:width: 600
 	:align: center
 	:alt: Fig. 1 - Illustration of different local-to-global dataset mapping options.

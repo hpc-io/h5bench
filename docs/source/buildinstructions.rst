@@ -61,6 +61,10 @@ In the source directory of your cloned h5bench repository, run the following:
     make
     make install
 
+.. warning::
+
+    If you plan on calling ``make install`` please notice that the default behavior of CMake is to install it system-wide. You can change the destination installation folder by passing the ``-DCMAKE_INSTALL_PREFIX=<path>`` to override with your defined installation directory.    
+
 By default, h5bench will only compile the base write and read benchmarks. To enable the additional benchmarks, you need to explicitly enable them before building h5bench. You can also enable all the benchmarks with ``-DH5BENCH_ALL=ON``. Notice that some of them have additional dependencies.
 
 ==================== =========================== ===============================

@@ -11,6 +11,8 @@ import distutils.spawn
 import argparse
 import collections
 import subprocess
+import h5bench_version
+import h5bench_configuration
 import logging
 import logging.handlers
 
@@ -18,28 +20,28 @@ import logging.handlers
 class H5bench:
     """H5bench benchmark suite."""
 
-    PREFIX = ''
+    H5BENCH_PATTERNS_WRITE = 'h5bench_write'
+    H5BENCH_PATTERNS_WRITE_UNLIMITED = 'h5bench_write_unlimited'
+    H5BENCH_PATTERNS_APPEND = 'h5bench_append'
+    H5BENCH_PATTERNS_OVERWRITE = 'h5bench_overwrite'
+    H5BENCH_PATTERNS_READ = 'h5bench_read'
+    H5BENCH_EXERCISER = 'h5bench_exerciser'
+    H5BENCH_METADATA = 'h5bench_hdf5_iotest'
+    H5BENCH_AMREX_SYNC = 'h5bench_amrex_sync'
+    H5BENCH_AMREX_ASYNC = 'h5bench_amrex_async'
+    H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
+    H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
+    H5BENCH_E3SM = 'h5bench_e3sm'
 
-    H5BENCH_PATTERNS_WRITE = PREFIX + 'h5bench_write'
-    H5BENCH_PATTERNS_WRITE_UNLIMITED = PREFIX + 'h5bench_write_unlimited'
-    H5BENCH_PATTERNS_APPEND = PREFIX + 'h5bench_append'
-    H5BENCH_PATTERNS_OVERWRITE = PREFIX + 'h5bench_overwrite'
-    H5BENCH_PATTERNS_READ = PREFIX + 'h5bench_read'
-    H5BENCH_EXERCISER = PREFIX + 'h5bench_exerciser'
-    H5BENCH_METADATA = PREFIX + 'h5bench_hdf5_iotest'
-    H5BENCH_AMREX_SYNC = PREFIX + 'h5bench_amrex_sync'
-    H5BENCH_AMREX_ASYNC = PREFIX + 'h5bench_amrex_async'
-    H5BENCH_OPENPMD_WRITE = PREFIX + 'h5bench_openpmd_write'
-    H5BENCH_OPENPMD_READ = PREFIX + 'h5bench_openpmd_read'
-    H5BENCH_E3SM = PREFIX + 'h5bench_e3sm'
-
-    def __init__(self, setup, debug, abort, validate):
+    def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
         self.check_parallel()
 
         self.configure_log(debug)
+
+        self.prefix = prefix
         self.setup = setup
         self.abort = abort
         self.validate = validate
@@ -248,8 +250,8 @@ class H5bench:
                 self.vol_environment['LD_PRELOAD'] = ''
 
             if 'library' in vol:
-                self.vol_environment['LD_LIBRARY_PATH'] += vol['library']
-                self.vol_environment['DYLD_LIBRARY_PATH'] += vol['library']
+                self.vol_environment['LD_LIBRARY_PATH'] += ':' + vol['library']
+                self.vol_environment['DYLD_LIBRARY_PATH'] += ':' + vol['library']
             if 'path' in vol:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
             if 'preload' in vol:
@@ -288,10 +290,6 @@ class H5bench:
     def reset_vol(self):
         """Reset the environment variables for the VOL."""
         if self.vol_environment is not None:
-            if 'LD_LIBRARY_PATH' in self.vol_environment:
-                del self.vol_environment['LD_LIBRARY_PATH']
-            if 'DYLD_LIBRARY_PATH' in self.vol_environment:
-                del self.vol_environment['DYLD_LIBRARY_PATH']
             if 'HDF5_PLUGIN_PATH' in self.vol_environment:
                 del self.vol_environment['HDF5_PLUGIN_PATH']
             if 'HDF5_VOL_CONNECTOR' in self.vol_environment:
@@ -326,7 +324,10 @@ class H5bench:
             file = '{}/{}'.format(self.directory, setup['file'])
             configuration = setup['configuration']
 
-            if 'connector' in vol.keys():
+            # Disable any user-defined VOL connectors as we will be handling that
+            self.disable_vol(vol)
+
+            if configuration['MODE'] == 'ASYNC':
                 self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
@@ -364,6 +365,14 @@ class H5bench:
             if operation == 'read':
                 benchmark_path = self.H5BENCH_PATTERNS_READ
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + benchmark_path
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + benchmark_path):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + benchmark_path
+                else:
+                    benchmark_path = benchmark_path
+
             command = '{} {} {} {}'.format(
                 self.mpi,
                 benchmark_path,
@@ -384,7 +393,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -432,7 +441,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_EXERCISER):
             self.logger.critical('{} is not available'.format(self.H5BENCH_EXERCISER))
 
-            return
+            exit(-1)
 
         try:
             start = time.time()
@@ -445,9 +454,17 @@ class H5bench:
             for key in configuration:
                 parameters.append('--{} {} '.format(key, configuration[key]))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_EXERCISER
+                else:
+                    benchmark_path = self.H5BENCH_EXERCISER
+
             command = '{} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_EXERCISER,
+                benchmark_path,
                 ' '.join(parameters)
             )
 
@@ -464,7 +481,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -486,7 +503,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_METADATA):
             self.logger.critical('{} is not available'.format(self.H5BENCH_METADATA))
 
-            return
+            exit(-1)
 
         try:
             start = time.time()
@@ -510,9 +527,17 @@ class H5bench:
 
                 f.write('hdf5-file = {}\n'.format(file))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_METADATA
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
+                else:
+                    benchmark_path = self.H5BENCH_EXERCISER
+
             command = '{} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_METADATA,
+                benchmark_path,
                 configuration_file
             )
 
@@ -529,7 +554,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -551,13 +576,16 @@ class H5bench:
         if not self.is_available(self.H5BENCH_AMREX_SYNC):
             self.logger.critical('{} is not available'.format(self.H5BENCH_AMREX_SYNC))
 
-            return
+            exit(-1)
 
         try:
             start = time.time()
 
             directory = '{}/{}/{}'.format(self.directory, id, setup['file'])
             configuration = setup['configuration']
+
+            # Disable any user-defined VOL connectors as we will be handling that
+            self.disable_vol(vol)
 
             if configuration['mode'] == 'ASYNC':
                 self.enable_vol(vol)
@@ -588,9 +616,17 @@ class H5bench:
 
                 # f.write('directory = {}\n'.format(directory))
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.binary
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                else:
+                    benchmark_path = binary
+
             command = '{} {} {}'.format(
                 self.mpi,
-                binary,
+                benchmark_path,
                 configuration_file
             )
 
@@ -607,7 +643,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -632,12 +668,12 @@ class H5bench:
         if not self.is_available(self.H5BENCH_OPENPMD_WRITE):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_WRITE))
 
-            return
+            exit(-1)
 
         if not self.is_available(self.H5BENCH_OPENPMD_READ):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_READ))
 
-            return
+            exit(-1)
 
         try:
             start = time.time()
@@ -663,19 +699,35 @@ class H5bench:
             if configuration['operation'] == 'write':
                 binary = self.H5BENCH_OPENPMD_WRITE
 
+                if self.prefix:
+                    benchmark_path = self.prefix + '/' + binary
+                else:
+                    if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                        benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    else:
+                        benchmark_path = binary
+
                 command = '{} {} {}'.format(
                     self.mpi,
-                    binary,
+                    benchmark_path,
                     configuration_file
                 )
             elif configuration['operation'] == 'read':
                 binary = self.H5BENCH_OPENPMD_READ
 
+                if self.prefix:
+                    benchmark_path = self.prefix + '/' + binary
+                else:
+                    if os.path.isfile(h5bench_configuration.__install__ + '/' + binary):
+                        benchmark_path = h5bench_configuration.__install__ + '/' + binary
+                    else:
+                        benchmark_path = binary
+
                 file_path = '{}/8a_parallel_3Db'.format(self.directory)
 
                 command = '{} {} {} {}'.format(
                     self.mpi,
-                    binary,
+                    benchmark_path,
                     file_path,
                     configuration['pattern']
                 )
@@ -697,7 +749,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -717,7 +769,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_E3SM):
             self.logger.critical('{} is not available'.format(self.H5BENCH_E3SM))
 
-            return
+            exit(-1)
 
         try:
             start = time.time()
@@ -740,9 +792,17 @@ class H5bench:
 
             file = '{}/{}'.format(self.directory, configuration['netcdf'])
 
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_E3SM
+                else:
+                    benchmark_path = self.H5BENCH_E3SM
+
             command = '{} {} {} {}'.format(
                 self.mpi,
-                self.H5BENCH_E3SM,
+                benchmark_path,
                 ' '.join(parameters),
                 file
             )
@@ -760,7 +820,7 @@ class H5bench:
                 sOutput, sError = s.communicate()
 
                 if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
-                    self.logger.info('SUCCESS')
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
                 else:
                     self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
 
@@ -776,48 +836,61 @@ class H5bench:
             self.logger.error('Unable to run the benchmark: %s', e)
 
 
-PARSER = argparse.ArgumentParser(
-    description='H5bench: a Parallel I/O Benchmark Suite for HDF5: '
-)
+def main():
+    PARSER = argparse.ArgumentParser(
+        description='H5bench: a Parallel I/O Benchmark Suite for HDF5: '
+    )
 
-PARSER.add_argument(
-    'setup',
-    action='store',
-    help='JSON file with the benchmarks to run'
-)
+    PARSER.add_argument(
+        'setup',
+        action='store',
+        help='JSON file with the benchmarks to run'
+    )
 
-PARSER.add_argument(
-    '-a',
-    '--abort-on-failure',
-    action='store_true',
-    dest='abort',
-    help='Stop h5bench if a benchmark failed'
-)
+    PARSER.add_argument(
+        '-a',
+        '--abort-on-failure',
+        action='store_true',
+        dest='abort',
+        help='Stop h5bench if a benchmark failed'
+    )
 
-PARSER.add_argument(
-    '-d',
-    '--debug',
-    action='store_true',
-    dest='debug',
-    help='Enable debug mode'
-)
+    PARSER.add_argument(
+        '-d',
+        '--debug',
+        action='store_true',
+        dest='debug',
+        help='Enable debug mode'
+    )
 
-PARSER.add_argument(
-    '-v',
-    '--validate-mode',
-    action='store_true',
-    dest='validate',
-    help='Validated if the requested mode (async/sync) was run'
-)
+    PARSER.add_argument(
+        '-v',
+        '--validate-mode',
+        action='store_true',
+        dest='validate',
+        help='Validated if the requested mode (async/sync) was run'
+    )
 
-PARSER.add_argument(
-    '-V',
-    '--version',
-    action='version',
-    version='%(prog)s (version 1.1)'
-)
+    PARSER.add_argument(
+        '-p',
+        '--prefix',
+        action='store',
+        dest='prefix',
+        help='Prefix where all h5bench binaries were installed'
+    )
 
-ARGS = PARSER.parse_args()
+    PARSER.add_argument(
+        '-V',
+        '--version',
+        action='version',
+        version='%(prog)s ' + h5bench_version.__version__
+    )
 
-BENCH = H5bench(ARGS.setup, ARGS.debug, ARGS.abort, ARGS.validate)
-BENCH.run()
+    ARGS = PARSER.parse_args()
+
+    BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate)
+    BENCH.run()
+
+
+if __name__ == '__main__':
+    main()
