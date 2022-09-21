@@ -37,7 +37,7 @@ The ``minBlock`` and ``grid`` parameters must include the values for each of the
 
 For the ``pattern`` attribute for read you can chose:
 
-- ``m``: metadata onlune
+- ``m``: metadata only
 - ``sx``: slice of the 'rho' mesh in the x-axis (eg. ``x=0``)
 - ``sy``: slice of the 'rho' mesh in the y-axis (eg. ``y=0``)
 - ``sz``: slice of the 'rho' mesh in the z-axis (eg. ``z=0``)

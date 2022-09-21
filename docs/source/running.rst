@@ -243,7 +243,13 @@ In Cori you need to load Python and its libraries for the main ``h5bench`` scrip
 
    module load python
 
-In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads, make sure you define:
+In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads:
+
+.. code-block::
+
+   Assertion `MPI_THREAD_MULTIPLE == mpi_thread_lvl_p rovided' failed.
+
+Please, make sure you define the following:
 
 .. code-block::
 
