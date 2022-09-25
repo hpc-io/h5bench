@@ -68,6 +68,20 @@ message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
+# Check if HDF5 has subfiling VFD
+set(HAVE_subfiling 0)
+find_file (H5FDsubfiling_H H5FDsubfiling.h PATHS ${HDF5_INCLUDE_DIRS})
+if(EXISTS ${H5FDsubfiling_H})
+   include(CheckSymbolExists)
+   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${HDF5_INCLUDE_DIRS})
+   check_symbol_exists(H5_HAVE_SUBFILING_VFD hdf5.h HAVE_SUBFILING_VFD)
+   if(${HAVE_SUBFILING_VFD})
+       add_definitions(-DHAVE_SUBFILING)
+   endif()
+   unset(CMAKE_REQUIRED_INCLUDES)
+endif()
+message(STATUS "   Detected HDF5 subfiling support: ${HAVE_SUBFILING_VFD}")
+
 # VOL ASYNC Dependency ########################################################
 #
 

@@ -95,6 +95,7 @@ typedef struct bench_params {
     int          useCompress;
     int          useCSV;
     async_mode   asyncMode;
+    int          subfiling;
     union access_pattern {
         read_pattern  pattern_read;
         write_pattern pattern_write;
