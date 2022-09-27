@@ -17,9 +17,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-          
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
 
       - name: Dependencies
         run: |
@@ -155,6 +152,10 @@ jobs:
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+        
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
