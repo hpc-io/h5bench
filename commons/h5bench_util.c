@@ -67,13 +67,12 @@ h5bench_sleep(duration sleep_time)
 }
 
 void
-async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
+async_sleep(hid_t es_id, duration sleep_time)
 {
 #ifdef USE_ASYNC_VOL
-    unsigned cap = 0;
-    H5Pget_vol_cap_flags(fapl, &cap);
-    if (H5VL_CAP_FLAG_ASYNC & cap)
-        H5Fstart(file_id, fapl);
+    int num_in_progress, op_failed;
+
+    H5ESwait(es_id, 0, &num_in_progress, &op_failed);
 #endif
     h5bench_sleep(sleep_time);
 }

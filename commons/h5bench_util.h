@@ -168,7 +168,7 @@ typedef struct mem_monitor {
 unsigned long long read_time_val(duration time, time_unit unit);
 
 void h5bench_sleep(duration sleep_time);
-void async_sleep(hid_t file_id, hid_t fapl, duration sleep_time);
+void async_sleep(hid_t es_id, duration sleep_time);
 
 void timestep_es_id_close(time_step *ts, async_mode mode);
 
