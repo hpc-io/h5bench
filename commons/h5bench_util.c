@@ -70,7 +70,8 @@ void
 async_sleep(hid_t es_id, duration sleep_time)
 {
 #ifdef USE_ASYNC_VOL
-    int num_in_progress, op_failed;
+    size_t num_in_progress;
+    hbool_t op_failed;
 
     H5ESwait(es_id, 0, &num_in_progress, &op_failed);
 #endif
