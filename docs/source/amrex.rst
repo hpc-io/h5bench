@@ -47,7 +47,8 @@ To run an instance of AMReX HDF5 benchmark you need to include the following in 
             "nparticlefile": "2",
             "sleeptime": "2",
             "restart_check": "1",
-            "hdf5compression": "ZFP_ACCURACY#0.001"
+            "hdf5compression": "ZFP_ACCURACY#0.001",
+            "mode": "SYNC"
         }
     }
 
@@ -69,6 +70,7 @@ To read grids from file you need to set: ``grids_from_file``, ``nlevels``, and `
             "sleeptime": "2",
             "restart_check": "1",
             "hdf5compression": "ZFP_ACCURACY#0.001",
+            "mode": "SYNC",
             "nlevs": "3",
             "grids_from_file": "1",
             "ref_ratio_file": "4 2"

@@ -838,7 +838,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing...\n");
-                async_sleep(file_id, fapl, params.compute_time);
+                async_sleep(ts->es_meta_close, params.compute_time);
             }
         }
 
