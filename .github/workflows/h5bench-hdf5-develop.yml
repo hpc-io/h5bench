@@ -12,6 +12,7 @@ jobs:
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_MCA_rmaps_base_oversubscribe: "yes"
 
     steps:
       - uses: actions/checkout@v2
@@ -21,7 +22,7 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc libtool zlib1g-dev python3 libopenmpi-dev -y
+          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev -y
           
           # HDF5
           git clone https://github.com/HDFGroup/hdf5.git
@@ -190,6 +191,10 @@ jobs:
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+        
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |

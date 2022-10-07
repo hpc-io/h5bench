@@ -48,9 +48,16 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
+
 #ifdef USE_CACHE_VOL
 #include "cache_new_h5api.h"
 #endif
+
+#ifdef HAVE_SUBFILING
+#include "H5FDsubfiling.h"
+#include "H5FDioc.h"
+#endif
+
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -93,6 +100,8 @@ typedef struct Particle {
     int   id_1;
     float id_2;
 } particle;
+
+int subfiling = 0;
 
 void
 timestep_es_id_set()
@@ -841,7 +850,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing...\n");
-                async_sleep(file_id, fapl, params.compute_time);
+                async_sleep(ts->es_meta_close, params.compute_time);
             }
         }
 
@@ -916,7 +925,7 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
 
     if (meta_collective == 1) {
         if (MY_RANK == 0)
-            printf("Collective write: ON\n");
+            printf("Collective Metadata operations: ON\n");
 #if H5_VERSION_GE(1, 10, 0)
         H5Pset_all_coll_metadata_ops(fapl, 1);
         H5Pset_coll_metadata_write(fapl, 1);
@@ -924,7 +933,7 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
     }
     else {
         if (MY_RANK == 0)
-            printf("Collective write: OFF\n");
+            printf("Collective Metadata operations: OFF\n");
     }
 
     // Defer metadata flush
@@ -1011,6 +1020,9 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
+if (params.subfiling)
+        subfiling = 1;
+
 #if H5_VERSION_GE(1, 13, 1)
     if (H5VLis_connector_registered_by_name("cache_ext")) {
         if (MY_RANK == 0) {
@@ -1057,11 +1069,15 @@ main(int argc, char *argv[])
         printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
-
     if (params.file_per_proc) {
     }
     else {
-        H5Pset_fapl_mpio(fapl, comm, info);
+#ifdef HAVE_SUBFILING
+        if (params.subfiling == 1)
+            H5Pset_fapl_subfiling(fapl, NULL);
+        else
+#endif
+            H5Pset_fapl_mpio(fapl, comm, info);
         set_metadata(fapl, ALIGN, ALIGN_THRESHOLD, ALIGN_LEN, params.meta_coll);
     }
 
@@ -1174,6 +1190,7 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
             fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
+            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
             value = format_human_readable(total_size_bytes);

@@ -67,14 +67,14 @@ h5bench_sleep(duration sleep_time)
 }
 
 void
-async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
+async_sleep(hid_t es_id, duration sleep_time)
 {
 #ifndef USE_CACHE_VOL
 #ifdef USE_ASYNC_VOL
-    unsigned cap = 0;
-    H5Pget_vol_cap_flags(fapl, &cap);
-    if (H5VL_CAP_FLAG_ASYNC & cap)
-        H5Fstart(file_id, fapl);
+    size_t  num_in_progress;
+    hbool_t op_failed;
+
+    H5ESwait(es_id, 0, &num_in_progress, &op_failed);
 #endif
 #endif
     h5bench_sleep(sleep_time);
@@ -900,6 +900,17 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).file_per_proc = 0;
     }
+    else if (strcmp(key, "SUBFILING") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y') {
+#ifndef HAVE_SUBFILING
+            printf("HDF5 version does not support SUBFILING \n");
+            return -1;
+#endif
+            (*params_in_out).subfiling = 1;
+        }
+        else
+            (*params_in_out).subfiling = 0;
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -930,6 +941,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).meta_coll    = 0;
     (*params_out).data_coll    = 0;
     (*params_out).asyncMode    = MODE_SYNC;
+    (*params_out).subfiling    = 0;
 
     (*params_out).cnt_time_step         = 0;
     (*params_out).cnt_time_step_delay   = 0;
@@ -1061,6 +1073,11 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
             }
         }
     }
+    if (params_out->subfiling > 0 && params_out->data_coll == 1) {
+        printf("Subfiling does not support collective data buffering for data.\n");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1078,7 +1095,9 @@ print_params(const bench_params *p)
     printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
     printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
     printf("Collective buffering for data operations: %s\n", p->data_coll == 1 ? "YES" : "NO");
-
+    if (p->subfiling) {
+        printf("Use Subfiling: %s\n", p->subfiling == 1 ? "YES" : "NO");
+    }
     printf("Number of dimensions: %d\n", p->num_dims);
     printf("    Dim_1: %lu\n", p->dim_1);
     if (p->num_dims >= 2) {
