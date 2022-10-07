@@ -50,7 +50,8 @@ class H5bench:
         """Check for parallel overwrite command."""
         mpi = [
             'mpirun', 'mpiexec',
-            'srun', 'aprun'
+            'srun',
+            'aprun'
         ]
 
         # Get user defined shell
