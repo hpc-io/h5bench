@@ -1020,7 +1020,7 @@ main(int argc, char *argv[])
     if (params.useCompress)
         params.data_coll = 1;
 
-if (params.subfiling)
+    if (params.subfiling)
         subfiling = 1;
 
 #if H5_VERSION_GE(1, 13, 1)
