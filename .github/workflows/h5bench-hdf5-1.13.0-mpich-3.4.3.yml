@@ -96,6 +96,7 @@ jobs:
           cmake .. \
             -DH5BENCH_ALL=ON
           make -j 2
+          make install
 
       - name: Build h5bench ASYNC
         run: |
@@ -113,7 +114,8 @@ jobs:
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
-          make
+          make -j 2
+          make install
 
       - name: Configure for MPICH
         run: |
@@ -262,7 +264,7 @@ jobs:
 
       - name: Test h5bench SYNC e3sm
         run: |
-          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/pnetcdf/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           export PATH=$(pwd):$PATH
