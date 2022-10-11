@@ -254,6 +254,8 @@ jobs:
 
       - name: Test h5bench SYNC amrex
         run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+                  
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
