@@ -6,7 +6,7 @@
 h5bench
 ===================================
 
-h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patterns that are commonly used in HDF5 applications on high performance computing systems. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
+h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patterns that are commonly used in HDF5 applications on high performance computing systems. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc. You can check h5bench source-code at https://github.com/hpc-io/h5bench.
 
 |badge-github| |badge-spack| |badge-status| |badge-docs|
 
