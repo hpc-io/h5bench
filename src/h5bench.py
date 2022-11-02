@@ -774,17 +774,16 @@ class H5bench:
 
             # Create the configuration parameter list
             for key in configuration:
-                if key not in ['i', 'o']:
+                if key not in ['i', 'o', 'map'] and configuration[key]:
                     parameters.append('-{} {} '.format(key, configuration[key]))
-
-                if key in ['i', 'o']:
-                    parameters.append('-{} {}/{}/{} '.format(key, self.directory, id, setup['file']))
 
             # Temporarily overwrite -x and -a to only supported patterns
             parameters.append('-{} {}'.format('a', 'hdf5'))
             parameters.append('-{} {}'.format('x', 'blob'))
 
-            file = '{}/{}'.format(self.directory, configuration['i'])
+            parameters.append('-o {}/{}/{} '.format(self.directory, id, setup['file']))
+
+            file = '{}/{}'.format(self.directory, configuration['map'])
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM

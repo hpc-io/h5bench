@@ -32,10 +32,6 @@ jobs:
           make -j 2
           make install
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-          
       - name: Test h5bench SYNC write/read
         run: |
           export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
@@ -209,5 +205,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: test
-          path: build/storage/**/std*
+          path: build/h5bench_e3sm-prefix/src/h5bench_e3sm-stamp/*
           retention-days: 1

@@ -18,7 +18,7 @@
             "configuration": {
                 "k": "",
                 "r": "25",
-                "i": "../../e3sm/datasets/map_f_case_16p.h5"
+                "map": "../../e3sm/datasets/map_f_case_16p.h5"
             }
         }
     ]
