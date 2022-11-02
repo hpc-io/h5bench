@@ -31,6 +31,10 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           make install
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
           
       - name: Test h5bench SYNC write/read
         run: |
