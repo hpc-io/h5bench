@@ -30,11 +30,6 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
-          # PnetCDF
-          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
-          tar -zxf pnetcdf-1.12.2.tar.gz
-          mv pnetcdf-1.12.2 pnetcdf
-
           python3 -m pip install pytest
 
       - name: Build HDF5 develop
@@ -48,18 +43,6 @@ jobs:
 
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-
-          make -j 2
-          make install
-
-      - name: Build PnetCDF
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export PNETCDF_DIR=/opt/pnetcdf
-
-          cd pnetcdf
-
-          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
 
           make -j 2
           make install
@@ -111,9 +94,8 @@ jobs:
         run: |
           export HDF5_DIR=/opt/hdf5
           export HDF5_HOME=$HDF5_DIR
-          export PNETCDF_HOME=/opt/pnetcdf
 
-          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$PNETCDF_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-sync
           cd build-sync
@@ -126,11 +108,10 @@ jobs:
       - name: Build h5bench ASYNC
         run: |
           export HDF5_HOME=/opt/hdf5
-          export PNETCDF_HOME=/opt/pnetcdf
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
 
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$PNETCDF_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-async
           cd build-async

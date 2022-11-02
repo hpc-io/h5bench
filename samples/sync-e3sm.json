@@ -1,8 +1,8 @@
 {
     "mpi": {
         "command": "mpirun",
-        "ranks": "4",
-        "configuration": "--allow-run-as-root --oversubscribe -np 8"
+        "ranks": "8",
+        "configuration": "--allow-run-as-root --oversubscribe"
     },
     "vol": {
         
@@ -18,8 +18,7 @@
             "configuration": {
                 "k": "",
                 "r": "25",
-                "o": "ON",
-                "netcdf": "../../e3sm/datasets/f_case_866x72_16p.nc"
+                "i": "../../e3sm/datasets/map_f_case_16p.h5"
             }
         }
     ]

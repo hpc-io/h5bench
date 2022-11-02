@@ -435,7 +435,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_EXERCISER):
             self.logger.critical('{} is not available'.format(self.H5BENCH_EXERCISER))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -497,7 +497,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_METADATA):
             self.logger.critical('{} is not available'.format(self.H5BENCH_METADATA))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -570,7 +570,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_AMREX_SYNC):
             self.logger.critical('{} is not available'.format(self.H5BENCH_AMREX_SYNC))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -662,12 +662,12 @@ class H5bench:
         if not self.is_available(self.H5BENCH_OPENPMD_WRITE):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_WRITE))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         if not self.is_available(self.H5BENCH_OPENPMD_READ):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_READ))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -763,7 +763,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_E3SM):
             self.logger.critical('{} is not available'.format(self.H5BENCH_E3SM))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -774,7 +774,7 @@ class H5bench:
 
             # Create the configuration parameter list
             for key in configuration:
-                if key not in ['i', 'o', 'netcdf']:
+                if key not in ['i', 'o']:
                     parameters.append('-{} {} '.format(key, configuration[key]))
 
                 if key in ['i', 'o']:
@@ -784,7 +784,7 @@ class H5bench:
             parameters.append('-{} {}'.format('a', 'hdf5'))
             parameters.append('-{} {}'.format('x', 'blob'))
 
-            file = '{}/{}'.format(self.directory, configuration['netcdf'])
+            file = '{}/{}'.format(self.directory, configuration['i'])
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
