@@ -47,14 +47,6 @@ message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
 
-if(H5BENCH_E3SM)
-    set(PNETCDF_HOME $ENV{PNETCDF_HOME})
-    set(CMAKE_PREFIX_PATH ${PNETCDF_HOME})
-
-    find_package(PNetCDF REQUIRED)
-    include_directories(${PNETCDF_INCLUDES})
-endif()
-
 # HDF5 Dependency #############################################################
 #
 
@@ -216,7 +208,7 @@ endif()
 if(H5BENCH_E3SM)
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-pnetcdf=${PNETCDF_HOME} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
+        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME}
         BUILD_COMMAND make
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
