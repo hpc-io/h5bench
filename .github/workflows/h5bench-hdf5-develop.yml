@@ -26,7 +26,6 @@ jobs:
           
           # HDF5
           git clone https://github.com/HDFGroup/hdf5.git
-          git checkout hdf5-1_13_2
 
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
@@ -39,6 +38,8 @@ jobs:
           mkdir $HDF5_DIR
 
           cd hdf5
+          
+          git checkout hdf5-1_13_2
 
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
