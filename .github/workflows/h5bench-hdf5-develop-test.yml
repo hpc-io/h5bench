@@ -143,6 +143,10 @@ jobs:
 
           ctest --verbose .
 
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
