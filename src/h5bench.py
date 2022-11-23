@@ -33,7 +33,7 @@ class H5bench:
     H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
     H5BENCH_E3SM = 'h5bench_e3sm'
 
-    def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None):
+    def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None, filter=None):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
@@ -45,6 +45,11 @@ class H5bench:
         self.setup = setup
         self.abort = abort
         self.validate = validate
+
+        if filter:
+            self.filter = filter.split(',')
+        else:
+            self.filter = None
 
     def check_parallel(self):
         """Check for parallel overwrite command."""
@@ -188,6 +193,14 @@ class H5bench:
 
         for benchmark in benchmarks:
             name = benchmark['benchmark']
+
+            # Check if filters were enabled
+            if self.filter:
+                if name not in self.filter:
+                    self.logger.warning('Skipping "{}" due to active filters'.format(name))
+
+                    continue
+
             id = str(uuid.uuid4()).split('-')[0]
 
             self.logger.info('h5bench [{}] - Starting'.format(name))
@@ -873,6 +886,14 @@ def main():
     )
 
     PARSER.add_argument(
+        '-f',
+        '--filter',
+        action='store',
+        dest='filter',
+        help='Execute only filtered benchmarks'
+    )
+
+    PARSER.add_argument(
         '-V',
         '--version',
         action='version',
@@ -881,7 +902,7 @@ def main():
 
     ARGS = PARSER.parse_args()
 
-    BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate)
+    BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate, ARGS.filter)
     BENCH.run()
 
 
