@@ -540,7 +540,7 @@ class H5bench:
                 if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA):
                     benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
                 else:
-                    benchmark_path = self.H5BENCH_EXERCISER
+                    benchmark_path = self.H5BENCH_METADATA
 
             command = '{} {} {}'.format(
                 self.mpi,
