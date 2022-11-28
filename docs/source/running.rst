@@ -11,19 +11,21 @@ If you prefer, you can also manually run each benchmark in h5bench. For more det
 
 .. code-block::
 
-   usage: h5bench [-h] [--abort-on-failure] [--debug] [--validate-mode] setup
+   usage: h5bench [-h] [-a] [-d] [-v] [-p PREFIX] [-f FILTER] [-V] setup
 
    H5bench: a Parallel I/O Benchmark Suite for HDF5:
 
    positional arguments:
-     setup               JSON file with the benchmarks to run
+     setup                          JSON file with the benchmarks to run
 
-   optional arguments:
-     -h, --help          show this help message and exit
-     --abort-on-failure  Stop h5bench if a benchmark failed
-     --debug             Enable debug mode
-     --validate-mode     Validated if the requested mode (async/sync) was run
-
+   options:
+     -h, --help                     Show this help message and exit
+     -a, --abort-on-failure         Stop h5bench if a benchmark failed
+     -d, --debug                    Enable debug mode
+     -v, --validate-mode            Validated if the requested mode (async/sync) was run
+     -p PREFIX, --prefix PREFIX     Prefix where all h5bench binaries were installed
+     -f FILTER, --filter FILTER     Execute only filtered benchmarks
+     -V, --version                  Show program's version number and exit
 
 You need to provide a JSON file with the configurations you want to run.
 If you're using ``h5bench``, you should *not* call ``mpirun``, ``srun``, or any other parallel launcher on your own. 
@@ -32,13 +34,19 @@ The main script will handle setting and unsetting environment variables, launchi
 
 .. code-block::
 
-   ./h5bench configuration.json
+   h5bench configuration.json
 
 If you run it with the ``--debug`` option, h5bench will also print log messages ``stdout``. The default behavior is to store it in a file. 
 
 .. warning::
 
    Make sure you do not call `srun`, `mpirun`, etc directly but instead define that in the JSON configuration file. You should **always** call h5bench directly.  
+
+You can define a single `.json` file with a complete setup and a combination of kernels you want to run. You can filter which of those benchmarks `h5bench` should run by passing the `--filter` option when running. For instance, the following command will only run the `read`, and `openpmd` kernels defined in the `.json`. The remaining ones would be ignored.
+
+.. code-block::
+
+   h5bench --filter read,openpmd configuration.json
 
 Configuration
 -------------

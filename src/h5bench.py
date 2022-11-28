@@ -33,7 +33,7 @@ class H5bench:
     H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
     H5BENCH_E3SM = 'h5bench_e3sm'
 
-    def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None):
+    def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None, filter=None):
         """Initialize the suite."""
         self.LOG_FILENAME = '{}-h5bench.log'.format(setup.replace('.json', ''))
 
@@ -45,6 +45,11 @@ class H5bench:
         self.setup = setup
         self.abort = abort
         self.validate = validate
+
+        if filter:
+            self.filter = filter.split(',')
+        else:
+            self.filter = None
 
     def check_parallel(self):
         """Check for parallel overwrite command."""
@@ -189,6 +194,14 @@ class H5bench:
 
         for benchmark in benchmarks:
             name = benchmark['benchmark']
+
+            # Check if filters were enabled
+            if self.filter:
+                if name not in self.filter:
+                    self.logger.warning('Skipping "{}" due to active filters'.format(name))
+
+                    continue
+
             id = str(uuid.uuid4()).split('-')[0]
 
             self.logger.info('h5bench [{}] - Starting'.format(name))
@@ -442,7 +455,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_EXERCISER):
             self.logger.critical('{} is not available'.format(self.H5BENCH_EXERCISER))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -504,7 +517,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_METADATA):
             self.logger.critical('{} is not available'.format(self.H5BENCH_METADATA))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -534,7 +547,7 @@ class H5bench:
                 if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA):
                     benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_METADATA
                 else:
-                    benchmark_path = self.H5BENCH_EXERCISER
+                    benchmark_path = self.H5BENCH_METADATA
 
             command = '{} {} {}'.format(
                 self.mpi,
@@ -577,7 +590,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_AMREX_SYNC):
             self.logger.critical('{} is not available'.format(self.H5BENCH_AMREX_SYNC))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -669,12 +682,12 @@ class H5bench:
         if not self.is_available(self.H5BENCH_OPENPMD_WRITE):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_WRITE))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         if not self.is_available(self.H5BENCH_OPENPMD_READ):
             self.logger.critical('{} is not available'.format(self.H5BENCH_OPENPMD_READ))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -770,7 +783,7 @@ class H5bench:
         if not self.is_available(self.H5BENCH_E3SM):
             self.logger.critical('{} is not available'.format(self.H5BENCH_E3SM))
 
-            exit(-1)
+            sys.exit(os.EX_UNAVAILABLE)
 
         try:
             start = time.time()
@@ -781,17 +794,16 @@ class H5bench:
 
             # Create the configuration parameter list
             for key in configuration:
-                if key not in ['i', 'o', 'netcdf']:
+                if key not in ['i', 'o', 'map'] and configuration[key]:
                     parameters.append('-{} {} '.format(key, configuration[key]))
-
-                if key in ['i', 'o']:
-                    parameters.append('-{} {}/{}/{} '.format(key, self.directory, id, setup['file']))
 
             # Temporarily overwrite -x and -a to only supported patterns
             parameters.append('-{} {}'.format('a', 'hdf5'))
             parameters.append('-{} {}'.format('x', 'blob'))
 
-            file = '{}/{}'.format(self.directory, configuration['netcdf'])
+            parameters.append('-o {}/{}/{} '.format(self.directory, id, setup['file']))
+
+            file = '{}/{}'.format(self.directory, configuration['map'])
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_E3SM
@@ -881,6 +893,14 @@ def main():
     )
 
     PARSER.add_argument(
+        '-f',
+        '--filter',
+        action='store',
+        dest='filter',
+        help='Execute only filtered benchmarks'
+    )
+
+    PARSER.add_argument(
         '-V',
         '--version',
         action='version',
@@ -889,7 +909,7 @@ def main():
 
     ARGS = PARSER.parse_args()
 
-    BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate)
+    BENCH = H5bench(ARGS.setup, ARGS.prefix, ARGS.debug, ARGS.abort, ARGS.validate, ARGS.filter)
     BENCH.run()
 
 
