@@ -26,22 +26,8 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
-          # PnetCDF
-          wget https://parallel-netcdf.github.io/Release/pnetcdf-1.12.2.tar.gz
-          tar -zxf pnetcdf-1.12.2.tar.gz
-          mv pnetcdf-1.12.2 pnetcdf
-
-      - name: Build PnetCDF
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export PNETCDF_DIR=/opt/pnetcdf
-
-          cd pnetcdf
-
-          ./configure --prefix=${PNETCDF_DIR} CC=mpicc
-
-          make -j 2
-          make install
+          # VOL-CACHE
+          git clone --recursive https://github.com/hpc-io/vol-cache.git /opt/vol-cache
 
       - name: Build Argobots
         run: |
@@ -76,34 +62,54 @@ jobs:
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
 
-          export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:/usr/local/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
           export HDF5_PLUGIN_PATH="$ASYNC_DIR/include"
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
           cd $ASYNC_DIR/build
           
-          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so:$LD_PRELOAD
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           ctest
 
+      - name: Build VOL-CACHE
+        run: |
+          export HDF5_ROOT=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_DIR=/opt/vol-cache
+
+          [ -e $HDF5_VOL_DIR ] || mkdir $HDF5_VOL_DIR
+          [ -e $HDF5_VOL_DIR/bin ] || mkdir $HDF5_VOL_DIR/bin
+          [ -e $HDF5_VOL_DIR/lib ] || mkdir $HDF5_VOL_DIR/lib
+          [ -e $HDF5_VOL_DIR/include ] || mkdir $HDF5_VOL_DIR/include
+
+          cp -r $ASYNC_DIR/lib/*.so $ASYNC_DIR/lib/*.a $HDF5_VOL_DIR/lib/
+          cp -r $ASYNC_DIR/include/*.h $HDF5_VOL_DIR/include/
+
+          export LD_LIBRARY_PATH=$HDF5_VOL_DIR/lib:$HDF5_ROOT/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+
+          cd $HDF5_VOL_DIR/src
+
+          make all
       - name: Build h5bench SYNC
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export PNETCDF_HOME=/opt/pnetcdf
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_HOME=$HDF5_DIR
+
+          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-sync
           cd build-sync
 
           cmake .. \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DH5BENCH_ALL=ON
           make -j 2
-          make install
+          sudo make install
 
       - name: Build h5bench ASYNC
         run: |
           export HDF5_HOME=/opt/hdf5
-          export PNETCDF_HOME=/opt/pnetcdf
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
 
@@ -113,12 +119,26 @@ jobs:
           cd build-async
 
           cmake .. \
-            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
           make -j 2
-          make install
+          sudo make install
+
+      - name: Build h5bench CACHE
+        run: |
+          export HDF5_ROOT=/opt/hdf5
+          export HDF5_HOME=/opt/hdf5
+          export HDF5_VOL_DIR=/opt/vol-cache
+
+          mkdir build-cache
+          cd build-cache
+
+          cmake .. \
+            -DWITH_CACHE_VOL:BOOL=ON \
+            -DWITH_ASYNC_VOL:BOOL=ON \
+            -DCMAKE_C_FLAGS="-I/$HDF5_VOL_DIR/include -L/$HDF5_VOL_DIR/lib"
+          make -j 2
 
       - name: Configure for MPICH
         run: |
@@ -129,133 +149,263 @@ jobs:
 
       - name: Test h5bench SYNC write/read
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-strided.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) contiguous (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) interleaved (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) contiguous (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) interleaved (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) contiguous (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) interleaved (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) contiguous (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) interleaved (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 3D contiguous (memory) contiguous (file)
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
 
       - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC write unlimited
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
 
       - name: Test h5bench SYNC overwrite
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
 
       - name: Test h5bench SYNC append
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-append.json
 
       - name: Test h5bench SYNC exerciser
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
 
       - name: Test h5bench SYNC metadata
         run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
           cd build-sync
           export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
 
       - name: Test h5bench SYNC amrex
         run: |
-          export LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
                   
           cd build-sync
           export PATH=$(pwd):$PATH
@@ -263,7 +413,11 @@ jobs:
 
       - name: Test h5bench SYNC openpmd
         run: |
-          export LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           export PATH=$(pwd):$PATH
@@ -271,7 +425,11 @@ jobs:
 
       - name: Test h5bench SYNC e3sm
         run: |
-          export LD_LIBRARY_PATH=/opt/hdf5/lib:/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           export PATH=$(pwd):$PATH
@@ -497,6 +655,247 @@ jobs:
           python3 ../samples/update.py ../samples/async-amrex.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
+
+      - name: Test h5bench CACHE write 1D contiguous (memory) strided (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export HDF5_VOL_DIR=/opt/vol-cache
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+          
+          python3 ../samples/update.py ../samples/async-write-1d-contig-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-strided.json
+
+      - name: Test h5bench CACHE write 1D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig.json
+
+      - name: Test h5bench CACHE write 1D contiguous (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-interleaved.json
+
+      - name: Test h5bench CACHE write 1D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-contig.json
+
+      - name: Test h5bench CACHE write 1D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-interleaved.json
+
+      - name: Test h5bench CACHE write 2D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig.json
+
+      - name: Test h5bench CACHE write 2D contiguous (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-interleaved.json
+
+      - name: Test h5bench CACHE write 2D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-contig.json
+
+      - name: Test h5bench CACHE write 2D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-interleaved.json
+
+      - name: Test h5bench CACHE write 3D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-3d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-3d-contig-contig.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-partial.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench CACHE read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench CACHE read 2D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench CACHE read 3D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+    
+          cd build-cache
+          
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          
+          [ -e SSD ] || mkdir SSD
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
 
       - name: Upload artifact
         if: always()
