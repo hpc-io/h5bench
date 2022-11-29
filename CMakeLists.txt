@@ -266,14 +266,22 @@ configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINAR
 # https://github.com/QMCPACK/qmcpack
 
 if(H5BENCH_QMCPACK)
-    set(ENV{HDF5_ROOT} ${HDF5_HOME})
-    set(QMC_BUILD_SANDBOX_ONLY ON)
+    if(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.2.0)
+        if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.12.1")
+            set(ENV{HDF5_ROOT} ${HDF5_HOME})
+            set(QMC_BUILD_SANDBOX_ONLY ON)
 
-    add_subdirectory(qmcpack)
+            add_subdirectory(qmcpack)
 
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/qmcpack/bin/restart ${CMAKE_BINARY_DIR}/h5bench_qmcpack
-    )
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/qmcpack/bin/restart ${CMAKE_BINARY_DIR}/h5bench_qmcpack
+            )
+        else()
+            message(FATAL_ERROR "QMCPACK requires at least HDF5 1.12.1")
+        endif()
+    else()
+        message(FATAL_ERROR "QMCPACK requires at least gcc-9.2")
+    endif()
 endif()
 
 # Install binaries ############################################################
@@ -348,6 +356,15 @@ if(H5BENCH_AMREX)
             DESTINATION bin
         )
     endif()
+endif()
+
+if(H5BENCH_QMCPACK)
+    install(
+        FILES
+        h5bench_qmcpack
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        DESTINATION bin
+    )
 endif()
 
 # Testing #####################################################################
