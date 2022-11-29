@@ -28,6 +28,7 @@ option(H5BENCH_EXERCISER        "Enable Exerciser benchmark"        OFF)
 option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
+option(H5BENCH_QMCPACK          "Enable QMCPACK benchmark"          OFF)
 
 message(STATUS "h5bench baseline: ON")
 
@@ -39,6 +40,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_AMREX ON)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
+    set(H5BENCH_QMCPACK ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -46,6 +48,7 @@ message(STATUS "h5bench EXERCISER: ${H5BENCH_EXERCISER}")
 message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
+message(STATUS "h5bench QMCPACK: ${H5BENCH_QMCPACK}")
 
 # HDF5 Dependency #############################################################
 #
@@ -257,6 +260,21 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
+
+# QMCPACK #####################################################################
+#
+# https://github.com/QMCPACK/qmcpack
+
+if(H5BENCH_QMCPACK)
+    set(ENV{HDF5_ROOT} ${HDF5_HOME})
+    set(QMC_BUILD_SANDBOX_ONLY ON)
+
+    add_subdirectory(qmcpack)
+
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/qmcpack/bin/restart ${CMAKE_BINARY_DIR}/h5bench_qmcpack
+    )
+endif()
 
 # Install binaries ############################################################
 

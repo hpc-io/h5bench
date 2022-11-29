@@ -32,6 +32,7 @@ class H5bench:
     H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
     H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
     H5BENCH_E3SM = 'h5bench_e3sm'
+    H5BENCH_QMCPACK = 'h5bench_qmcpack'
 
     def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None, filter=None):
         """Initialize the suite."""
@@ -222,6 +223,8 @@ class H5bench:
                 self.run_openpmd(id, benchmark)
             elif name == 'e3sm':
                 self.run_e3sm(id, benchmark)
+            elif name == 'qmcpack':
+                self.run_qmcpack(id, benchmark)
             else:
                 self.logger.critical('{} - Unsupported benchmark/kernel')
 
@@ -811,6 +814,70 @@ class H5bench:
                 benchmark_path,
                 ' '.join(parameters),
                 file
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        sys.exit(os.EX_SOFTWARE)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+    def run_qmcpack(self, id, setup):
+        """Run the QMCPACK benchmark."""
+        if not self.is_available(self.H5BENCH_QMCPACK):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_QMCPACK))
+
+            sys.exit(os.EX_UNAVAILABLE)
+
+        try:
+            start = time.time()
+
+            configuration = setup['configuration']
+
+            parameters = []
+
+            # Create the configuration parameter list
+            for key in configuration:
+                if key not in ['d'] and configuration[key]:
+                    parameters.append('-{} {} '.format(key, configuration[key]))
+
+            # Waiting for https://github.com/QMCPACK/qmcpack/pull/4343 to be merged
+            # parameters.append('-d {}/{} '.format(self.directory, id))
+
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_QMCPACK
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_QMCPACK):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_QMCPACK
+                else:
+                    benchmark_path = self.H5BENCH_QMCPACK
+
+            command = '{} {} {}'.format(
+                self.mpi,
+                benchmark_path,
+                ' '.join(parameters)
             )
 
             self.logger.info(command)

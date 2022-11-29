@@ -9,3 +9,6 @@
 [submodule "e3sm"]
 	path = e3sm
 	url = https://github.com/Parallel-NetCDF/E3SM-IO
+[submodule "qmcpack"]
+	path = qmcpack
+	url = https://github.com/QMCPACK/qmcpack
