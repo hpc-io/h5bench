@@ -28,7 +28,6 @@ jobs:
           cd build
 
           cmake .. \
-            -DH5BENCH_ALL=ON \
             -DH5BENCH_METADATA=ON \
             -DH5BENCH_EXERCISER=ON \
             -DH5BENCH_AMREX=ON \

@@ -50,7 +50,7 @@ jobs:
 
           ./configure
 
-          make install
+          sudo make install
 
       - name: Build VOL-ASYNC
         run: |
