@@ -266,6 +266,13 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
+      - name: Test h5bench SYNC qmcpack
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-qmcpack.json
+
       - name: Test h5bench ASYNC write/read
         run: |
           export HDF5_DIR=/opt/hdf5
