@@ -25,6 +25,10 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
+          # FFTW
+          wget https://www.fftw.org/fftw-3.3.10.tar.gz
+          tar zxf fftw-3.3.10.tar.gz
+
       - name: Build Argobots
         run: |
           export ABT_DIR=/opt/argobots
@@ -35,6 +39,14 @@ jobs:
           ./configure --prefix=$ABT_DIR
 
           make -j 2
+          make install
+
+      - name: Build FFTW
+        run: |
+          cd fftw-3.3.10
+
+          ./configure
+
           make install
 
       - name: Build VOL-ASYNC
