@@ -367,8 +367,9 @@ endif()
 
 if(H5BENCH_MACSIO)
     install(
-        TARGETS
-        h5bench_macsio
+        FILES
+        ${CMAKE_BINARY_DIR}/h5bench_macsio
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
         DESTINATION bin
     )
 endif()
