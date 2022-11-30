@@ -1101,6 +1101,7 @@ main(int argc, char *argv[])
     H5Pclose(fapl);
     unsigned long tflush_start = get_time_usec();
     H5Fflush(file_id, H5F_SCOPE_LOCAL);
+    MPI_Barrier(MPI_COMM_WORLD);
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
