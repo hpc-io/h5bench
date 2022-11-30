@@ -1,0 +1,23 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "configuration": "--allow-run-as-root --oversubscribe -np 2 "
+    },
+    "vol": {
+        
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "macsio",
+            "file": "test.h5",
+            "configuration": {
+                "parallel_file_mode": "MIF 8",
+                "part_size": "1M"
+            }
+        }
+    ]
+}
