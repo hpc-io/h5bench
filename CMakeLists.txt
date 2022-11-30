@@ -269,10 +269,21 @@ if(H5BENCH_MACSIO)
     set(ENABLE_HDF5_PLUGIN ON)
     set(WITH_HDF5_PREFIX ${HDF5_HOME})
 
-    add_subdirectory(macsio)
+    set(JSON_HOME $ENV{JSON_HOME})
+    set(CMAKE_PREFIX_PATH ${HDF5_HOME};${JSON_HOME})
 
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/macsio/macsio/macsio ${CMAKE_BINARY_DIR}/h5bench_macsio
+    ExternalProject_Add(h5bench_macsio
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/macsio
+        CMAKE_ARGS
+            -DBUILD_DOCS=OFF
+            -DENABLE_SILO_PLUGIN=OFF
+            -DENABLE_HDF5_PLUGIN=ON
+            -DWITH_HDF5_PREFIX=${HDF5_HOME}
+            -DWITH_JSON-CWX_PREFIX=${JSON_HOME}
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/macsio/macsio/macsio ${CMAKE_BINARY_DIR}/h5bench_macsio
+        BUILD_IN_SOURCE 1
+        LOG_CONFIGURE 1
+        LOG_BUILD 1
     )
 endif()
 
@@ -352,6 +363,14 @@ if(H5BENCH_AMREX)
             DESTINATION bin
         )
     endif()
+endif()
+
+if(H5BENCH_MACSIO)
+    install(
+        TARGETS
+        h5bench_macsio
+        DESTINATION bin
+    )
 endif()
 
 # Testing #####################################################################
