@@ -28,6 +28,7 @@ option(H5BENCH_EXERCISER        "Enable Exerciser benchmark"        OFF)
 option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
+option(H5BENCH_MACSIO           "Enable MACSio benchmark"           OFF)
 
 message(STATUS "h5bench baseline: ON")
 
@@ -39,6 +40,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_AMREX ON)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
+    set(H5BENCH_MACSIO ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -46,6 +48,7 @@ message(STATUS "h5bench EXERCISER: ${H5BENCH_EXERCISER}")
 message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
+message(STATUS "h5bench MACSIO: ${H5BENCH_MACSIO}")
 
 # HDF5 Dependency #############################################################
 #
@@ -251,6 +254,25 @@ if(H5BENCH_OPENPMD)
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()
+
+# MACSIO ######################################################################
+#
+# https://github.com/LLNL/MACSio
+
+if(H5BENCH_MACSIO)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+    set(BUILD_DOCS OFF)
+    set(ENABLE_SILO_PLUGIN OFF)
+    set(ENABLE_HDF5_PLUGIN ON)
+    set(WITH_HDF5_PREFIX ${HDF5_HOME})
+
+    add_subdirectory(macsio)
+
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/macsio/macsio/macsio ${CMAKE_BINARY_DIR}/h5bench_macsio
     )
 endif()
 

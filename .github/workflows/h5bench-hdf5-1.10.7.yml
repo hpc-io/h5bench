@@ -200,6 +200,13 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
+      - name: Test h5bench SYNC macsio
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
