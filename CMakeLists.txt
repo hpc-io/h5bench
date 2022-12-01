@@ -263,6 +263,7 @@ endif()
 
 if(H5BENCH_MACSIO)
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(CMAKE_POLICY_DEFAULT_CMP0114 NEW)
 
     set(BUILD_DOCS OFF)
     set(ENABLE_SILO_PLUGIN OFF)
@@ -273,15 +274,16 @@ if(H5BENCH_MACSIO)
     set(CMAKE_PREFIX_PATH ${HDF5_HOME};${JSON_HOME})
 
     ExternalProject_Add(h5bench_macsio
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/macsio
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/macsio
         CMAKE_ARGS
             -DBUILD_DOCS=OFF
             -DENABLE_SILO_PLUGIN=OFF
             -DENABLE_HDF5_PLUGIN=ON
             -DWITH_HDF5_PREFIX=${HDF5_HOME}
             -DWITH_JSON-CWX_PREFIX=${JSON_HOME}
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/macsio/macsio/macsio ${CMAKE_BINARY_DIR}/h5bench_macsio
-        BUILD_IN_SOURCE 1
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+        BUILD_COMMAND make
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio-prefix/src/h5bench_macsio-build/macsio/macsio ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio
         LOG_CONFIGURE 1
         LOG_BUILD 1
     )
@@ -369,7 +371,6 @@ if(H5BENCH_MACSIO)
     install(
         FILES
         ${CMAKE_BINARY_DIR}/h5bench_macsio
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
         DESTINATION bin
     )
 endif()

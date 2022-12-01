@@ -109,17 +109,16 @@ jobs:
       - name: Build h5bench SYNC
         run: |
           export HDF5_DIR=/opt/hdf5
-          export JSON_DIR=/opt/json-cwx
           export HDF5_HOME=$HDF5_DIR
-
+          export JSON_HOME=/opt/json-cwx
+          
           export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-sync
           cd build-sync
 
           cmake .. \
-            -DH5BENCH_ALL=ON \
-            -DWITH_JSON-CWX_PREFIX=$JSON_DIR
+            -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
 
@@ -130,7 +129,7 @@ jobs:
           export HDF5_HOME=/opt/hdf5
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
-          export JSON_DIR=/opt/json-cwx
+          export JSON_HOME=/opt/json-cwx
 
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
@@ -140,8 +139,7 @@ jobs:
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
-            -DH5BENCH_ALL=ON \
-            -DWITH_JSON-CWX_PREFIX=$JSON_DIR
+            -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
 

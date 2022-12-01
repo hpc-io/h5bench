@@ -93,8 +93,7 @@ jobs:
           cd build-sync
 
           cmake .. \
-            -DH5BENCH_ALL=ON \
-            -DWITH_JSON-CWX_PREFIX=$JSON_HOME
+            -DH5BENCH_ALL=ON
           make -j 2
           make install
 
@@ -113,8 +112,7 @@ jobs:
           cmake .. \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
-            -DH5BENCH_ALL=ON \
-            -DWITH_JSON-CWX_PREFIX=$JSON_HOME
+            -DH5BENCH_ALL=ON
           make -j 2
           make install
 
