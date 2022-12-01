@@ -30,6 +30,9 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
+          # JSON-CWX
+          git clone https://github.com/LLNL/json-cwx /opt/json-cwx
+
           python3 -m pip install pytest
 
       - name: Build HDF5 develop
@@ -45,6 +48,19 @@ jobs:
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
 
           make -j 2
+          make install
+
+      - name: Build JSON-CWX
+        run: |
+          export JSON_DIR=/opt/json-cwx
+
+          cd /opt/json-cwx/json-cwx
+
+          ./autogen.sh
+          
+          ./configure --prefix=$JSON_DIR
+
+          make
           make install
 
       - name: Build Argobots
