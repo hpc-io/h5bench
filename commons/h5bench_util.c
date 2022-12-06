@@ -656,7 +656,7 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
     else {
         (*params_in_out).asyncMode = MODE_SYNC;
     }
-    
+
     if (strcmp(key, "IO_OPERATION") == 0) {
         if (strcmp(val, "READ") == 0) {
             params_in_out->io_op = IO_READ;
@@ -928,15 +928,14 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
             params_in_out->asyncMode = MODE_SYNC;
         }
         else {
-	    printf("Unknown MODE: %s\n", key);
-	    return -1;
+            printf("Unknown MODE: %s\n", key);
+            return -1;
         }
     }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
     }
-
 
     if ((*params_in_out).useCSV)
         (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
