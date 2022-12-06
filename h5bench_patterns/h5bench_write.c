@@ -789,7 +789,6 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
 #ifdef USE_CACHE_VOL
-        MPI_Barrier(MPI_COMM_WORLD);
         H5Fcache_async_op_pause(file_id);
 #endif
         switch (pattern) {
