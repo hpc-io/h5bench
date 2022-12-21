@@ -909,6 +909,33 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).subfiling = 0;
     }
+    else if (strcmp(key, "ALIGN") == 0) {
+        int align = atoi(val);
+        if (align == 0 || align == 1)
+            (*params_in_out).align = align;
+        else {
+            printf("ALIGN MUST BE 1 OR 0\n");
+            return -1;
+        }
+    }
+    else if (strcmp(key, "ALIGN_THRESHOLD") == 0) {
+        int align_threshold = atoi(val);
+        if (align_threshold >=0)
+            (*params_in_out).align_threshold = align_threshold;
+        else {
+            printf("align_threshold >=0 \n");
+            return -1;
+        }
+    }
+    else if (strcmp(key, "ALIGN_LEN") == 0) {
+        int align_len = atoi(val);
+        if (align_len >=0)
+            (*params_in_out).align_len = align_len;
+        else {
+            printf("ALIGN_LEN >=0 \n");
+            return -1;
+        }
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -965,6 +992,9 @@ bench_params_init(bench_params *params_out)
     (*params_out).csv_fs        = NULL;
     (*params_out).env_meta_path = NULL;
     (*params_out).file_per_proc = 0;
+    (*params_out).align         = 0;
+    (*params_out).align_threshold       = 0;
+    (*params_out).align_len     = 0;
 }
 
 int
@@ -1122,6 +1152,9 @@ print_params(const bench_params *p)
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
+    printf("From h5bench_util.c - ALIGN : %d \t ALIGN_THRESHOLD : %ld \t ALIGN_LEN : %ld \t \n", 
+            p->align, p->align_threshold, p->align_len);
+
     printf("===========================================================\n");
     printf("\n");
 }

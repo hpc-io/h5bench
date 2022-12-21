@@ -202,9 +202,12 @@ class H5bench:
                     continue
 
             id = str(uuid.uuid4()).split('-')[0]
-
+            cobalt_jobid = os.environ['LSB_JOBID']
+            id = id + "--" + cobalt_jobid
+            self.logger.info('LSB_JOBID is [{}]'.format(cobalt_jobid))
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
+            #print(f"storage ID is {id} and LSB_JOBID is {cobalt_jobid}\n")
 
             os.mkdir('{}/{}'.format(setup['directory'], id))
 
@@ -235,9 +238,13 @@ class H5bench:
             self.mpi = '{} {}'.format(mpi['command'], mpi['configuration'])
         else:
             if mpi['command'] in ['mpirun', 'mpiexec']:
-                self.mpi = '{} -np {}'.format(mpi['command'], mpi['ranks'])
+                self.mpi = '{} -n {} -ppn {}'.format(mpi['command'], mpi['ranks'], mpi['ppn'])
             elif mpi['command'] == 'srun':
                 self.mpi = '{} --cpu_bind=cores -n {}'.format(mpi['command'], mpi['ranks'])
+            elif mpi['command'] == 'aprun':
+                self.mpi = '{} -n {} -N {} -cc depth'.format(mpi['command'], mpi['ranks'], mpi['ppn'])  
+            elif mpi['command'] == 'jsrun':
+                self.mpi = '{} -n {} -r {} -cc depth'.format(mpi['command'], mpi['ranks'], mpi['ppn'])  
             else:
                 self.logger.warning('Unknown MPI launcher selected!')
 

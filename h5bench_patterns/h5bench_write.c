@@ -82,9 +82,9 @@ hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
 // Optimization globals
-int           ALIGN                = 1;
-unsigned long ALIGN_THRESHOLD      = 16777216;
-unsigned long ALIGN_LEN            = 16777216;
+int           ALIGN                = 0;
+unsigned long ALIGN_THRESHOLD      = 0;
+unsigned long ALIGN_LEN            = 0; // 16777216
 int           COLL_METADATA        = 0;
 int           DEFER_METADATA_FLUSH = 1;
 
@@ -908,9 +908,23 @@ set_fapl()
 hid_t
 set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len, int meta_collective)
 {
-    if (align != 0)
+    hsize_t threshold_o, alignment_len_o;
+    herr_t  ret;
+    if (align == 1)
+    {
         H5Pset_alignment(fapl, threshold, alignment_len);
 
+        ret = H5Pget_alignment(fapl, &threshold_o, &alignment_len_o);
+        if (ret < 0)
+            if (MY_RANK == 0) 
+                printf("K-Debug: H5Pget_alignment failed \n");
+        
+        if (MY_RANK == 0) 
+        {
+            printf("K-Debug: alignment_len_o Value:  %ld\n", alignment_len_o );
+            printf("K-Debug: threshold_o Value:  %ld\n", threshold_o );  
+        }
+    }
     if (meta_collective == 1) {
         if (MY_RANK == 0)
             printf("Collective Metadata operations: ON\n");
@@ -1049,6 +1063,10 @@ main(int argc, char *argv[])
         printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
     hid_t fapl = set_fapl();
+    ALIGN           = params.align;
+    ALIGN_THRESHOLD = params.align_threshold;
+    ALIGN_LEN       = params.align_len;
+
     if (params.file_per_proc) {
     }
     else {
@@ -1182,6 +1200,19 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
+
+        if (MY_RANK == 0) {
+        printf("K-DEBUG-Summary\n");
+        printf("Number of ranks: %d \n", NUM_RANKS);
+        printf("Number of TIMESTEPS: %d \n", NUM_TIMESTEPS);
+        printf("NUM_PARTICLES per rank: %llu \n", NUM_PARTICLES);
+        printf("TOTAL_PARTICLES from all ranks: %llu \n", TOTAL_PARTICLES);
+        printf("Size of 1 particle: %ld Bytes\n", (7 * sizeof(float) + sizeof(int)));
+        printf("total_write_size: %lu Bytes\n", total_write_size);
+        
+        //unsigned long total_write_size = NUM_RANKS * NUM_TIMESTEPS * NUM_PARTICLES * (7 * sizeof(float) + sizeof(int));
+    }
+
     }
 
     MPI_Finalize();
