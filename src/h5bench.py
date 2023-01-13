@@ -334,7 +334,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['MODE'] == 'ASYNC':
+            if configuration['MODE'] in ['ASYNC', 'LOG']:
                 self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
@@ -411,7 +411,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['MODE'] == 'ASYNC':
+            if configuration['MODE'] in ['ASYNC', 'LOG']:
                 self.disable_vol(vol)
 
             if self.validate:
@@ -594,7 +594,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['mode'] == 'ASYNC':
+            if configuration['mode'] in ['ASYNC', 'LOG']:
                 self.enable_vol(vol)
 
                 binary = self.H5BENCH_AMREX_ASYNC
@@ -661,7 +661,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['mode'] == 'ASYNC':
+            if configuration['mode'] in ['ASYNC', 'LOG']:
                 self.disable_vol(vol)
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
