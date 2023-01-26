@@ -166,6 +166,35 @@ This way, you can configure a workflow with multiple interleaving files, e.g., `
       }
    }
 
+You can also provide the ``align`` settings for GPFS filesystem in the ``benchmark`` property configuration. Note, not in the ``filesystem`` property.  
+This parameter is enabled only for h5bench-write and h5bench-write-unlimited.
+
+
+.. code-block::
+
+   {
+      "benchmark": "write",
+      "file": "test.h5",
+      "configuration": {
+            "MEM_PATTERN": "CONTIG",
+            "FILE_PATTERN": "CONTIG",
+            "TIMESTEPS": "5",
+            "DELAYED_CLOSE_TIMESTEPS": "2",
+            "COLLECTIVE_DATA": "YES",
+            "COLLECTIVE_METADATA": "YES",
+            "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+            "NUM_DIMS": "1",
+            "DIM_1": "4194304",
+            "DIM_2": "1",
+            "DIM_3": "1",
+            "MODE": "ASYNC",
+            "CSV_FILE": "output.csv",
+            "ALIGN":"YES",
+            "ALIGN_THRESHOLD":"16777216",
+            "ALIGN_LEN":"16777216"
+      }
+   }
+
 For the ``metadata`` stress benchmark, ``file`` and ``configuration`` properties must be defined:
 
 .. code-block::

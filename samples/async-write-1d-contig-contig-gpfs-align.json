@@ -1,11 +1,13 @@
 {
     "mpi": {
-        "command": "jsrun",
-        "ranks": "64",
-        "configuration": "-a 16 -c 16 -r 1"
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root --np 2 --oversubscribe"
     },
-    "vol": { },
-    "file-system": { },
+    "vol": {
+    },
+    "file-system": {
+    },
     "directory": "storage",
     "benchmarks": [
         {
@@ -25,7 +27,7 @@
                 "DIM_3": "1",
                 "CSV_FILE": "output.csv",
                 "MODE": "ASYNC",
-                "ALIGN":"1",
+                "ALIGN":"YES",
                 "ALIGN_THRESHOLD":"16777216",
                 "ALIGN_LEN":"16777216"
             }
