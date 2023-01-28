@@ -33,7 +33,7 @@ build-cori:
 build-perlmutter:
     stage: build
     tags:
-        - cori
+        - perlmutter
     variables:
         GIT_SUBMODULE_STRATEGY: recursive
         SCHEDULER_PARAMETERS: "--qos=debug -N 1 -t 00:30:00"
