@@ -18,7 +18,7 @@ ARGS = PARSER.parse_args()
 with open(ARGS.setup, 'r') as f:
     data = json.load(f, object_pairs_hook=collections.OrderedDict)
 
-del data['mpi']['command']
+data['mpi']['command'] = ''
 del data['mpi']['ranks']
 
 data['mpi']['configuration'] = 'srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -n 4 -t 00:30:00'
