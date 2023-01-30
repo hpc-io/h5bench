@@ -2,7 +2,12 @@
   <img src="https://raw.githubusercontent.com/hpc-io/h5bench/develop/docs/source/_static/images/h5bench-logo.png?raw=true" alt="h5bench"/>
 </p>
 
-# H5bench: a Parallel I/O Benchmark Suite for HDF5
+# h5bench: a Parallel I/O Benchmark Suite for HDF5
+
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/hpc-io/h5bench?label=h5bench&logo=github)
+![Spack](https://img.shields.io/spack/v/h5bench)
+![GitHub branch checks state](https://img.shields.io/github/checks-status/hpc-io/h5bench/master)
+![Read the Docs](https://img.shields.io/readthedocs/h5bench?logo=readthedocs&logoColor=white)
 
 H5bench is a suite of parallel I/O benchmarks or kernels representing I/O patterns that are commonly used in HDF5 applications on high performance computing systems. H5bench measures I/O performance from various aspects, including the I/O overhead, observed I/O rate, etc.
 

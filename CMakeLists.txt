@@ -6,11 +6,16 @@ project(
 )
 
 include(ExternalProject)
+include(CTest)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
+find_package(Python REQUIRED)
 find_package(MPI REQUIRED)
+
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+enable_testing()
 
 # Options and Variants ########################################################
 #
@@ -42,14 +47,6 @@ message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
 
-if(H5BENCH_E3SM)
-    set(PNETCDF_HOME $ENV{PNETCDF_HOME})
-    set(CMAKE_PREFIX_PATH ${PNETCDF_HOME})
-
-    find_package(PNetCDF REQUIRED)
-    include_directories(${PNETCDF_INCLUDES})
-endif()
-
 # HDF5 Dependency #############################################################
 #
 
@@ -63,6 +60,20 @@ message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
 
+# Check if HDF5 has subfiling VFD
+set(HAVE_subfiling 0)
+find_file (H5FDsubfiling_H H5FDsubfiling.h PATHS ${HDF5_INCLUDE_DIRS})
+if(EXISTS ${H5FDsubfiling_H})
+   include(CheckSymbolExists)
+   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${HDF5_INCLUDE_DIRS})
+   check_symbol_exists(H5_HAVE_SUBFILING_VFD hdf5.h HAVE_SUBFILING_VFD)
+   if(${HAVE_SUBFILING_VFD})
+       add_definitions(-DHAVE_SUBFILING)
+   endif()
+   unset(CMAKE_REQUIRED_INCLUDES)
+endif()
+message(STATUS "   Detected HDF5 subfiling support: ${HAVE_SUBFILING_VFD}")
+
 # VOL ASYNC Dependency ########################################################
 #
 
@@ -72,8 +83,8 @@ option(WITH_ASYNC_VOL "Enable HDF5 VOL ASYNC connector" OFF)
 if(WITH_ASYNC_VOL)
     if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.13.0")
         add_definitions(-DUSE_ASYNC_VOL)
-        include_directories(${ASYNC_HOME})
-        link_directories(${ASYNC_HOME})
+        include_directories(${ASYNC_HOME}/include)
+        link_directories(${ASYNC_HOME}/lib)
     else()
         message(SEND_ERROR "VOL ASYNC requires HDF5 1.13.0 or newer.")
     endif()
@@ -188,8 +199,6 @@ if(H5BENCH_AMREX)
         add_executable(h5bench_amrex_async ${amrex_src})
         target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async ${CMAKE_DL_LIBS} MPI::MPI_C)
     endif()
-        
-    configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 endif()
 
 # E3SM ########################################################################
@@ -199,7 +208,7 @@ endif()
 if(H5BENCH_E3SM)
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-pnetcdf=${PNETCDF_HOME} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
+        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME}
         BUILD_COMMAND make
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
@@ -245,14 +254,40 @@ if(H5BENCH_OPENPMD)
     )
 endif()
 
-configure_file(${CMAKE_SOURCE_DIR}/h5bench ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
 
 # Install binaries ############################################################
 
 install(
     FILES
-    h5bench
+    src/h5bench.py RENAME h5bench
     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    src/h5bench_version.py
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    FILES
+    ${CMAKE_BINARY_DIR}/h5bench_configuration.py
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
+
+install(
+    TARGETS
+    h5bench_write
+    h5bench_write_unlimited
+    h5bench_overwrite
+    h5bench_append
+    h5bench_read
     DESTINATION bin
 )
 
@@ -296,3 +331,7 @@ if(H5BENCH_AMREX)
         )
     endif()
 endif()
+
+# Testing #####################################################################
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)

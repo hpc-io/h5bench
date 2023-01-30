@@ -1,0 +1,156 @@
+name: h5bench (HDF5 develop test) 
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  h5bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_MCA_rmaps_base_oversubscribe: "yes"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev -y
+          
+          # HDF5
+          git clone https://github.com/HDFGroup/hdf5.git
+
+          # VOL-ASYNC
+          git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
+
+          python3 -m pip install pytest
+
+      - name: Build HDF5 develop
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_LIBTOOL=/usr/bin/libtoolize
+          
+          mkdir $HDF5_DIR
+
+          cd hdf5
+
+          ./autogen.sh
+          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+
+          make -j 2
+          make install
+
+      - name: Build Argobots
+        run: |
+          export ABT_DIR=/opt/argobots
+          
+          cd /opt/vol-async/argobots
+
+          ./autogen.sh
+          ./configure --prefix=$ABT_DIR
+
+          make -j 2
+          make install
+
+      - name: Build VOL-ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          
+          cd $ASYNC_DIR
+          mkdir build
+          cd build
+
+          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR
+          make
+          make install
+
+      - name: Test VOL-ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_HOME=$HDF5_DIR
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+          export HDF5_PLUGIN_PATH="$ASYNC_DIR/include"
+          export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
+
+          cd $ASYNC_DIR/build
+          
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
+          ctest
+
+      - name: Build h5bench SYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_HOME=$HDF5_DIR
+
+          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
+
+          mkdir build-sync
+          cd build-sync
+
+          cmake .. \
+            -DH5BENCH_ALL=ON
+          make -j 2
+          sudo make install
+
+      - name: Build h5bench ASYNC
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
+          mkdir build-async
+          cd build-async
+
+          cmake .. \
+            -DWITH_ASYNC_VOL:BOOL=ON \
+            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
+            -DH5BENCH_ALL=ON
+          make -j 2
+          sudo make install
+
+      - name: Test h5bench SYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-sync
+
+          ctest --verbose .
+
+      - name: Test h5bench ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          ctest --verbose .
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test
+          path: build*/storage/**/std*
+          retention-days: 1

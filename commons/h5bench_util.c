@@ -29,6 +29,8 @@ int str_to_ull(char *str_in, unsigned long long *num_out);
 int parse_time(char *str_in, duration *time);
 int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
+int has_vol_async;
+
 unsigned long
 get_time_usec()
 {
@@ -65,13 +67,13 @@ h5bench_sleep(duration sleep_time)
 }
 
 void
-async_sleep(hid_t file_id, hid_t fapl, duration sleep_time)
+async_sleep(hid_t es_id, duration sleep_time)
 {
 #ifdef USE_ASYNC_VOL
-    unsigned cap = 0;
-    H5Pget_vol_cap_flags(fapl, &cap);
-    if (H5VL_CAP_FLAG_ASYNC & cap)
-        H5Fstart(file_id, fapl);
+    size_t  num_in_progress;
+    hbool_t op_failed;
+
+    H5ESwait(es_id, 0, &num_in_progress, &op_failed);
 #endif
     h5bench_sleep(sleep_time);
 }
@@ -186,8 +188,11 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
         ts_run = &(mon->time_steps[i]);
         if (mon->time_steps[i].status == TS_DELAY) {
             t1 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts_run->dset_ids[j] != 0) {
+                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                }
+            }
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
             t2 = get_time_usec();
             meta_time += (t2 - t1);
@@ -259,8 +264,11 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         for (int i = 0; i < mon->time_step_cnt; i++) {
             ts_run = &(mon->time_steps[i]);
             if (mon->time_steps[i].status == TS_DELAY) {
-                for (int j = 0; j < dset_cnt; j++)
-                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                for (int j = 0; j < dset_cnt; j++) {
+                    if (ts_run->dset_ids[j] != 0) {
+                        H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                    }
+                }
                 H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
             }
         }
@@ -274,8 +282,11 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         ts_run = &(mon->time_steps[i]);
         if (mon->time_steps[i].status == TS_DELAY) {
 
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts_run->dset_ids[j] != 0) {
+                    H5Dclose_async(ts_run->dset_ids[j], ts_run->es_meta_close);
+                }
+            }
             H5Gclose_async(ts_run->grp_id, ts_run->es_meta_close);
 
             ts_run->status = TS_READY;
@@ -887,6 +898,17 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).file_per_proc = 0;
     }
+    else if (strcmp(key, "SUBFILING") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y') {
+#ifndef HAVE_SUBFILING
+            printf("HDF5 version does not support SUBFILING \n");
+            return -1;
+#endif
+            (*params_in_out).subfiling = 1;
+        }
+        else
+            (*params_in_out).subfiling = 0;
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -917,6 +939,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).meta_coll    = 0;
     (*params_out).data_coll    = 0;
     (*params_out).asyncMode    = MODE_SYNC;
+    (*params_out).subfiling    = 0;
 
     (*params_out).cnt_time_step         = 0;
     (*params_out).cnt_time_step_delay   = 0;
@@ -1048,6 +1071,11 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
             }
         }
     }
+    if (params_out->subfiling > 0 && params_out->data_coll == 1) {
+        printf("Subfiling does not support collective data buffering for data.\n");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1055,8 +1083,9 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
 void
 print_params(const bench_params *p)
 {
-    printf("=======================================\n");
-    printf("Benchmark configuration: \nFile: %s\n", p->data_file_path);
+    printf("\n");
+    printf("================ Benchmark Configuration ==================\n");
+    printf("File: %s\n", p->data_file_path);
     printf("Number of particles per rank: %llu\n", p->num_particles);
     printf("Number of time steps: %d\n", p->cnt_time_step);
     printf("Emulated compute time per timestep: %lu\n", p->compute_time.time_num);
@@ -1064,7 +1093,9 @@ print_params(const bench_params *p)
     printf("Mode: %s\n", p->asyncMode == MODE_SYNC ? "SYNC" : "ASYNC");
     printf("Collective metadata operations: %s\n", p->meta_coll == 1 ? "YES" : "NO");
     printf("Collective buffering for data operations: %s\n", p->data_coll == 1 ? "YES" : "NO");
-
+    if (p->subfiling) {
+        printf("Use Subfiling: %s\n", p->subfiling == 1 ? "YES" : "NO");
+    }
     printf("Number of dimensions: %d\n", p->num_dims);
     printf("    Dim_1: %lu\n", p->dim_1);
     if (p->num_dims >= 2) {
@@ -1091,8 +1122,8 @@ print_params(const bench_params *p)
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
     }
-
-    printf("=======================================\n");
+    printf("===========================================================\n");
+    printf("\n");
 }
 
 void
@@ -1257,4 +1288,26 @@ get_dir_from_path(char *path)
     char *pDir = substr(path, 0, strlen(path) - strlen(get_file_name_from_path(path)));
 
     return pDir;
+}
+
+human_readable
+format_human_readable(uint64_t bytes)
+{
+    human_readable value;
+
+    char unit[] = {' ', 'K', 'M', 'G', 'T'};
+    char length = sizeof(unit) / sizeof(unit[0]);
+
+    int    i      = 0;
+    double format = bytes;
+
+    if (bytes >= 1024) {
+        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
+            format = bytes / 1024.0;
+    }
+
+    value.value = format;
+    value.unit  = unit[i];
+
+    return value;
 }

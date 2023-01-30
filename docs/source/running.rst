@@ -11,19 +11,21 @@ If you prefer, you can also manually run each benchmark in h5bench. For more det
 
 .. code-block::
 
-   usage: h5bench [-h] [--abort-on-failure] [--debug] [--validate-mode] setup
+   usage: h5bench [-h] [-a] [-d] [-v] [-p PREFIX] [-f FILTER] [-V] setup
 
    H5bench: a Parallel I/O Benchmark Suite for HDF5:
 
    positional arguments:
-     setup               JSON file with the benchmarks to run
+     setup                          JSON file with the benchmarks to run
 
-   optional arguments:
-     -h, --help          show this help message and exit
-     --abort-on-failure  Stop h5bench if a benchmark failed
-     --debug             Enable debug mode
-     --validate-mode     Validated if the requested mode (async/sync) was run
-
+   options:
+     -h, --help                     Show this help message and exit
+     -a, --abort-on-failure         Stop h5bench if a benchmark failed
+     -d, --debug                    Enable debug mode
+     -v, --validate-mode            Validated if the requested mode (async/sync) was run
+     -p PREFIX, --prefix PREFIX     Prefix where all h5bench binaries were installed
+     -f FILTER, --filter FILTER     Execute only filtered benchmarks
+     -V, --version                  Show program's version number and exit
 
 You need to provide a JSON file with the configurations you want to run.
 If you're using ``h5bench``, you should *not* call ``mpirun``, ``srun``, or any other parallel launcher on your own. 
@@ -32,13 +34,19 @@ The main script will handle setting and unsetting environment variables, launchi
 
 .. code-block::
 
-   ./h5bench configuration.json
+   h5bench configuration.json
 
 If you run it with the ``--debug`` option, h5bench will also print log messages ``stdout``. The default behavior is to store it in a file. 
 
 .. warning::
 
    Make sure you do not call `srun`, `mpirun`, etc directly but instead define that in the JSON configuration file. You should **always** call h5bench directly.  
+
+You can define a single `.json` file with a complete setup and a combination of kernels you want to run. You can filter which of those benchmarks `h5bench` should run by passing the `--filter` option when running. For instance, the following command will only run the `read`, and `openpmd` kernels defined in the `.json`. The remaining ones would be ignored.
+
+.. code-block::
+
+   h5bench --filter read,openpmd configuration.json
 
 Configuration
 -------------
@@ -104,10 +112,10 @@ You can use this property to configure some file system options. For now, you ca
 Benchmarks
 ^^^^^^^^^^
 
-You can specify which benchmarks ``h5bench`` should run in this property, their order, and configuration.
-You can choose between: ``write``, ``read``, ``metadata``, and ``exerciser``. 
+You can specify which benchmarks ``h5bench`` should run using this property, their order, and configuration.
+You can choose between: ``write``, ``write-unlimited``, ``overwrite``, ``append``, ``read``, ``metadata``, ``exerciser``, ``openpmd``, ``amrex``, ``e3sm``. 
 
-For the ``write`` pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``:
+For each pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``:
 
 .. code-block::
 
@@ -132,7 +140,6 @@ For the ``write`` pattern of ``h5bench``, you should provide the ``file`` and th
       }
    }
 
-For the ``read`` pattern of ``h5bench``, you should provide the ``file`` and the ``configuration``. 
 If you provide the same ``file`` name used for a previous ``write`` execution, it will read from that file.
 This way, you can configure a workflow with multiple interleaving files, e.g., ``write`` file-01, ``write`` file-02, ``read`` file-02, ``read`` file-01.
 
@@ -198,7 +205,7 @@ For the ``exerciser`` benchmark, you need to provide the required runtime option
       }
    }
 
-You can refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
+You can find several samples of configuration file with all the optins in the our [GitHub repository] (https://github.com/hpc-io/h5bench/tree/master/samples). You can also refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
 
 .. literalinclude:: ../../configuration.json
    :language: json
@@ -235,7 +242,13 @@ In Cori you need to load Python and its libraries for the main ``h5bench`` scrip
 
    module load python
 
-In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads, make sure you define:
+In case you are running on Cori and the benchmark fails with an MPI message indicating no support for multiple threads:
+
+.. code-block::
+
+   Assertion `MPI_THREAD_MULTIPLE == mpi_thread_lvl_p rovided' failed.
+
+Please, make sure you define the following:
 
 .. code-block::
 

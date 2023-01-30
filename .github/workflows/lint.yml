@@ -17,7 +17,7 @@ jobs:
         uses: julianwachholz/flake8-action@v2
         with:
           checkName: "Python Lint"
-          path: h5bench
+          path: src/h5bench.py
           config: tox.ini
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

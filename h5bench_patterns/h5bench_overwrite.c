@@ -233,11 +233,12 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
 int
 _set_dataspace_seq_read(unsigned long read_elem_cnt, hid_t *filespace_in, hid_t *memspace_out)
 {
+    hsize_t count[1] = {1};
     /* Overwrite dataset, set dim to NULL. */
     *memspace_out = H5Screate_simple(1, (hsize_t *)&read_elem_cnt, NULL);
 
-    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL,
-                        (hsize_t *)&read_elem_cnt, NULL);
+    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, (hsize_t *)&FILE_OFFSET, NULL, count,
+                        (hsize_t *)&read_elem_cnt);
     return read_elem_cnt;
 }
 
@@ -282,14 +283,15 @@ _set_dataspace_seq_2D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[0] = (hsize_t)dim_1 * NUM_RANKS; // total x length: dim_1 * world_size.
     file_dims[1] = (hsize_t)dim_2;             // always the same dim_2
 
-    hsize_t file_starts[2], count[2];   // select start point and range in each dimension.
+    hsize_t count[2] = {1, 1};
+    hsize_t file_starts[2], block[2];   // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK); // file offset for each rank
     file_starts[1] = 0;
 
-    count[0]      = dim_1;
-    count[1]      = dim_2;
+    block[0]      = dim_1;
+    block[1]      = dim_2;
     *memspace_out = H5Screate_simple(2, mem_dims, NULL);
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, block);
     return dim_1 * dim_2;
 }
 
@@ -306,6 +308,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     file_dims[1] = (hsize_t)dim_2;
     file_dims[2] = (hsize_t)dim_3;
 
+    hsize_t count[3] = {1, 1, 1};
     hsize_t file_starts[3], file_range[3]; // select start point and range in each dimension.
     file_starts[0] = dim_1 * (MY_RANK);
     file_starts[1] = 0;
@@ -316,7 +319,7 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 
     *memspace_out = H5Screate_simple(3, mem_dims, NULL);
 
-    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, file_range, NULL);
+    H5Sselect_hyperslab(*filespace_in_out, H5S_SELECT_SET, file_starts, NULL, count, file_range);
     return dim_1 * dim_2 * dim_3;
 }
 
@@ -423,8 +426,11 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
 
         if (params.cnt_time_step_delay == 0) {
             t3 = get_time_usec();
-            for (int j = 0; j < dset_cnt; j++)
-                H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+            for (int j = 0; j < dset_cnt; j++) {
+                if (ts->dset_ids[j] != 0) {
+                    H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
+                }
+            }
             H5Gclose_async(ts->grp_id, ts->es_meta_close);
             ts->status = TS_READY;
             t4         = get_time_usec();
@@ -435,7 +441,7 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing... \n");
-                async_sleep(file_id, fapl, params.compute_time);
+                async_sleep(ts->es_meta_close, params.compute_time);
             }
         }
 
@@ -485,12 +491,14 @@ main(int argc, char *argv[])
     char *cfg_file_path = argv[1];
     char *file_name     = argv[2]; // data file to read
 
-    if (MY_RANK == 0)
-        printf("config file: %s, read data file: %s\n", argv[1], argv[2]);
+    if (MY_RANK == 0) {
+        printf("Configuration file: %s\n", argv[1]);
+        printf("Read data file: %s\n", argv[2]);
+    }
     int do_write = 0;
     if (read_config(cfg_file_path, &params, do_write) < 0) {
         if (MY_RANK == 0)
-            printf("Config file read failed. check path: %s\n", cfg_file_path);
+            printf("Configuration file read failed. Please, check %s\n", cfg_file_path);
         return 0;
     }
     ASYNC_MODE    = params.asyncMode;
@@ -520,7 +528,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 0) {
         for (int i = 0; i < dims_cnt; i++) {
             if (MY_RANK == 0)
-                printf("dims[%d] = %lu (total number for the file)\n", i, dims[i]);
+                printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
             total_particles *= dims[i];
         }
     }
@@ -548,7 +556,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 1) { // 2D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_2(%lu) is greater than file dimension(%lu).\n",
+                printf("Failed: Required dimension_2 (%lu) is greater than file dimension (%llu).\n",
                        params.dim_2, dims[1]);
             goto error;
         }
@@ -556,7 +564,7 @@ main(int argc, char *argv[])
     if (dims_cnt > 2) { // 3D
         if (params.dim_2 > dims[1]) {
             if (MY_RANK == 0)
-                printf("Failed: Required dimension_3(%lu) is greater than file dimension(%lu).\n",
+                printf("Failed: Required dimension_3 (%lu) is greater than file dimension (%llu).\n",
                        params.dim_3, dims[2]);
             goto error;
         }
@@ -599,7 +607,7 @@ main(int argc, char *argv[])
     }
 
     if (MY_RANK == 0)
-        printf("Opened HDF5 file ... [%s]\n", file_name);
+        printf("Opened HDF5 file... [%s]\n", file_name);
 
     unsigned long raw_read_time, metadata_time, local_data_size;
 
@@ -624,7 +632,8 @@ main(int argc, char *argv[])
     free_contig_memory(BUF_STRUCT);
 
     if (MY_RANK == 0) {
-        char *mode_str = NULL;
+        human_readable value;
+        char *         mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
@@ -632,40 +641,54 @@ main(int argc, char *argv[])
         else {
             mode_str = "SYNC";
         }
-        printf("\n =================  Performance results  =================\n");
+
+        printf("\n=================== Performance Results ==================\n");
+
+        printf("Total number of ranks: %d\n", NUM_RANKS);
+
         unsigned long long total_sleep_time_us =
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        unsigned long total_size_gb = NUM_RANKS * local_data_size / (1024 * 1024 * 1024);
-        printf("Total emulated compute time = %.3lf sec\n"
-               "Total modify size = %lu GB\n",
-               total_sleep_time_us / (1000.0 * 1000.0), total_size_gb);
+        printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
-        float rrt_s = (float)raw_read_time / (1000 * 1000);
+        unsigned long total_size_bytes = NUM_RANKS * local_data_size;
+        value                          = format_human_readable(total_size_bytes);
+        printf("Total modify size: %.3lf %cB\n", value.value, value.unit);
 
-        float raw_rate_gbs = total_size_gb / rrt_s;
-        printf("Raw modify time = %.3f sec \n", rrt_s);
+        float rrt_s = (float)raw_read_time / (1000.0 * 1000.0);
 
-        float meta_time_s = (float)metadata_time / (1000 * 1000);
-        printf("Metadata time = %.3f sec\n", meta_time_s);
+        float raw_rate = total_size_bytes / rrt_s;
+        printf("Raw modify time: %.3f s \n", rrt_s);
 
-        float oct_s = (float)(t4 - t1) / (1000 * 1000);
-        printf("Observed modify completion time = %.3f sec\n", oct_s);
+        float meta_time_s = (float)metadata_time / (1000.0 * 1000.0);
+        printf("Metadata time: %.3f s\n", meta_time_s);
 
-        printf("%s Raw modify rate = %.3f GB/sec \n", mode_str, raw_rate_gbs);
-        double or_gbs = (float)total_size_gb / ((float)(t4 - t1 - total_sleep_time_us) / (1000 * 1000));
-        printf("%s Observed modify rate = %.3f GB/sec\n", mode_str, or_gbs);
+        float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
+        printf("Observed modify completion time: %.3f s\n", oct_s);
+
+        value = format_human_readable(raw_rate);
+        printf("%s Raw modify rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
+
+        float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
+        value       = format_human_readable(or_bs);
+        printf("%s Observed modify rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
+
+        printf("===========================================================\n");
 
         if (params.useCSV) {
-            fprintf(params.csv_fs, "NUM_RANKS, %d\n", NUM_RANKS);
-            fprintf(params.csv_fs, "Total emulated compute time, %llu, sec\n",
-                    total_sleep_time_us / (1000 * 1000));
-            fprintf(params.csv_fs, "Total modify size, %lu, GB\n", total_size_gb);
-            fprintf(params.csv_fs, "Metadata_time, %.3f, sec\n", meta_time_s);
-            fprintf(params.csv_fs, "Data modify time, %.3f, sec\n", rrt_s);
-            fprintf(params.csv_fs, "Observed modify completion time, %.3f, sec\n", oct_s);
-
-            fprintf(params.csv_fs, "Raw modify rate, %.3f, GB/sec\n", raw_rate_gbs);
-            fprintf(params.csv_fs, "Observed modify rate, %.3f, GB/sec\n", or_gbs);
+            fprintf(params.csv_fs, "metric, value, unit\n");
+            fprintf(params.csv_fs, "operation, %s, %s\n", "overwrite", "");
+            fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+            fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
+                    "seconds");
+            value = format_human_readable(total_size_bytes);
+            fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
+            fprintf(params.csv_fs, "raw time, %.3f, %s\n", rrt_s, "seconds");
+            value = format_human_readable(raw_rate);
+            fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
+            fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
+            value = format_human_readable(or_bs);
+            fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
+            fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
     }
