@@ -1,6 +1,4 @@
 variables:
-    HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
-    HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
     H5BENCH_BUILD_PATH: "${CI_PROJECT_DIR}/build"
     H5BENCH_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
 
@@ -8,40 +6,108 @@ stages:
     - build
     - test
 
-build:
+build-cori:
     stage: build
     tags:
         - cori
     variables:
         GIT_SUBMODULE_STRATEGY: recursive
         SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
     script:
         - echo "Build h5bench"
         - module swap PrgEnv-intel PrgEnv-gnu 
         - module unload gcc
         - module load cmake gcc/8.3.0
         - module list
-        - mkdir ${H5BENCH_BUILD_PATH}
-        - cd ${H5BENCH_BUILD_PATH}
-        - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH} -DH5BENCH_METADATA=ON -DH5BENCH_AMREX=ON -DH5BENCH_EXERCISER=ON -DH5BENCH_OPENPMD=ON
+        - module load cmake
+        - mkdir -p ${H5BENCH_BUILD_PATH}/cori
+        - cd ${H5BENCH_BUILD_PATH}/cori
+        - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/cori
         - make -j 8
         - make install
     artifacts:
         paths:
-            - ${H5BENCH_BUILD_PATH}
-            - ${H5BENCH_INSTALL_PATH}
+            - ${H5BENCH_BUILD_PATH}/cori
+            - ${H5BENCH_INSTALL_PATH}/cori
+
+build-perlmutter:
+    stage: build
+    tags:
+        - perlmutter
+    variables:
+        GIT_SUBMODULE_STRATEGY: recursive
+        SCHEDULER_PARAMETERS: "--qos=debug -N 1 -t 00:30:00"
+        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+    script:
+        - echo "Build h5bench"
+        - module list
+        - module load cmake
+        - mkdir -p ${H5BENCH_BUILD_PATH}/perlmutter
+        - cd ${H5BENCH_BUILD_PATH}/perlmutter
+        - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter
+        - make -j 8
+        - make install
+    artifacts:
+        paths:
+            - ${H5BENCH_BUILD_PATH}/perlmutter
+            - ${H5BENCH_INSTALL_PATH}/perlmutter
       
-test:
+test-cori:
     stage: test
+    needs: ["build-cori"]
     tags:
         - cori
     variables:
         SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
+        MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
         - echo "Test h5bench SYNC"
-        - cd ${H5BENCH_BUILD_PATH}
+        - cd ${H5BENCH_BUILD_PATH}/cori
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
-        - export MPICH_MAX_THREAD_SAFETY=multiple
+        - echo "Test h5bench SYNC write/read"
+        - python3 ../samples/update-cori.py ../samples/sync-write-read-contig-1d-small.json
+        - ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+        - echo "Test h5bench SYNC write unlimited"
+        - python3 ../samples/update-cori.py ../samples/sync-write-unlimited.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+        - echo "Test h5bench SYNC overwrite"
+        - python3 ../samples/update-cori.py ../samples/sync-overwrite.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+        - echo "Test h5bench SYNC append"
+        - python3 ../samples/update-cori.py ../samples/sync-append.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+        - echo "Test h5bench SYNC exerciser"
+        - python3 ../samples/update-cori.py ../samples/sync-exerciser.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+        - echo "Test h5bench SYNC metadata"
+        - python3 ../samples/update-cori.py ../samples/sync-metadata.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+        - echo "Test h5bench SYNC amrex"
+        - python3 ../samples/update-cori.py ../samples/sync-amrex.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+        - echo "Test h5bench SYNC openpmd"
+        - python3 ../samples/update-cori.py ../samples/sync-openpmd.json
+        - ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+        
+test-perlmutter:
+    stage: test
+    needs: ["build-perlmutter"]
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: " --qos=debug -N 1 -t 00:30:00"
+        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        MPICH_MAX_THREAD_SAFETY: "multiple"
+    script:
+        - echo "Test h5bench SYNC"
+        - cd ${H5BENCH_BUILD_PATH}/perlmutter
+        - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Test h5bench SYNC write/read"
         - python3 ../samples/update-cori.py ../samples/sync-write-read-contig-1d-small.json
         - ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
