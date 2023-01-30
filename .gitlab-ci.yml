@@ -20,7 +20,7 @@ build-cori:
         - module swap PrgEnv-intel PrgEnv-gnu 
         - module list
         - module load cmake
-        - mkdir ${H5BENCH_BUILD_PATH}/cori
+        - mkdir -p ${H5BENCH_BUILD_PATH}/cori
         - cd ${H5BENCH_BUILD_PATH}/cori
         - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/cori
         - make -j 8
@@ -43,7 +43,7 @@ build-perlmutter:
         - echo "Build h5bench"
         - module list
         - module load cmake
-        - mkdir ${H5BENCH_BUILD_PATH}/perlmutter
+        - mkdir -p ${H5BENCH_BUILD_PATH}/perlmutter
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
         - cmake .. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter
         - make -j 8
