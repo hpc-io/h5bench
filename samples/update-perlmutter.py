@@ -18,10 +18,10 @@ ARGS = PARSER.parse_args()
 with open(ARGS.setup, 'r') as f:
     data = json.load(f, object_pairs_hook=collections.OrderedDict)
 
-data['mpi']['command'] = 'srun'
-data['mpi']['ranks'] = '4'
+del data['mpi']['command']
+del data['mpi']['ranks']
 
-del data['mpi']['configuration']
+data['mpi']['configuration'] = 'srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -n 4 -t 00:30:00'
 
 with open(ARGS.setup, 'w') as f:
     json.dump(data, f, indent=4, sort_keys=False)
