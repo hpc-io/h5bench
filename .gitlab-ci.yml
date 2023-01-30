@@ -70,29 +70,29 @@ test-cori:
         - cd ${H5BENCH_BUILD_PATH}/cori
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Test h5bench SYNC write/read"
-        - python3 ../samples/update-cori.py ../samples/sync-write-read-contig-1d-small.json
-        - ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-write-read-contig-1d-small.json
+        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/sync-write-read-contig-1d-small.json
         - echo "Test h5bench SYNC write unlimited"
-        - python3 ../samples/update-cori.py ../samples/sync-write-unlimited.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-write-unlimited.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-write-unlimited.json
         - echo "Test h5bench SYNC overwrite"
-        - python3 ../samples/update-cori.py ../samples/sync-overwrite.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-overwrite.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-overwrite.json
         - echo "Test h5bench SYNC append"
-        - python3 ../samples/update-cori.py ../samples/sync-append.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-append.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-append.json
         - echo "Test h5bench SYNC exerciser"
-        - python3 ../samples/update-cori.py ../samples/sync-exerciser.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-exerciser.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-exerciser.json
         - echo "Test h5bench SYNC metadata"
-        - python3 ../samples/update-cori.py ../samples/sync-metadata.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-metadata.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-metadata.json
         - echo "Test h5bench SYNC amrex"
-        - python3 ../samples/update-cori.py ../samples/sync-amrex.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-amrex.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-amrex.json
         - echo "Test h5bench SYNC openpmd"
-        - python3 ../samples/update-cori.py ../samples/sync-openpmd.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+        - python3 ../../samples/update-cori.py ../../samples/sync-openpmd.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-openpmd.json
         
 test-perlmutter:
     stage: test
@@ -109,26 +109,26 @@ test-perlmutter:
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Test h5bench SYNC write/read"
-        - python3 ../samples/update-cori.py ../samples/sync-write-read-contig-1d-small.json
-        - ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-write-read-contig-1d-small.json
+        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/sync-write-read-contig-1d-small.json
         - echo "Test h5bench SYNC write unlimited"
-        - python3 ../samples/update-cori.py ../samples/sync-write-unlimited.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-write-unlimited.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-write-unlimited.json
         - echo "Test h5bench SYNC overwrite"
-        - python3 ../samples/update-cori.py ../samples/sync-overwrite.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-overwrite.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-overwrite.json
         - echo "Test h5bench SYNC append"
-        - python3 ../samples/update-cori.py ../samples/sync-append.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-append.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-append.json
         - echo "Test h5bench SYNC exerciser"
-        - python3 ../samples/update-cori.py ../samples/sync-exerciser.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-exerciser.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-exerciser.json
         - echo "Test h5bench SYNC metadata"
-        - python3 ../samples/update-cori.py ../samples/sync-metadata.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-metadata.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-metadata.json
         - echo "Test h5bench SYNC amrex"
-        - python3 ../samples/update-cori.py ../samples/sync-amrex.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-amrex.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-amrex.json
         - echo "Test h5bench SYNC openpmd"
-        - python3 ../samples/update-cori.py ../samples/sync-openpmd.json
-        - ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-openpmd.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-openpmd.json
