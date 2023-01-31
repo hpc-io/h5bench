@@ -55,7 +55,8 @@ class H5bench:
         """Check for parallel overwrite command."""
         mpi = [
             'mpirun', 'mpiexec',
-            'srun'
+            'srun',
+            'aprun'
         ]
 
         # Get user defined shell
@@ -238,6 +239,8 @@ class H5bench:
                 self.mpi = '{} -np {}'.format(mpi['command'], mpi['ranks'])
             elif mpi['command'] == 'srun':
                 self.mpi = '{} --cpu_bind=cores -n {}'.format(mpi['command'], mpi['ranks'])
+            elif mpi['command'] == 'aprun':
+                self.mpi = '{} -n {} -N {} '.format(mpi['command'], mpi['ranks'], mpi['ppn'])
             else:
                 self.logger.warning('Unknown MPI launcher selected!')
 
@@ -267,6 +270,10 @@ class H5bench:
                 self.vol_environment['HDF5_PLUGIN_PATH'] = vol['path']
             if 'preload' in vol:
                 self.vol_environment['LD_PRELOAD'] += vol['preload']
+            if 'cache_write' in vol:
+                self.vol_environment['HDF5_CACHE_WR'] = vol['cache_write']
+            if 'cache_read' in vol:
+                self.vol_environment['HDF5_CACHE_RD'] = vol['cache_read']
 
             self.vol_environment['ABT_THREAD_STACKSIZE'] = '100000'
 

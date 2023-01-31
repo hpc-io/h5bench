@@ -92,6 +92,24 @@ endif()
 
 message(STATUS "HDF5 VOL ASYNC: ${WITH_ASYNC_VOL}")
 
+# VOL CACHE Dependency #######################################################
+#
+
+set(CACHE_HOME $ENV{CACHE_HOME})
+option(WITH_CACHE_VOL "Enable HDF5 VOL CACHE connector" OFF)
+
+if (WITH_CACHE_VOL)
+     if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.13.1")
+         add_definitions(-DUSE_CACHE_VOL)
+         include_directories(${CACHE_HOME})
+         link_directories(${CACHE_HOME})
+     else()
+         message(SEND_ERROR "VOL CACHE requires HDF5 1.13.1 or newer.")
+     endif()    	
+endif()
+
+message(STATUS "HDF5 VOL CACHE: ${WITH_CACHE_VOL}")
+
 # h5bench Utility #############################################################
 #
 
@@ -104,6 +122,9 @@ add_library(h5bench_util ${h5bench_util_src})
 
 if(WITH_ASYNC_VOL)
     target_link_libraries(h5bench_util asynchdf5 h5async)
+endif()
+if(WITH_CACHE_VOL)
+	target_link_libraries(h5bench_util cache_new_h5api)
 endif()
 
 # h5bench WRITE ###############################################################

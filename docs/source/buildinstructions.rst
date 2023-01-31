@@ -114,6 +114,33 @@ h5bench will automatically set the environment variables required to run the asy
     # MacOS
     export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$ASYNC_HOME"
 
+
+
+Build to run with Cache VOL
+-----------------------------------
+
+To run h5bench with Cache VOL, you need the develop branchs of HDF5, Async VOL and Cache VOL. Please create a folder (HDF5_VOL_DIR) with the following structure. Please build Async VOL and Cache VOL first and copy the header files and library files to the folder, HDF5_VOL_DIR.
+
+  HDF5_VOL_DIR:
+     ./include - contains header files for Cache VOL and Async VOL.
+     ./lib - contains Cache VOL and Async VOL libraries such as libh5cache_ext.so, libcache_new_h5api.a, libasynchdf5.a, libh5async.so
+
+.. code-block:: bash
+                mkdir build
+                cd build
+                cmake .. -DWITH_CACHE_VOL:BOOL=ON -DCMAKE_C_FLAGS="-I$HDF5_VOL_DIR/include -L$HDF5_VOL_DIR/lib -g"
+                make
+
+Please also set the following environment variable:
+
+        export HDF5_HOME="$YOUR_HDF5_DEVELOP_BRANCH_BUILD/hdf5"
+        export HDF5_VOL_CONNECTOR="cache_ext config=config.cfg;under_vol=0;under_info={}"
+        export HDF5_PLUGIN_PATH="$HDF5_VOL_DIR/lib"
+        export DYLD_LIBRARY_PATH="$HDF5_HOME/lib:$HDF5_PLUGIN_PATH"
+
+On Linux platform, replace DYLD_LIBRARY_PATH with LD_LIBRARY_PATH. Please follow instruction from https://vol-cache.readthedocs.io/en/latest/gettingstarted.html#set-environment-variables to set up the configuration for Cache VOL.
+
+
 -----------------------------------
 Build with Spack
 -----------------------------------

@@ -1,4 +1,4 @@
-name: h5bench (HDF5 develop) 
+name: h5bench (HDF5 1.13.1, MPICH 3.4.3) 
 
 on:
   pull_request:
@@ -7,8 +7,10 @@ on:
 
 jobs:
   h5bench:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    runs-on: ubuntu-20.04
+    container:
+      image: hpcio/hdf5-1.13.1-mpich-3.4.3
+    timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -21,33 +23,11 @@ jobs:
 
       - name: Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev -y
-          
-          # HDF5
-          git clone https://github.com/HDFGroup/hdf5.git
-
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
           # VOL-CACHE
           git clone --recursive https://github.com/hpc-io/vol-cache.git /opt/vol-cache
-      - name: Build HDF5 develop
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export HDF5_LIBTOOL=/usr/bin/libtoolize
-          
-          mkdir $HDF5_DIR
-
-          cd hdf5
-          
-          git checkout hdf5-1_13_2
-
-          ./autogen.sh
-          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
-
-          make -j 2
-          make install
 
       - name: Build Argobots
         run: |
@@ -112,7 +92,6 @@ jobs:
           cd $HDF5_VOL_DIR/src
 
           make all
-
       - name: Build h5bench SYNC
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -161,6 +140,13 @@ jobs:
             -DCMAKE_C_FLAGS="-I/$HDF5_VOL_DIR/include -L/$HDF5_VOL_DIR/lib"
           make -j 2
 
+      - name: Configure for MPICH
+        run: |
+          cd build-sync
+
+          find ../samples -name '*.json' -exec sed -i "s/--allow-run-as-root//g" '{}' \;
+          find ../samples -name '*.json' -exec sed -i "s/--oversubscribe//g" '{}' \;
+
       - name: Test h5bench SYNC write/read
         run: |
           export HDF5_HOME=/opt/hdf5
@@ -170,23 +156,8 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
-
-      - name: Test h5bench ASYNC write/read
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=/opt/argobots
-          export ASYNC_DIR=/opt/vol-async
-
-          cd build-async
-
-          python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
-
-          ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
-        
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
 
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
@@ -197,6 +168,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-strided.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) contiguous (file)
@@ -208,6 +180,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) interleaved (file)
@@ -219,6 +192,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) contiguous (file)
@@ -230,6 +204,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) interleaved (file)
@@ -241,6 +216,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) contiguous (file)
@@ -252,6 +228,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) interleaved (file)
@@ -263,6 +240,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) contiguous (file)
@@ -274,6 +252,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) interleaved (file)
@@ -285,6 +264,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 3D contiguous (memory) contiguous (file)
@@ -296,6 +276,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
@@ -307,6 +288,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
@@ -318,6 +300,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
@@ -329,6 +312,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
 
       - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
@@ -340,6 +324,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
@@ -351,6 +336,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC write unlimited
@@ -362,6 +348,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
 
       - name: Test h5bench SYNC overwrite
@@ -373,6 +360,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
 
       - name: Test h5bench SYNC append
@@ -384,6 +372,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-append.json
 
       - name: Test h5bench SYNC exerciser
@@ -395,6 +384,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
 
       - name: Test h5bench SYNC metadata
@@ -406,6 +396,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
 
       - name: Test h5bench SYNC amrex
@@ -415,8 +406,9 @@ jobs:
           export ASYNC_HOME=/opt/vol-async
 
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
-
+                  
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
       - name: Test h5bench SYNC openpmd
@@ -428,6 +420,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
 
       - name: Test h5bench SYNC e3sm
@@ -439,6 +432,7 @@ jobs:
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
           cd build-sync
+          export PATH=$(pwd):$PATH
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
       - name: Test h5bench ASYNC write/read
@@ -448,6 +442,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
 
@@ -460,6 +455,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-strided.json
 
@@ -472,6 +468,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-contig.json
 
@@ -484,6 +481,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-interleaved.json
 
@@ -496,6 +494,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-interleaved-contig.json
 
@@ -508,6 +507,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-interleaved-interleaved.json
 
@@ -520,6 +520,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-contig.json
 
@@ -532,6 +533,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-interleaved.json
 
@@ -544,6 +546,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-interleaved-contig.json
 
@@ -556,6 +559,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-interleaved-interleaved.json
 
@@ -568,6 +572,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-3d-contig-contig.json
 
@@ -580,6 +585,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-full.json
 
@@ -592,6 +598,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-partial.json
 
@@ -604,6 +611,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-strided.json
 
@@ -616,6 +624,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
 
@@ -628,6 +637,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
 
@@ -640,12 +650,12 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           cd build-async
+          export PATH=$(pwd):$PATH
 
           python3 ../samples/update.py ../samples/async-amrex.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
 
-      
       - name: Test h5bench CACHE write 1D contiguous (memory) strided (file)
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -655,7 +665,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
           
@@ -671,7 +681,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -687,7 +697,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -703,7 +713,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -719,7 +729,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -735,7 +745,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -751,7 +761,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -767,7 +777,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -783,7 +793,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -799,7 +809,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -815,7 +825,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -831,7 +841,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -847,7 +857,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -863,7 +873,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 
@@ -879,7 +889,7 @@ jobs:
     
           cd build-cache
           
-          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184" >& cache_1.cfg
+          printf "HDF5_CACHE_STORAGE_TYPE: SSD\nHDF5_CACHE_STORAGE_PATH: SSD\nHDF5_CACHE_STORAGE_SCOPE: LOCAL\nHDF5_CACHE_STORAGE_SIZE: 128755813888\nHDF5_CACHE_WRITE_BUFFER_SIZE: 17179869184\n" > cache_1.cfg
           
           [ -e SSD ] || mkdir SSD
 

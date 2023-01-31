@@ -48,10 +48,16 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
+
+#ifdef USE_CACHE_VOL
+#include "cache_new_h5api.h"
+#endif
+
 #ifdef HAVE_SUBFILING
 #include "H5FDsubfiling.h"
 #include "H5FDioc.h"
 #endif
+
 #define DIM_MAX 3
 
 herr_t ierr;
@@ -474,7 +480,6 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
                                   ts->es_meta_create);
 
     unsigned t2 = get_time_usec();
-
     ierr =
         H5Dwrite_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, data_in->x, ts->es_data);
     ierr =
@@ -757,6 +762,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
     unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
+#ifdef USE_CACHE_VOL
+        H5Fcache_async_close_wait(file_id);
+#endif
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
@@ -780,7 +788,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
         if (MY_RANK == 0)
             printf("Writing %s ... \n", grp_name);
-
+#ifdef USE_CACHE_VOL
+        H5Fcache_async_op_pause(file_id);
+#endif
         switch (pattern) {
             case CONTIG_CONTIG_1D:
             case CONTIG_CONTIG_2D:
@@ -816,7 +826,9 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             default:
                 break;
         }
-
+#ifdef USE_CACHE_VOL
+        H5Fcache_async_op_start(file_id);
+#endif
         ts->status = TS_DELAY;
 
         if (params.cnt_time_step_delay == 0) {
@@ -833,7 +845,6 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             t4         = get_time_usec();
             meta_time5 += (t4 - t3);
         }
-
         if (ts_index != timestep_cnt - 1) { // no sleep after the last ts
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
@@ -842,7 +853,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             }
         }
 
-        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
+        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
         *data_time_total += (data_time_exp + data_time_imp);
     } // end for timestep_cnt
 
@@ -1011,6 +1022,14 @@ main(int argc, char *argv[])
     if (params.subfiling)
         subfiling = 1;
 
+#if H5_VERSION_GE(1, 13, 1)
+    if (H5VLis_connector_registered_by_name("cache_ext")) {
+        if (MY_RANK == 0) {
+            printf("Using 'cache_ext' VOL connector\n");
+        }
+    }
+#endif
+
 #if H5_VERSION_GE(1, 13, 0)
     if (H5VLis_connector_registered_by_name("async")) {
         if (MY_RANK == 0) {
@@ -1078,6 +1097,9 @@ main(int argc, char *argv[])
     else {
         file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
+#ifdef USE_CACHE_VOL
+    H5Fcache_async_close_set(file_id);
+#endif
     unsigned long tfopen_end = get_time_usec();
 
     if (MY_RANK == 0)
