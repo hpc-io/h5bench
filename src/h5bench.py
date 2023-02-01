@@ -215,7 +215,7 @@ class H5bench:
             
             if jobid is not None:
                 id = id + "-" + jobid
-                self.logger.info('JOBID is [{}]'.format(jobid))
+                self.logger.info('JOBID: {}'.format(jobid))
             
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
