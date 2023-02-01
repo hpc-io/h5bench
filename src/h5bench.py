@@ -212,11 +212,11 @@ class H5bench:
                 jobid = os.environ['LSB_JOBID']     # olcf
             else:
                 jobid = None
-            
+
             if jobid is not None:
                 id = id + "-" + jobid
                 self.logger.info('JOBID: {}'.format(jobid))
-            
+
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
