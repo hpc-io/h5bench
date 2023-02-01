@@ -202,7 +202,21 @@ class H5bench:
                     continue
 
             id = str(uuid.uuid4()).split('-')[0]
-
+            if 'SLURM_JOB_ID' in os.environ:
+                jobid = os.environ['SLURM_JOB_ID'] # nersc
+            elif  'COBALT_JOBID' in os.environ:
+                jobid = os.environ['COBALT_JOBID'] # alcf_theta
+            elif  'PBS_JOBID' in os.environ:
+                jobid = os.environ['PBS_JOBID']    # alcf_polaris
+            elif  'LSB_JOBID' in os.environ:
+                jobid = os.environ['LSB_JOBID']    # olcf
+            else:
+                jobid = None
+            
+            if jobid is not None:
+                id = id + "-" + jobid
+                self.logger.info('JOBID: {}'.format(jobid))
+            
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
