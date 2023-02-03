@@ -25,7 +25,7 @@ h5bench is a suite of parallel I/O benchmarks or kernels representing I/O patter
 These are the benchmarks and kernels currently available in h5bench:
 
 ==================== =========================== ==================== ======================== ======================== ========================
-**Benchmark**        **Name**                    **SYNC**             **ASYNC VOL**            **CACHE VOL**            **LOG VOL**          
+**Benchmark**        **Name**                    **SYNC**             **ASYNC**                **CACHE**                **LOG**          
 ==================== =========================== ==================== ======================== ======================== ========================
 h5bench write        ``h5bench_write``           |:white_check_mark:| |:white_check_mark:|     |:white_check_mark:|     |:white_check_mark:|
 h5bench read         ``h5bench_read``            |:white_check_mark:| |:white_check_mark:|     |:white_check_mark:|     |:white_check_mark:|
