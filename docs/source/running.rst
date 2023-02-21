@@ -282,6 +282,22 @@ Please, make sure you define the following:
 .. code-block::
 
    export MPICH_MAX_THREAD_SAFETY="multiple" 
+   
+Sunspot
+^^^^^^^
+
+In Sunspot you need to export one additional enviroment variable related to ATS. ATS is the Address Translation Service support for using the IOMMU (Input–Output Memory Management Unit) for address translation. ATS is not supported on Intel processors at this time. The default is to NTA (NIC translation).
+
+.. code-block::
+
+   export FI_CXI_ATS=0 
+
+Otherwise you will encounter the following error:
+
+.. code-block::
+
+   libfabric:36807:1674015247::cxi:core:cxip_fc_notify_cb():4366<warn>
+   x1922c0s5b0n0: TXC (0x1081:5:0):: Fatal, unexpected event rc: 26
 
 -----------------------------------
 Manual Execution
