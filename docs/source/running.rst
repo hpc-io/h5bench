@@ -262,8 +262,8 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
    2021-10-25 16:31:49,174 h5bench - INFO - SUCCESS
    2021-10-25 16:31:49,174 h5bench - INFO - Finishing h5bench Suite
 
-Cori
-^^^^
+Cori (NERSC)
+^^^^^^^^^^^^
 
 In Cori you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark that is not required. 
 
@@ -283,8 +283,8 @@ Please, make sure you define the following:
 
    export MPICH_MAX_THREAD_SAFETY="multiple" 
    
-Sunspot
-^^^^^^^
+Sunspot (ALCF)
+^^^^^^^^^^^^^^
 
 In Sunspot you need to export one additional enviroment variable related to ATS. ATS is the Address Translation Service support for using the IOMMU (Input–Output Memory Management Unit) for address translation. ATS is not supported on Intel processors at this time. The default is to NTA (NIC translation).
 
