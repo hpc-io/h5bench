@@ -909,6 +909,32 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).subfiling = 0;
     }
+    else if (strcmp(key, "ALIGN") == 0) {
+        if (val[0] == 'Y' || val[0] == 'y') {
+            (*params_in_out).align = 1;
+        }
+        else {
+            (*params_in_out).align = 0;
+        }
+    }
+    else if (strcmp(key, "ALIGN_THRESHOLD") == 0) {
+        int align_threshold = atoi(val);
+        if (align_threshold >= 0)
+            (*params_in_out).align_threshold = align_threshold;
+        else {
+            printf("ALIGN_THRESHOLD must be >=0\n");
+            return -1;
+        }
+    }
+    else if (strcmp(key, "ALIGN_LEN") == 0) {
+        int align_len = atoi(val);
+        if (align_len >= 0)
+            (*params_in_out).align_len = align_len;
+        else {
+            printf("ALIGN_LEN must be >=0\n");
+            return -1;
+        }
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -961,10 +987,13 @@ bench_params_init(bench_params *params_out)
     (*params_out).csv_path      = NULL;
     (*params_out).env_meta_path = NULL;
 
-    (*params_out).csv_path      = NULL;
-    (*params_out).csv_fs        = NULL;
-    (*params_out).env_meta_path = NULL;
-    (*params_out).file_per_proc = 0;
+    (*params_out).csv_path        = NULL;
+    (*params_out).csv_fs          = NULL;
+    (*params_out).env_meta_path   = NULL;
+    (*params_out).file_per_proc   = 0;
+    (*params_out).align           = 0;
+    (*params_out).align_threshold = 0;
+    (*params_out).align_len       = 0;
 }
 
 int
@@ -1121,6 +1150,12 @@ print_params(const bench_params *p)
         else if (p->num_dims >= 3) {
             printf("    chunk_dim3: %lu\n", p->chunk_dim_3);
         }
+    }
+    if (p->align) {
+        printf("Align settings: \n");
+        printf("    align  = %d\n", p->align);
+        printf("    align threshold = %ld\n", p->align_threshold);
+        printf("    align length = %ld\n", p->align_len);
     }
     printf("===========================================================\n");
     printf("\n");
