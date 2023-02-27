@@ -51,6 +51,6 @@
                 "CSV_FILE": "write-interleaved-interleaved-1d.csv",
                 "MODE": "SYNC"
             }
-        },
+        }
     ]
 }
