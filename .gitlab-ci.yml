@@ -179,6 +179,7 @@ metrics-cori:
         HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench/hdf5/install"
         MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
+        - module load python
         - echo "h5bench SYNC"
         - cd ${H5BENCH_BUILD_PATH}/cori
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
