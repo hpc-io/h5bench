@@ -184,7 +184,7 @@ metrics-cori:
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Run h5bench SYNC write/read"
         - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/metrics.json
-	- echo "Install dependencies"
+        - echo "Install dependencies"
         - pip install gspread gspread-dataframe google
         - echo "Store h5bench metrics"
         - python3 ../../workflows/store-metrics.py
