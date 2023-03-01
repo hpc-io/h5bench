@@ -166,7 +166,7 @@ build-cori-metrics:
             - ${H5BENCH_BUILD_PATH}/cori-metrics
             - ${H5BENCH_INSTALL_PATH}/cori-metrics
 
-build-perlmutter:
+build-perlmutter-metrics:
     stage: build
     tags:
         - perlmutter
