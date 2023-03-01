@@ -1,7 +1,7 @@
 {
     "mpi": {
         "command": "srun",
-        "configuration": "--cpu_bind=cores,verbose -N 1 -n 32"
+        "configuration": "--cpu_bind=cores,verbose -N 16 -n 32"
     },
     "vol": {
 
