@@ -37,6 +37,8 @@ build-cori:
 
 build-perlmutter:
     stage: build
+    rules:
+        - if: '$METRICS == null'
     tags:
         - perlmutter
     variables:
@@ -101,6 +103,8 @@ test-cori:
         
 test-perlmutter:
     stage: test
+    rules:
+        - if: '$METRICS == null'
     needs: ["build-perlmutter"]
     tags:
         - perlmutter
@@ -181,7 +185,7 @@ build-perlmutter-metrics:
         - module load cmake
         - mkdir -p ${H5BENCH_BUILD_PATH}/perlmutter-metrics
         - cd ${H5BENCH_BUILD_PATH}/perlmutter-metrics
-        - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter
+        - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter-metrics
         - make -j 8
         - make install
     artifacts:
