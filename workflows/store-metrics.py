@@ -184,7 +184,7 @@ df_values = dataset.values.tolist()
 gs.values_append(
     sys.argv[1],
     {
-        'valueInputOption': 'RAW'
+        'valueInputOption': 'USER_ENTERED'
     },
     {
         'values': df_values
