@@ -143,9 +143,9 @@ test-perlmutter:
         - ./h5bench --debug --abort-on-failure ../../samples/sync-openpmd.json
 
 build-cori-metrics:
+    stage: build
     rules:
         - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
-    stage: build
     tags:
         - cori
     variables:
@@ -172,6 +172,8 @@ build-cori-metrics:
 
 build-perlmutter-metrics:
     stage: build
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
     tags:
         - perlmutter
     variables:
@@ -211,7 +213,7 @@ metrics-cori:
         - cd ${H5BENCH_BUILD_PATH}/cori-metrics
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Run h5bench SYNC write/read"
-        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/metrics.json 2> h5bench-suite-sync.err 1> h5bench-suite-sync.out
+        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/metrics-cori.json 2> h5bench-suite-sync.err 1> h5bench-suite-sync.out
         - echo "Install dependencies"
         - pip install pydrive gspread gspread-dataframe google
         - echo "Store h5bench metrics"
@@ -237,7 +239,7 @@ metrics-perlmutter:
         - cd ${H5BENCH_BUILD_PATH}/perlmutter-metrics
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
         - echo "Run h5bench SYNC write/read"
-        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/metrics.json 2> h5bench-suite-sync.err 1> h5bench-suite-sync.out
+        - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/metrics-perlmutter.json 2> h5bench-suite-sync.err 1> h5bench-suite-sync.out
         - echo "Install dependencies"
         - pip install pydrive gspread gspread-dataframe google
         - echo "Store h5bench metrics"
