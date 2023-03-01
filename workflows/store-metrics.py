@@ -177,7 +177,7 @@ dataset['collective meta'] = dataset['collective meta'].replace('', 'NO')
 
 print(dataset)
 
-df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
 df_values = dataset.values.tolist()
 
