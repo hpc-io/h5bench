@@ -39,7 +39,7 @@ drive = GoogleDrive(gauth)
 
 gs = gc.open_by_key(SPREADSHEET_ID)
 
-for test in glob.glob('h5bench-suite-sync-*.err'):
+for test in glob.glob('h5bench-suite-sync*.err'):
     print(test)
 
     tmp = None
