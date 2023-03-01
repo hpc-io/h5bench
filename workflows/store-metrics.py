@@ -46,31 +46,6 @@ for test in glob.glob('h5bench-suite-sync*.err'):
     found = False
     dimensions = None
     connector = None
-    stripe = None
-
-    lustre = dict()
-
-    with open(test.replace('.err', '.out')) as f:
-        lines = f.readlines()
-
-        filename = None
-
-        for line in lines:
-            if '.h5' in line:
-                filename = line.strip().split()[-1].split('/')[-1]
-
-                lustre[filename] = dict()
-
-            if 'lmm_stripe_count' in line:
-                lustre[filename]['count'] = line.strip().split()[-1]
-
-            if 'lmm_stripe_size' in line:
-                lustre[filename]['size'] = line.strip().split()[-1]
-
-            if 'lmm_stripe_offset' in line:
-                filename = None
-
-    # print(lustre)
 
     with open(test, 'r') as f:
         lines = f.readlines()
@@ -144,8 +119,6 @@ for test in glob.glob('h5bench-suite-sync*.err'):
                         df['pattern'] = experiments[index]
                         df['dimensions'] = dimensions
                         df['connector'] = connector
-                        df['lustre_count'] = lustre[filename]['count']
-                        df['lustre_size'] = lustre[filename]['size']
 
                         h5_stdout = '{}stdout'.format(dir_hash)
 
