@@ -75,9 +75,19 @@ print_data(int n)
                BUF_STRUCT->pz[i]);
 }
 
+void
+set_dspace_plist(hid_t *plist_id_out, int data_collective)
+{
+    *plist_id_out = H5Pcreate(H5P_DATASET_XFER);
+    if (data_collective == 1)
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_COLLECTIVE);
+    else
+        H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
+}
+
 // Create HDF5 file and read data
 void
-read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace,
+read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t memspace, hid_t plist_id,
              unsigned long *read_time, unsigned long *metadata_time)
 {
     hid_t         dapl;
@@ -100,21 +110,21 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 
     t2 = get_time_usec();
 
-    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->x,
+    ierr = H5Dread_async(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->x,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->y,
+    ierr = H5Dread_async(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->y,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->z,
+    ierr = H5Dread_async(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->z,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_1,
+    ierr = H5Dread_async(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, plist_id, BUF_STRUCT->id_1,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->id_2,
+    ierr = H5Dread_async(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->id_2,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->px,
+    ierr = H5Dread_async(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->px,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->py,
+    ierr = H5Dread_async(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->py,
                          ts->es_data);
-    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, BUF_STRUCT->pz,
+    ierr = H5Dread_async(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, plist_id, BUF_STRUCT->pz,
                          ts->es_data);
 
     t3 = get_time_usec();
@@ -281,6 +291,15 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     hid_t              memspace;
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
 
+    hid_t plist_id; //, filespace, memspace;
+
+    if (params.file_per_proc) {
+        plist_id = H5Pcreate(H5P_DATASET_XFER);
+    }
+    else {
+        set_dspace_plist(&plist_id, params.data_coll);
+    }
+
     if (actual_read_cnt < 1)
         return -1;
 
@@ -325,7 +344,8 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         if (MY_RANK == 0)
             printf("Reading %s ... \n", grp_name);
 
-        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, &read_time_exp, &meta_time4);
+        read_h5_data(ts, ts->grp_id, ts->dset_ids, filespace, memspace, plist_id, &read_time_exp,
+                     &meta_time4);
 
         ts->status = TS_DELAY;
 
@@ -360,6 +380,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
     H5Sclose(memspace);
     H5Sclose(filespace);
+    H5Pclose(plist_id);
     return 0;
 }
 
@@ -583,6 +604,8 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "operation, %s, %s\n", "read", "");
             fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+            fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
+            fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
             value = format_human_readable(total_size_bytes);
