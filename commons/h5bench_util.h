@@ -130,6 +130,7 @@ typedef struct bench_params {
     int           align;
     unsigned long align_threshold;
     unsigned long align_len;
+    unsigned long stdev_dim_1;
 } bench_params;
 
 typedef struct data_md {
