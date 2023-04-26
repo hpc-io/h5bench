@@ -108,7 +108,7 @@ class H5bench:
 
         try:
             # Create a temporary directory to store all configurations
-            os.mkdir(self.directory)
+            os.makedirs(self.directory)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
@@ -220,7 +220,7 @@ class H5bench:
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
-            os.mkdir('{}/{}'.format(setup['directory'], id))
+            os.makedirs('{}/{}'.format(setup['directory'], id))
 
             self.prepare_parallel(setup['mpi'])
 
@@ -619,7 +619,7 @@ class H5bench:
 
             try:
                 # Create a temporary directory to store all configurations
-                os.mkdir(directory)
+                os.makedirs(directory)
             except OSError as exc:
                 if exc.errno != errno.EEXIST:
                     raise
