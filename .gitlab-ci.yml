@@ -235,6 +235,8 @@ metrics-perlmutter:
         MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
         - module load python
+        - module load darshan
+        - export LD_PRELOAD="$DARSHAN_BASE_DIR/lib/libdarshan.so"
         - echo "h5bench SYNC"
         - cd ${H5BENCH_BUILD_PATH}/perlmutter-metrics
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
@@ -246,3 +248,10 @@ metrics-perlmutter:
         - python3 ../../workflows/store-metrics.py Perlmutter
         - echo "Removing files"
         - rm storage-metrics/*.h5
+        - export RESULTS="/global/homes/j/jeanbez/h5bench-ci-metrics/perlmutter/*${SLURM_JOBID}*"
+        - mkdir -p $RESULTS
+        - echo "Fetching Darshan log file"
+        - cp /pscratch/darshanlogs/$(date +%Y)/$(date +%-m)/$(date +%u)/*${SLURM_JOBID}* ${RESULTS}
+        - echo "Fetching runtime files"
+        - cp h5bench-suite-sync.* ${RESULTS}
+        - cp -r storage-metrics/* ${RESULTS}
