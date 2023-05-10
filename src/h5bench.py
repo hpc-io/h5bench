@@ -109,7 +109,7 @@ class H5bench:
 
         try:
             # Create a temporary directory to store all configurations
-            os.mkdir(self.directory)
+            os.makedirs(self.directory)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
@@ -203,11 +203,25 @@ class H5bench:
                     continue
 
             id = str(uuid.uuid4()).split('-')[0]
+            if 'SLURM_JOB_ID' in os.environ:
+                jobid = os.environ['SLURM_JOB_ID']  # nersc
+            elif 'COBALT_JOBID' in os.environ:
+                jobid = os.environ['COBALT_JOBID']  # alcf_theta
+            elif 'PBS_JOBID' in os.environ:
+                jobid = os.environ['PBS_JOBID']     # alcf_polaris
+            elif 'LSB_JOBID' in os.environ:
+                jobid = os.environ['LSB_JOBID']     # olcf
+            else:
+                jobid = None
+
+            if jobid is not None:
+                id = id + "-" + jobid
+                self.logger.info('JOBID: {}'.format(jobid))
 
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
-            os.mkdir('{}/{}'.format(setup['directory'], id))
+            os.makedirs('{}/{}'.format(setup['directory'], id))
 
             self.prepare_parallel(setup['mpi'])
 
@@ -337,7 +351,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['MODE'] == 'ASYNC':
+            if configuration['MODE'] in ['ASYNC', 'LOG']:
                 self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
@@ -414,7 +428,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['MODE'] == 'ASYNC':
+            if configuration['MODE'] in ['ASYNC', 'LOG']:
                 self.disable_vol(vol)
 
             if self.validate:
@@ -597,7 +611,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['mode'] == 'ASYNC':
+            if configuration['mode'] in ['ASYNC', 'LOG']:
                 self.enable_vol(vol)
 
                 binary = self.H5BENCH_AMREX_ASYNC
@@ -608,7 +622,7 @@ class H5bench:
 
             try:
                 # Create a temporary directory to store all configurations
-                os.mkdir(directory)
+                os.makedirs(directory)
             except OSError as exc:
                 if exc.errno != errno.EEXIST:
                     raise
@@ -664,7 +678,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['mode'] == 'ASYNC':
+            if configuration['mode'] in ['ASYNC', 'LOG']:
                 self.disable_vol(vol)
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
