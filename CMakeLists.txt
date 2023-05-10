@@ -28,6 +28,7 @@ option(H5BENCH_EXERCISER        "Enable Exerciser benchmark"        OFF)
 option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
+option(H5BENCH_MACSIO           "Enable MACSio benchmark"           OFF)
 
 message(STATUS "h5bench baseline: ON")
 
@@ -39,6 +40,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_AMREX ON)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
+    set(H5BENCH_MACSIO ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -46,6 +48,7 @@ message(STATUS "h5bench EXERCISER: ${H5BENCH_EXERCISER}")
 message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
+message(STATUS "h5bench MACSIO: ${H5BENCH_MACSIO}")
 
 # HDF5 Dependency #############################################################
 #
@@ -254,6 +257,38 @@ if(H5BENCH_OPENPMD)
     )
 endif()
 
+# MACSIO ######################################################################
+#
+# https://github.com/LLNL/MACSio
+
+if(H5BENCH_MACSIO)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(CMAKE_POLICY_DEFAULT_CMP0114 NEW)
+
+    set(BUILD_DOCS OFF)
+    set(ENABLE_SILO_PLUGIN OFF)
+    set(ENABLE_HDF5_PLUGIN ON)
+    set(WITH_HDF5_PREFIX ${HDF5_HOME})
+
+    set(JSON_HOME $ENV{JSON_HOME})
+    set(CMAKE_PREFIX_PATH ${HDF5_HOME};${JSON_HOME})
+
+    ExternalProject_Add(h5bench_macsio
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/macsio
+        CMAKE_ARGS
+            -DBUILD_DOCS=OFF
+            -DENABLE_SILO_PLUGIN=OFF
+            -DENABLE_HDF5_PLUGIN=ON
+            -DWITH_HDF5_PREFIX=${HDF5_HOME}
+            -DWITH_JSON-CWX_PREFIX=${JSON_HOME}
+            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+        BUILD_COMMAND make
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio-prefix/src/h5bench_macsio-build/macsio/macsio ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio
+        LOG_CONFIGURE 1
+        LOG_BUILD 1
+    )
+endif()
+
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
@@ -330,6 +365,15 @@ if(H5BENCH_AMREX)
             DESTINATION bin
         )
     endif()
+endif()
+
+if(H5BENCH_MACSIO)
+    install(
+        FILES
+        ${CMAKE_BINARY_DIR}/h5bench_macsio
+        PERMISSIONS WORLD_EXECUTE OWNER_WRITE OWNER_READ
+        DESTINATION bin
+    )
 endif()
 
 # Testing #####################################################################

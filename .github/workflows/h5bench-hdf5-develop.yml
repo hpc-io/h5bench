@@ -30,6 +30,9 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
+          # JSON-CWX
+          git clone https://github.com/LLNL/json-cwx /opt/json-cwx
+
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -45,6 +48,19 @@ jobs:
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
 
           make -j 2
+          make install
+
+      - name: Build JSON-CWX
+        run: |
+          export JSON_DIR=/opt/json-cwx
+
+          cd /opt/json-cwx/json-cwx
+
+          ./autogen.sh
+          
+          ./configure --prefix=$JSON_DIR
+
+          make
           make install
 
       - name: Build Argobots
@@ -94,7 +110,8 @@ jobs:
         run: |
           export HDF5_DIR=/opt/hdf5
           export HDF5_HOME=$HDF5_DIR
-
+          export JSON_HOME=/opt/json-cwx
+          
           export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
 
           mkdir build-sync
@@ -112,6 +129,7 @@ jobs:
           export HDF5_HOME=/opt/hdf5
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
+          export JSON_HOME=/opt/json-cwx
 
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
@@ -405,6 +423,17 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
+      - name: Test h5bench SYNC macsio
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
+
       - name: Test h5bench ASYNC write/read
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -610,6 +639,10 @@ jobs:
           python3 ../samples/update.py ../samples/async-amrex.json
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
       - name: Upload artifact
         if: always()

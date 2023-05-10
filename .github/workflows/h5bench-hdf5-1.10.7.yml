@@ -20,15 +20,35 @@ jobs:
         with:
           submodules: true
 
+      - name: Dependencies
+        run: |
+          # JSON-CWX
+          git clone https://github.com/LLNL/json-cwx /opt/json-cwx
+
+      - name: Build JSON-CWX
+        run: |
+          export JSON_HOME=/opt/json-cwx
+
+          cd /opt/json-cwx/json-cwx
+
+          ./autogen.sh
+          
+          ./configure --prefix=$JSON_HOME
+
+          make
+          make install
+
       - name: Build h5bench
         run: |
           export HDF5_HOME=/opt/hdf5
+          export JSON_HOME=/opt/json-cwx
 
           mkdir build
           cd build
 
           cmake .. \
-            -DH5BENCH_ALL=ON
+            -DH5BENCH_ALL=ON \
+            -DWITH_JSON-CWX_PREFIX=$JSON_HOME
           make -j 2
           make install
 
@@ -199,6 +219,13 @@ jobs:
 
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
+      - name: Test h5bench SYNC macsio
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
 
       - name: Upload artifact
         if: always()
