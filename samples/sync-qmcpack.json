@@ -1,0 +1,22 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "configuration": "--allow-run-as-root --oversubscribe -np 2 "
+    },
+    "vol": {
+        
+    },
+    "file-system": {
+
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "qmcpack",
+            "configuration": {
+                "i": "100",
+                "g": "4 4 1"
+            }
+        }
+    ]
+}

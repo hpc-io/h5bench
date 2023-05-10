@@ -35,6 +35,7 @@ Exerciser            ``h5bench_exerciser``       |:white_check_mark:| |:white_la
 OpenPMD (write)      ``h5bench_openpmd_write``   |:white_check_mark:| |:white_large_square:| 
 OpenPMD (read)       ``h5bench_openpmd_read``    |:white_check_mark:| |:white_large_square:|
 E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_large_square:| 
+QMCPACK              ``h5bench_qmcpack``         |:white_check_mark:| |:white_large_square:| 
 ==================== =========================== ==================== ========================
 
 .. toctree::
@@ -54,6 +55,7 @@ E3SM-IO              ``h5bench_e3sm``            |:white_check_mark:| |:white_la
    openpmd
    exerciser
    e3sm
+   qmcpack
 
 .. toctree::
    :maxdepth: 2
