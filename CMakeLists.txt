@@ -161,7 +161,7 @@ endif()
 # IOTEST ######################################################################
 #
 
-if(H5BENCH_EXERCISER)
+if(H5BENCH_METADATA)
     set(meta_stress_src
         metadata_stress/hdf5_iotest.c
         metadata_stress/configuration.c

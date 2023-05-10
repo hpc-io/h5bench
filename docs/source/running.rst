@@ -166,6 +166,35 @@ This way, you can configure a workflow with multiple interleaving files, e.g., `
       }
    }
 
+You can also provide the ``align`` settings for GPFS filesystem in the ``benchmark`` property configuration. Note, not in the ``filesystem`` property.  
+This parameter is enabled only for h5bench-write and h5bench-write-unlimited.
+
+
+.. code-block::
+
+   {
+      "benchmark": "write",
+      "file": "test.h5",
+      "configuration": {
+            "MEM_PATTERN": "CONTIG",
+            "FILE_PATTERN": "CONTIG",
+            "TIMESTEPS": "5",
+            "DELAYED_CLOSE_TIMESTEPS": "2",
+            "COLLECTIVE_DATA": "YES",
+            "COLLECTIVE_METADATA": "YES",
+            "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+            "NUM_DIMS": "1",
+            "DIM_1": "4194304",
+            "DIM_2": "1",
+            "DIM_3": "1",
+            "MODE": "ASYNC",
+            "CSV_FILE": "output.csv",
+            "ALIGN":"YES",
+            "ALIGN_THRESHOLD":"16777216",
+            "ALIGN_LEN":"16777216"
+      }
+   }
+
 For the ``metadata`` stress benchmark, ``file`` and ``configuration`` properties must be defined:
 
 .. code-block::
@@ -233,8 +262,8 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
    2021-10-25 16:31:49,174 h5bench - INFO - SUCCESS
    2021-10-25 16:31:49,174 h5bench - INFO - Finishing h5bench Suite
 
-Cori
-^^^^
+Cori (NERSC)
+^^^^^^^^^^^^
 
 In Cori you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark that is not required. 
 
@@ -253,6 +282,22 @@ Please, make sure you define the following:
 .. code-block::
 
    export MPICH_MAX_THREAD_SAFETY="multiple" 
+   
+Sunspot (ALCF)
+^^^^^^^^^^^^^^
+
+In Sunspot you need to export one additional enviroment variable related to ATS. ATS is the Address Translation Service support for using the IOMMU (Input–Output Memory Management Unit) for address translation. ATS is not supported on Intel processors at this time. The default is to NTA (NIC translation).
+
+.. code-block::
+
+   export FI_CXI_ATS=0 
+
+Otherwise you will encounter the following error:
+
+.. code-block::
+
+   libfabric:36807:1674015247::cxi:core:cxip_fc_notify_cb():4366<warn>
+   x1922c0s5b0n0: TXC (0x1081:5:0):: Fatal, unexpected event rc: 26
 
 -----------------------------------
 Manual Execution
