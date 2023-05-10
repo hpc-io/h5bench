@@ -36,7 +36,7 @@
 #define NAME_LENGTH    1024
 #define NUM_ITERATIONS 10
 #define MAX_DIM        4
-#define HYPER_VERBOSE  0
+#define HYPER_VERBOSE  1
 #define MIN(a, b)      (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)      (((a) > (b)) ? (a) : (b))
 #define NUM_MOM        5
