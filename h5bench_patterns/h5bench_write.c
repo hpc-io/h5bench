@@ -82,9 +82,9 @@ hid_t PARTICLE_COMPOUND_TYPE;
 hid_t PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
 // Optimization globals
-int           ALIGN                = 1;
-unsigned long ALIGN_THRESHOLD      = 16777216;
-unsigned long ALIGN_LEN            = 16777216;
+int           ALIGN                = 0;
+unsigned long ALIGN_THRESHOLD      = 0;
+unsigned long ALIGN_LEN            = 0; // 16777216
 int           COLL_METADATA        = 0;
 int           DEFER_METADATA_FLUSH = 1;
 
@@ -838,7 +838,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             if (params.compute_time.time_num >= 0) {
                 if (MY_RANK == 0)
                     printf("Computing...\n");
-                async_sleep(ts->es_meta_close, params.compute_time);
+                async_sleep(ts->es_data, params.compute_time);
             }
         }
 
@@ -908,9 +908,22 @@ set_fapl()
 hid_t
 set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long alignment_len, int meta_collective)
 {
-    if (align != 0)
+    hsize_t threshold_o, alignment_len_o;
+    herr_t  ret;
+    if (align == 1) {
         H5Pset_alignment(fapl, threshold, alignment_len);
 
+        ret = H5Pget_alignment(fapl, &threshold_o, &alignment_len_o);
+        if (ret < 0)
+            if (MY_RANK == 0)
+                printf("H5Pget_alignment failed \n");
+
+        if (MY_RANK == 0) {
+            printf("GPFS alignment settings: ON\n");
+            printf("Value of alignment length :  %ld\n", alignment_len_o);
+            printf("Value of alignment threshold :  %ld\n", threshold_o);
+        }
+    }
     if (meta_collective == 1) {
         if (MY_RANK == 0)
             printf("Collective Metadata operations: ON\n");
@@ -1048,7 +1061,11 @@ main(int argc, char *argv[])
     if (MY_RANK == 0)
         printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
 
-    hid_t fapl = set_fapl();
+    hid_t fapl      = set_fapl();
+    ALIGN           = params.align;
+    ALIGN_THRESHOLD = params.align_threshold;
+    ALIGN_LEN       = params.align_len;
+
     if (params.file_per_proc) {
     }
     else {
@@ -1101,6 +1118,7 @@ main(int argc, char *argv[])
     H5Pclose(fapl);
     unsigned long tflush_start = get_time_usec();
     H5Fflush(file_id, H5F_SCOPE_LOCAL);
+    MPI_Barrier(MPI_COMM_WORLD);
     unsigned long tflush_end = get_time_usec();
 
     unsigned long tfclose_start = get_time_usec();
