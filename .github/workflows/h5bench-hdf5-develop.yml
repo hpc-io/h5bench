@@ -22,13 +22,17 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev -y
+          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev libblas-dev liblapack-dev -y
           
           # HDF5
           git clone https://github.com/HDFGroup/hdf5.git
 
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
+
+          # FFTW
+          wget https://www.fftw.org/fftw-3.3.10.tar.gz
+          tar zxf fftw-3.3.10.tar.gz
 
       - name: Build HDF5 develop
         run: |
@@ -58,6 +62,14 @@ jobs:
 
           make -j 2
           make install
+
+      - name: Build FFTW
+        run: |
+          cd fftw-3.3.10
+
+          ./configure
+
+          sudo make install
 
       - name: Build VOL-ASYNC
         run: |
@@ -404,6 +416,17 @@ jobs:
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
+      - name: Test h5bench SYNC qmcpack
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-qmcpack.json
 
       - name: Test h5bench ASYNC write/read
         run: |

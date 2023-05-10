@@ -28,6 +28,7 @@ option(H5BENCH_EXERCISER        "Enable Exerciser benchmark"        OFF)
 option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
+option(H5BENCH_QMCPACK          "Enable QMCPACK benchmark"          OFF)
 
 message(STATUS "h5bench baseline: ON")
 
@@ -39,6 +40,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_AMREX ON)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
+    set(H5BENCH_QMCPACK ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -46,6 +48,7 @@ message(STATUS "h5bench EXERCISER: ${H5BENCH_EXERCISER}")
 message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
+message(STATUS "h5bench QMCPACK: ${H5BENCH_QMCPACK}")
 
 # HDF5 Dependency #############################################################
 #
@@ -258,6 +261,29 @@ configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench CO
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
 
+# QMCPACK #####################################################################
+#
+# https://github.com/QMCPACK/qmcpack
+
+if(H5BENCH_QMCPACK)
+    if(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.2.0)
+        if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.12.1")
+            set(ENV{HDF5_ROOT} ${HDF5_HOME})
+            set(QMC_BUILD_SANDBOX_ONLY ON)
+
+            add_subdirectory(qmcpack)
+
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/qmcpack/bin/restart ${CMAKE_BINARY_DIR}/h5bench_qmcpack
+            )
+        else()
+            message(FATAL_ERROR "QMCPACK requires at least HDF5 1.12.1")
+        endif()
+    else()
+        message(FATAL_ERROR "QMCPACK requires at least gcc-9.2")
+    endif()
+endif()
+
 # Install binaries ############################################################
 
 install(
@@ -330,6 +356,15 @@ if(H5BENCH_AMREX)
             DESTINATION bin
         )
     endif()
+endif()
+
+if(H5BENCH_QMCPACK)
+    install(
+        FILES
+        h5bench_qmcpack
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        DESTINATION bin
+    )
 endif()
 
 # Testing #####################################################################

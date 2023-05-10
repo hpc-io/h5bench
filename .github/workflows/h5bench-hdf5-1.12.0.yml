@@ -28,7 +28,12 @@ jobs:
           cd build
 
           cmake .. \
-            -DH5BENCH_ALL=ON
+            -DH5BENCH_METADATA=ON \
+            -DH5BENCH_EXERCISER=ON \
+            -DH5BENCH_AMREX=ON \
+            -DH5BENCH_OPENPMD=ON \
+            -DH5BENCH_E3SM=ON \
+            -DH5BENCH_QMCPACK=OFF
           make -j 2
           make install
 

@@ -22,8 +22,15 @@ jobs:
 
       - name: Dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install libblas-dev liblapack-dev -y
+
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
+
+          # FFTW
+          wget https://www.fftw.org/fftw-3.3.10.tar.gz
+          tar zxf fftw-3.3.10.tar.gz
 
       - name: Build Argobots
         run: |
@@ -36,6 +43,14 @@ jobs:
 
           make -j 2
           make install
+
+      - name: Build FFTW
+        run: |
+          cd fftw-3.3.10
+
+          ./configure
+
+          sudo make install
 
       - name: Build VOL-ASYNC
         run: |
@@ -265,6 +280,13 @@ jobs:
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
+      - name: Test h5bench SYNC qmcpack
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-qmcpack.json
 
       - name: Test h5bench ASYNC write/read
         run: |
