@@ -2,7 +2,7 @@
     "mpi": {
         "command": "mpirun",
         "ranks": "4",
-        "configuration": "--allow-run-as-root --np 2 --oversubscribe"
+        "configuration": "--allow-run-as-root -n 2 --oversubscribe"
     },
     "vol": {
     },
