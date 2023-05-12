@@ -889,8 +889,8 @@ set_metadata(hid_t fapl, int align, unsigned long threshold, unsigned long align
                 printf("H5Pget_alignment failed \n");
 
         if (MY_RANK == 0) {
-            printf("Value of alignment length :  %ld\n", alignment_len_o);
-            printf("Value of alignment threshold :  %ld\n", threshold_o);
+            printf("Value of alignment length :  %lld\n", alignment_len_o);
+            printf("Value of alignment threshold :  %lld\n", threshold_o);
         }
     }
     if (meta_collective == 1) {
