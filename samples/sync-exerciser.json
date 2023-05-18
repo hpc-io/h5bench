@@ -2,7 +2,7 @@
     "mpi": {
         "command": "mpirun",
         "ranks": "4",
-        "configuration": "--allow-run-as-root --oversubscribe"
+        "configuration": "-n 2 --allow-run-as-root --oversubscribe"
     },
     "vol": {
         
@@ -20,6 +20,31 @@
                 "nsizes": "3",
                 "bufmult": "2 2",
                 "dimranks": "8 4"
+            }
+        },
+        {
+            "benchmark": "exerciser",
+            "configuration": {
+                "numdims": "2",
+                "minels": "8 8",
+                "nsizes": "3",
+                "bufmult": "2 2",
+                "dimranks": "8 4",
+                "indepio": ""
+            }
+        },
+        {
+            "benchmark": "exerciser",
+            "configuration": {
+                "numdims": "2",
+                "minels": "8 8",
+                "nsizes": "3",
+                "bufmult": "2 2",
+                "dimranks": "8 4",
+                "keepfile": "false",
+                "indepio": "true",
+                "addattr": "true",
+                "usechunked": "false"
             }
         }
     ]

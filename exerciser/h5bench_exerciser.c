@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <unistd.h>
+#include <assert.h>
 #ifdef __linux__
 #include <sys/sysinfo.h>
 #include <sys/resource.h>
@@ -35,7 +36,7 @@
 #define NAME_LENGTH    1024
 #define NUM_ITERATIONS 10
 #define MAX_DIM        4
-#define HYPER_VERBOSE  0
+#define HYPER_VERBOSE  1
 #define MIN(a, b)      (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)      (((a) > (b)) ? (a) : (b))
 #define NUM_MOM        5
@@ -347,7 +348,9 @@ main(int argc, char *argv[])
 
             BufSizeTotalDouble *= curNEls[j];
             BufSizeTotalDerived *= curNEls[j];
+            assert(NumDoubleElements * curNEls[j] < INT_MAX);
             NumDoubleElements *= curNEls[j];
+            assert(NumSimParamElements * curNEls[j] < INT_MAX);
             NumSimParamElements *= curNEls[j];
 
             /* Lets reset the block setting to default */

@@ -179,8 +179,13 @@ class H5bench:
         try:
             with open(self.setup) as file:
                 setup = json.load(file, object_pairs_hook=collections.OrderedDict)
-        except Exception:
-            self.logger.critical('Unable to find and parse the input configuration file')
+        except FileNotFoundError:
+            self.logger.critical('Unable to open the input configuration file')
+
+            sys.exit(os.EX_NOINPUT)
+        except Exception as e:
+            self.logger.critical('Unable to parse the input configuration file)')
+            self.logger.critical(e)
 
             sys.exit(os.EX_NOINPUT)
 
@@ -474,9 +479,21 @@ class H5bench:
 
             parameters = []
 
+            parameters_binary = [
+                'keepfile',
+                'usechunked',
+                'indepio',
+                'addattr',
+                'derivedtype'
+            ]
+
             # Create the configuration parameter list
             for key in configuration:
-                parameters.append('--{} {} '.format(key, configuration[key]))
+                if key in parameters_binary:
+                    if configuration[key].lower() == 'true':
+                        parameters.append('--{} '.format(key))
+                else:
+                    parameters.append('--{} {} '.format(key, configuration[key]))
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER

@@ -1,0 +1,56 @@
+{
+    "mpi": {
+        "command": "srun",
+        "configuration": "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 8 -n 512 -t 00:30:00"
+    },
+    "vol": {
+
+    },
+    "file-system": {
+        "lustre": {
+            "stripe-size": "1M",
+            "stripe-count": "16"
+        }
+    },
+    "directory": "storage-metrics",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "write-contiguous-contiguous-1d.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "10 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "1048576",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "write-contiguous-contiguous-1d.csv",
+                "MODE": "SYNC"
+            }
+        },
+        {
+            "benchmark": "write",
+            "file": "write-interleaved-interleaved-1d.h5",
+            "configuration": {
+                "MEM_PATTERN": "INTERLEAVED",
+                "FILE_PATTERN": "INTERLEAVED",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "10 s",
+                "NUM_DIMS": "1",
+                "DIM_1": "1048576",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "write-interleaved-interleaved-1d.csv",
+                "MODE": "SYNC"
+            }
+        }
+    ]
+}
