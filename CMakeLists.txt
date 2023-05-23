@@ -198,7 +198,7 @@ if(H5BENCH_AMREX)
 
     if(WITH_ASYNC_VOL)
         set(AMReX_HDF5_ASYNC YES)
-        
+
         add_executable(h5bench_amrex_async ${amrex_src})
         target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async ${CMAKE_DL_LIBS} MPI::MPI_C)
     endif()
@@ -262,6 +262,19 @@ endif()
 # https://github.com/LLNL/MACSio
 
 if(H5BENCH_MACSIO)
+    set(JSON_HOME ${CMAKE_BINARY_DIR}/json-cwx)
+
+    ExternalProject_Add(json_cwx
+        GIT_REPOSITORY https://github.com/LLNL/json-cwx
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json-cwx
+        BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json-cwx/json-cwx
+        CONFIGURE_COMMAND autoreconf -i COMMAND ./configure --prefix=${JSON_HOME}
+        BUILD_COMMAND make
+        BUILD_IN_SOURCE 0
+        LOG_CONFIGURE 1
+        LOG_BUILD 1
+    )
+
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     set(CMAKE_POLICY_DEFAULT_CMP0114 NEW)
 
@@ -270,7 +283,6 @@ if(H5BENCH_MACSIO)
     set(ENABLE_HDF5_PLUGIN ON)
     set(WITH_HDF5_PREFIX ${HDF5_HOME})
 
-    set(JSON_HOME $ENV{JSON_HOME})
     set(CMAKE_PREFIX_PATH ${HDF5_HOME};${JSON_HOME})
 
     ExternalProject_Add(h5bench_macsio
@@ -287,6 +299,8 @@ if(H5BENCH_MACSIO)
         LOG_CONFIGURE 1
         LOG_BUILD 1
     )
+
+    add_dependencies(h5bench_macsio json_cwx)
 endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
