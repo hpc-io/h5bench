@@ -30,9 +30,6 @@ jobs:
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
 
-          # JSON-CWX
-          git clone https://github.com/LLNL/json-cwx /opt/json-cwx
-
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
@@ -41,26 +38,11 @@ jobs:
           mkdir $HDF5_DIR
 
           cd hdf5
-          
-          git checkout hdf5-1_13_2
 
           ./autogen.sh
           ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
 
           make -j 2
-          make install
-
-      - name: Build JSON-CWX
-        run: |
-          export JSON_DIR=/opt/json-cwx
-
-          cd /opt/json-cwx/json-cwx
-
-          ./autogen.sh
-          
-          ./configure --prefix=$JSON_DIR
-
-          make
           make install
 
       - name: Build Argobots
@@ -97,7 +79,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
-          export HDF5_PLUGIN_PATH="$ASYNC_DIR/include"
+          export HDF5_PLUGIN_PATH="$ASYNC_DIR/lib"
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
           cd $ASYNC_DIR/build
@@ -110,7 +92,6 @@ jobs:
         run: |
           export HDF5_DIR=/opt/hdf5
           export HDF5_HOME=$HDF5_DIR
-          export JSON_HOME=/opt/json-cwx
           
           export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
 
@@ -129,7 +110,6 @@ jobs:
           export HDF5_HOME=/opt/hdf5
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
-          export JSON_HOME=/opt/json-cwx
 
           export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
 
