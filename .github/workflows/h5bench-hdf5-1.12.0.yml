@@ -20,35 +20,20 @@ jobs:
         with:
           submodules: true
 
-      - name: Dependencies
+      - name: Configuration
         run: |
-          # JSON-CWX
-          git clone https://github.com/LLNL/json-cwx /opt/json-cwx
-
-      - name: Build JSON-CWX
-        run: |
-          export JSON_HOME=/opt/json-cwx
-
-          cd /opt/json-cwx/json-cwx
-
-          ./autogen.sh
-          
-          ./configure --prefix=$JSON_HOME
-
-          make
-          make install
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
 
       - name: Build h5bench
         run: |
           export HDF5_HOME=/opt/hdf5
-          export JSON_HOME=/opt/json-cwx
 
           mkdir build
           cd build
 
           cmake .. \
-            -DH5BENCH_ALL=ON \
-            -DWITH_JSON-CWX_PREFIX=$JSON_HOME
+            -DH5BENCH_ALL=ON
           make -j 2
           make install
 
