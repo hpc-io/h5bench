@@ -266,8 +266,8 @@ if(H5BENCH_MACSIO)
 
     ExternalProject_Add(json_cwx
         GIT_REPOSITORY https://github.com/LLNL/json-cwx
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json-cwx
-        BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json-cwx/json-cwx
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/json-cwx
+        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/json-cwx/json-cwx
         CONFIGURE_COMMAND autoreconf -i COMMAND ./configure --prefix=${JSON_HOME}
         BUILD_COMMAND make
         BUILD_IN_SOURCE 0
