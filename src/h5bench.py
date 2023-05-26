@@ -896,8 +896,8 @@ class H5bench:
 
             parameters.append('--interface {} '.format('hdf5'))
             parameters.append('--filebase {}/{}/{} '.format(self.directory, id, setup['file'].replace('.h5', '')))
-            parameters.append('--log_file_name {}-macsio-log.log '.format(id))
-            parameters.append('--timings_file_name {}-macsio-timings.log '.format(id))
+            parameters.append('--log_file_name {}/{}-macsio-log.log '.format(self.directory, id))
+            parameters.append('--timings_file_name {}/{}-macsio-timings.log '.format(self.directory, id))
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_MACSIO
