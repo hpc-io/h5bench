@@ -88,6 +88,19 @@ Collective Operation Settings
 
 Both ``COLLECTIVE_DATA`` and ``COLLECTIVE_METADATA`` parameters are optional.
 
+Subfiling Settings
+^^^^^^^^^^^^^^^^^^
+
+======================================= ==========================================================
+**Parameter**                           **Description**                                         
+======================================= ==========================================================
+``SUBFILING``                           Enables HDF5 subfiling (default is ``NO``)  
+======================================= ==========================================================
+
+.. attention:: 
+
+	In order to enable this option your HDF5 must have been compiled with support for the HDF5 Subfiling Virtual File Driver (VFD) which was introduced in the HDF5 1.14.0. For CMake you can use the ``-DHDF5_ENABLE_PARALLEL=ON -DHDF5_ENABLE_SUBFILING_VFD=ON`` and for autotools ``--enable-parallel --enable-subfiling-vfd=yes``. Without this support, this parameter has no effect.
+
 CSV Settings
 ^^^^^^^^^^^^
 
