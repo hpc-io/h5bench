@@ -5,6 +5,10 @@ on:
 
   workflow_dispatch:
 
+  push:
+    branches:
+      - master
+
 jobs:
   h5bench:
     runs-on: ubuntu-20.04
