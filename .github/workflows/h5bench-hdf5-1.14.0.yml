@@ -1,0 +1,497 @@
+name: h5bench (HDF5 1.14.0) 
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+  push:
+    branches:
+      - master
+
+jobs:
+  h5bench:
+    runs-on: ubuntu-20.04
+    container:
+      image: hpcio/hdf5-1.14.0
+    timeout-minutes: 60
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Configuration
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
+
+      - name: Dependencies
+        run: |
+          # VOL-ASYNC
+          git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
+
+      - name: Build Argobots
+        run: |
+          export ABT_DIR=/opt/argobots
+          
+          cd /opt/vol-async/argobots
+
+          ./autogen.sh
+          ./configure --prefix=$ABT_DIR
+
+          make -j 2
+          make install
+
+      - name: Build VOL-ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          
+          cd $ASYNC_DIR
+          mkdir build
+          cd build
+
+          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR
+          make
+          make install
+
+      - name: Test VOL-ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export HDF5_HOME=$HDF5_DIR
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+          export HDF5_PLUGIN_PATH="$ASYNC_DIR/include"
+          export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
+
+          cd $ASYNC_DIR/build
+          
+          export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
+
+          ctest
+
+      - name: Build h5bench SYNC
+        run: |
+          export HDF5_HOME=/opt/hdf5
+
+          mkdir build-sync
+          cd build-sync
+
+          cmake .. \
+            -DH5BENCH_ALL=ON
+          make -j 2
+          make install
+
+      - name: Build h5bench ASYNC
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
+          mkdir build-async
+          cd build-async
+
+          cmake .. \
+            -DWITH_ASYNC_VOL:BOOL=ON \
+            -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
+            -DH5BENCH_ALL=ON
+          make -j 2
+          make install
+
+      - name: Test h5bench SYNC write/read
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-strided.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-interleaved.json
+
+      - name: Test h5bench SYNC write 1D interleaved (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-contig.json
+
+      - name: Test h5bench SYNC write 1D interleaved (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-interleaved.json
+
+      - name: Test h5bench SYNC write 2D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig.json
+
+      - name: Test h5bench SYNC write 2D contiguous (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-interleaved.json
+
+      - name: Test h5bench SYNC write 2D interleaved (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-contig.json
+
+      - name: Test h5bench SYNC write 2D interleaved (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-interleaved.json
+
+      - name: Test h5bench SYNC write 3D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC write unlimited
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+
+      - name: Test h5bench SYNC overwrite
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+
+      - name: Test h5bench SYNC append
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+
+      - name: Test h5bench SYNC exerciser
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+
+      - name: Test h5bench SYNC metadata
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+
+      - name: Test h5bench SYNC amrex
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+
+      - name: Test h5bench SYNC openpmd
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
+      - name: Test h5bench SYNC e3sm
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
+      - name: Test h5bench SYNC macsio
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
+
+      - name: Test h5bench ASYNC write/read
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
+
+          ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
+
+      - name: Test h5bench ASYNC write 1D contiguous (memory) strided (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-strided.json
+
+      - name: Test h5bench ASYNC write 1D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig.json
+
+      - name: Test h5bench ASYNC write 1D contiguous (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-interleaved.json
+
+      - name: Test h5bench ASYNC write 1D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-contig.json
+
+      - name: Test h5bench ASYNC write 1D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-interleaved-interleaved.json
+
+      - name: Test h5bench ASYNC write 2D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig.json
+
+      - name: Test h5bench ASYNC write 2D contiguous (memory) interleaved (file)
+        run: |
+          current="$PWD"
+
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-interleaved.json
+
+      - name: Test h5bench ASYNC write 2D interleaved (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-contig.json
+
+      - name: Test h5bench ASYNC write 2D interleaved (memory) interleaved (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-interleaved-interleaved.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-interleaved-interleaved.json
+
+      - name: Test h5bench ASYNC write 3D contiguous (memory) contiguous (file)
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-3d-contig-contig.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-3d-contig-contig.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-partial.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench ASYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-1d-contig-contig-read-strided.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench ASYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench ASYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-write-2d-contig-contig-read-full.json
+
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/async-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench ASYNC amrex
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+
+          cd build-async
+
+          python3 ../samples/update.py ../samples/async-amrex.json
+
+          ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test
+          path: build*/storage/**/std*
+          retention-days: 1
