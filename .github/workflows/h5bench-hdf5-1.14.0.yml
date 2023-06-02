@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.13.0) 
+name: h5bench (HDF5 1.14.0) 
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-20.04
     container:
-      image: hpcio/hdf5-1.13.0
+      image: hpcio/hdf5-1.14.0
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
