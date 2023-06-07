@@ -1240,8 +1240,11 @@ main(int argc, char *argv[])
 
         if (params.useCSV) {
             fprintf(params.csv_fs, "metric, value, unit\n");
-            fprintf(params.csv_fs, "operation, %s, %s\n", "write", "");
+            fprintf(params.csv_fs, "operation, %s, %s\n", "write_var_normal_dist", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+            fprintf(params.csv_fs, "Total number of particles, %lldM, %s\n", TOTAL_PARTICLES / (M_VAL), "");
+            fprintf(params.csv_fs, "Final mean particles, %ld, %s\n", final_mean, "");
+            fprintf(params.csv_fs, "Final standard deviation, %f, %s\n", sqrt(final_std / NUM_RANKS), "");
             fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");

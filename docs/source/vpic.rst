@@ -228,6 +228,58 @@ Sample output of ``h5bench_read``:
 	Raw read rate = 2132.200 MB/sec
 	Observed read rate = 2353.605225 MB/sec
 
+Supported Special Write Pattern (``h5bench_write_var_normal_dist``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In ``h5bench_write``, each process writes the same amount of local data. This program ``h5bench_write_var_normal_dist`` demonstrates a prototype for each process writing a varying size local data buffer which 
+follows a normal distribution based on the given mean number of particles provided from ``DIM1`` and standard deviation ``STDEV_DIM1`` in the config file. This special benchmark currently supports only ``DIM1``. check ``samples/sync-write-1d-contig-contig-write-full_var_normal_dist.json``
+
+.. code-block:: none
+
+ "benchmarks": [
+        {
+            "benchmark": "write_var_normal_dist",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                "NUM_DIMS": "1",
+                "DIM_1": "524288",
+                "STDEV_DIM_1":"100000",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "output.csv",
+                "MODE": "SYNC"
+            }
+
+Sample output of ``h5bench_write_var_normal_dist``:
+
+.. code-block:: none
+
+	==================  Performance results  =================
+	metric, value, unit
+	operation, write, 
+	ranks, 16, 
+	Total number of particles, 8M, 
+	Final mean particles, 550199, 
+	Final standard deviation, 103187.169653, 
+	collective data, YES, 
+	collective meta, YES, 
+	subfiling, NO, 
+	total compute time, 4.000, seconds
+	total size, 1.849, GB
+	raw time, 17.949, seconds
+	raw rate, 105.509, MB/s
+	metadata time, 0.001, seconds
+	observed rate, 87.519, MB/s
+	observed time, 25.639, seconds
+
+
+
 Known Issues
 ------------
 
