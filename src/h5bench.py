@@ -32,6 +32,7 @@ class H5bench:
     H5BENCH_OPENPMD_WRITE = 'h5bench_openpmd_write'
     H5BENCH_OPENPMD_READ = 'h5bench_openpmd_read'
     H5BENCH_E3SM = 'h5bench_e3sm'
+    H5BENCH_MACSIO = 'h5bench_macsio'
 
     def __init__(self, setup, prefix=None, debug=None, abort=None, validate=None, filter=None):
         """Initialize the suite."""
@@ -108,7 +109,7 @@ class H5bench:
 
         try:
             # Create a temporary directory to store all configurations
-            os.mkdir(self.directory)
+            os.makedirs(self.directory)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
@@ -178,8 +179,13 @@ class H5bench:
         try:
             with open(self.setup) as file:
                 setup = json.load(file, object_pairs_hook=collections.OrderedDict)
-        except Exception:
-            self.logger.critical('Unable to find and parse the input configuration file')
+        except FileNotFoundError:
+            self.logger.critical('Unable to open the input configuration file')
+
+            sys.exit(os.EX_NOINPUT)
+        except Exception as e:
+            self.logger.critical('Unable to parse the input configuration file)')
+            self.logger.critical(e)
 
             sys.exit(os.EX_NOINPUT)
 
@@ -220,7 +226,7 @@ class H5bench:
             self.logger.info('h5bench [{}] - Starting'.format(name))
             self.logger.info('h5bench [{}] - DIR: {}/{}/'.format(name, setup['directory'], id))
 
-            os.mkdir('{}/{}'.format(setup['directory'], id))
+            os.makedirs('{}/{}'.format(setup['directory'], id))
 
             self.prepare_parallel(setup['mpi'])
 
@@ -236,6 +242,8 @@ class H5bench:
                 self.run_openpmd(id, benchmark)
             elif name == 'e3sm':
                 self.run_e3sm(id, benchmark)
+            elif name == 'macsio':
+                self.run_macsio(id, benchmark)
             else:
                 self.logger.critical('{} - Unsupported benchmark/kernel')
 
@@ -471,9 +479,21 @@ class H5bench:
 
             parameters = []
 
+            parameters_binary = [
+                'keepfile',
+                'usechunked',
+                'indepio',
+                'addattr',
+                'derivedtype'
+            ]
+
             # Create the configuration parameter list
             for key in configuration:
-                parameters.append('--{} {} '.format(key, configuration[key]))
+                if key in parameters_binary:
+                    if configuration[key].lower() == 'true':
+                        parameters.append('--{} '.format(key))
+                else:
+                    parameters.append('--{} {} '.format(key, configuration[key]))
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_EXERCISER
@@ -619,7 +639,7 @@ class H5bench:
 
             try:
                 # Create a temporary directory to store all configurations
-                os.mkdir(directory)
+                os.makedirs(directory)
             except OSError as exc:
                 if exc.errno != errno.EEXIST:
                     raise
@@ -848,6 +868,79 @@ class H5bench:
                         self.logger.critical('h5bench execution aborted upon first error')
 
                         sys.exit(os.EX_SOFTWARE)
+
+            end = time.time()
+
+            self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
+        except Exception as e:
+            self.logger.error('Unable to run the benchmark: %s', e)
+
+    def run_macsio(self, id, setup):
+        """Run the MACSIO benchmark."""
+        if not self.is_available(self.H5BENCH_MACSIO):
+            self.logger.critical('{} is not available'.format(self.H5BENCH_MACSIO))
+
+            sys.exit(os.EX_UNAVAILABLE)
+
+        try:
+            start = time.time()
+
+            configuration = setup['configuration']
+
+            parameters = []
+
+            # Create the configuration parameter list
+            for key in configuration:
+                if key not in ['filebase', 'interface'] and configuration[key]:
+                    parameters.append('--{} {} '.format(key, configuration[key]))
+
+            parameters.append('--interface {} '.format('hdf5'))
+            parameters.append('--filebase {}/{}/{} '.format(self.directory, id, setup['file'].replace('.h5', '')))
+            parameters.append('--log_file_name {}/{}/macsio.log '.format(self.directory, id))
+            parameters.append('--timings_file_name {}/{}/timings.log '.format(self.directory, id))
+
+            if self.prefix:
+                benchmark_path = self.prefix + '/' + self.H5BENCH_MACSIO
+            else:
+                if os.path.isfile(h5bench_configuration.__install__ + '/' + self.H5BENCH_MACSIO):
+                    benchmark_path = h5bench_configuration.__install__ + '/' + self.H5BENCH_MACSIO
+                else:
+                    benchmark_path = self.H5BENCH_MACSIO
+
+            command = '{} {} {}'.format(
+                self.mpi,
+                benchmark_path,
+                ' '.join(parameters)
+            )
+
+            self.logger.info(command)
+
+            # Make sure the command line is in the correct format
+            arguments = shlex.split(command)
+
+            stdout_file_name = '{}/{}/stdout'.format(self.directory, id)
+            stderr_file_name = '{}/{}/stderr'.format(self.directory, id)
+
+            with open(stdout_file_name, mode='w') as stdout_file, open(stderr_file_name, mode='w') as stderr_file:
+                s = subprocess.Popen(arguments, stdout=stdout_file, stderr=stderr_file, env=self.vol_environment)
+                sOutput, sError = s.communicate()
+
+                if s.returncode == 0 and not self.check_for_hdf5_error(stderr_file_name):
+                    self.logger.info('SUCCESS (all output files are located at %s/%s)', self.directory, id)
+                else:
+                    self.logger.error('Return: %s (check %s for detailed log)', s.returncode, stderr_file_name)
+
+                    if self.abort:
+                        self.logger.critical('h5bench execution aborted upon first error')
+
+                        sys.exit(os.EX_SOFTWARE)
+
+                # Move the files if they were generated
+                if os.path.isfile('{}-macsio-log.log'.format(id)):
+                    os.rename('{}-macsio-log.log'.format(id), '{}/{}/macsio-log.log'.format(self.directory, id))
+
+                if os.path.isfile('{}-macsio-timings.log'.format(id)):
+                    os.rename('{}-macsio-timings.log'.format(id), '{}/{}/macsio-timings.log'.format(self.directory, id))
 
             end = time.time()
 
