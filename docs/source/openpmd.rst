@@ -33,7 +33,7 @@ When running with the ``read`` operation, you have to define the pattern:
 ``pattern``            Read access pattern
 
 
-The ``minBlock`` and ``grid`` parameters must include the values for each of the ``dim`` dimensions. For example, if ``"dim": "3"`` (for a 3D mesh) ``minBlock`` should contain three values, one for each dimenseion ``"16 32 32"`` and ``grid`` (which is based on the mini block) should also contain three values, one for each dimension ``"32 32 16"``.
+The ``minBlock`` and ``grid`` parameters must include the values for each of the ``dim`` dimensions. For example, if ``"dim": "3"`` (for a 3D mesh) ``minBlock`` should contain three values, one for each dimension ``"16 32 32"`` and ``grid`` (which is based on the mini block) should also contain three values, one for each dimension ``"32 32 16"``.
 
 For the ``pattern`` attribute for read you can chose:
 
@@ -68,12 +68,7 @@ To run an instance of openPMD HDF5 benchmark you need to include the following i
         "benchmark": "openpmd",
         "configuration": {
             "operation": "read",
-            "dim": "3",
-            "balanced": "true",
-            "ratio": "1",
-            "steps": "1",
-            "minBlock": "8 16 16",
-            "grid": "16 16 8"
+            "pattern": "sy"
         }
     }
 
