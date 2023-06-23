@@ -34,6 +34,14 @@ For instance on the Cori system at NERSC:
 
 You can also load any paralel HDF5 provided on your system, and you are good to go.
 
+.. warning::
+
+    If you are using `brew install hdf5-mpi` in MacOS to install HDF5 with parallel support, make sure you export the installation path so h5bench can correctly detect the dependency:
+
+    .. code-block:: bash
+
+        export HDF5_HOME="$(brew --prefix hdf5-mpi)"
+
 +++++++++++++++++++++++++++++++++
 Use your own installed HDF5
 +++++++++++++++++++++++++++++++++
