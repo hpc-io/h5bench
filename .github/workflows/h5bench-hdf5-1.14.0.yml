@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.14.1) 
+name: h5bench (HDF5 1.14.0) 
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-20.04
     container:
-      image: hpcio/hdf5-1.14.1
+      image: hpcio/hdf5-1.14.0
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -106,6 +106,7 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           make install
+
       - name: Test h5bench SYNC write/read
         run: |
           export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH

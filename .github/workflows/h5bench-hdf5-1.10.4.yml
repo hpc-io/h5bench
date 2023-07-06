@@ -1,0 +1,229 @@
+name: h5bench (HDF5 1.10.4)
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+  push:
+    branches:
+      - master
+
+jobs:
+  h5bench:
+    runs-on: ubuntu-20.04
+    container:
+      image: hpcio/hdf5-1.10.4
+    timeout-minutes: 60
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Configuration
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
+
+      - name: Build h5bench
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          
+          mkdir build
+          cd build
+
+          cmake .. \
+            -DH5BENCH_ALL=ON
+          make -j 2
+          make install
+
+      - name: Test h5bench SYNC write/read
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-strided.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig.json
+
+      - name: Test h5bench SYNC write 1D contiguous (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-interleaved.json
+
+      - name: Test h5bench SYNC write 1D interleaved (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-contig.json
+
+      - name: Test h5bench SYNC write 1D interleaved (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-interleaved.json
+
+      - name: Test h5bench SYNC write 2D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig.json
+
+      - name: Test h5bench SYNC write 2D contiguous (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-interleaved.json
+
+      - name: Test h5bench SYNC write 2D interleaved (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-contig.json
+
+      - name: Test h5bench SYNC write 2D interleaved (memory) interleaved (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-interleaved.json
+
+      - name: Test h5bench SYNC write 3D contiguous (memory) contiguous (file)
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
+
+      - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
+
+      - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
+
+      - name: Test h5bench SYNC write unlimited
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
+
+      - name: Test h5bench SYNC overwrite
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
+
+      - name: Test h5bench SYNC append
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-append.json
+
+      - name: Test h5bench SYNC exerciser
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
+
+      - name: Test h5bench SYNC metadata
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
+
+      - name: Test h5bench SYNC amrex
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
+
+      - name: Test h5bench SYNC openpmd
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
+
+      - name: Test h5bench SYNC e3sm
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
+
+      - name: Test h5bench SYNC macsio
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test
+          path: build/storage/**/std*
+          retention-days: 5
