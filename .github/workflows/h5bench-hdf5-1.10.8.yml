@@ -216,10 +216,14 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
 
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: test
           path: build/storage/**/std*
-          retention-days: 1
+          retention-days: 5
