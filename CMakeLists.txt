@@ -53,18 +53,18 @@ message(STATUS "h5bench MACSIO: ${H5BENCH_MACSIO}")
 # HDF5 Dependency #############################################################
 #
 
-if(DEFINED ENV{HDF5_HOME})
-    message(STATUS "Using HDF5_HOME: $ENV{HDF5_HOME}")
-
-    set(HDF5_HOME $ENV{HDF5_HOME})
-    set(CMAKE_PREFIX_PATH ${HDF5_HOME})
-endif()
-
 if(DEFINED ENV{HDF5_DIR})
     message(STATUS "Using HDF5_DIR: $ENV{HDF5_DIR}")
 
     set(HDF5_HOME $ENV{HDF5_DIR})
-    set(CMAKE_PREFIX_PATH ${HDF5_DIR})
+    set(CMAKE_PREFIX_PATH $ENV{HDF5_DIR})
+endif()
+
+if(DEFINED ENV{HDF5_HOME})
+    message(STATUS "Using HDF5_HOME: $ENV{HDF5_HOME}")
+
+    set(HDF5_HOME $ENV{HDF5_HOME})
+    set(CMAKE_PREFIX_PATH $ENV{HDF5_HOME})
 endif()
 
 find_package(HDF5 REQUIRED)
