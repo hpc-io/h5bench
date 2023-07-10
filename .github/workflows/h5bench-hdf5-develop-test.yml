@@ -69,7 +69,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR
+          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
@@ -138,6 +138,7 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
+          export HDF5_ASYNC_MAX_MEM_MB=1024
 
           cd build-async
 
@@ -153,4 +154,4 @@ jobs:
         with:
           name: test
           path: build*/storage/**/std*
-          retention-days: 1
+          retention-days: 5
