@@ -138,6 +138,7 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
+          export HDF5_ASYNC_MAX_MEM_MB=1024
 
           cd build-async
 
