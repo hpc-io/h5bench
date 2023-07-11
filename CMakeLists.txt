@@ -53,8 +53,19 @@ message(STATUS "h5bench MACSIO: ${H5BENCH_MACSIO}")
 # HDF5 Dependency #############################################################
 #
 
-set(HDF5_HOME $ENV{HDF5_HOME})
-set(CMAKE_PREFIX_PATH ${HDF5_HOME})
+if(DEFINED ENV{HDF5_DIR})
+    message(STATUS "Using HDF5_DIR: $ENV{HDF5_DIR}")
+
+    set(HDF5_HOME $ENV{HDF5_DIR})
+    set(CMAKE_PREFIX_PATH $ENV{HDF5_DIR})
+endif()
+
+if(DEFINED ENV{HDF5_HOME})
+    message(STATUS "Using HDF5_HOME: $ENV{HDF5_HOME}")
+
+    set(HDF5_HOME $ENV{HDF5_HOME})
+    set(CMAKE_PREFIX_PATH $ENV{HDF5_HOME})
+endif()
 
 find_package(HDF5 REQUIRED)
 
@@ -197,6 +208,8 @@ if(H5BENCH_AMREX)
     target_link_libraries(h5bench_amrex_sync hdf5 z m amrex pthread ${CMAKE_DL_LIBS} MPI::MPI_C)
 
     if(WITH_ASYNC_VOL)
+        message(WARNING "h5bench AMReX with ASYNC-VOL: ensure ASYNC-VOL was compiled with -DENABLE_WRITE_MEMCPY=ON")
+
         set(AMReX_HDF5_ASYNC YES)
 
         add_executable(h5bench_amrex_async ${amrex_src})

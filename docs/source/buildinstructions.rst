@@ -11,7 +11,7 @@ First, clone the h5bench GitHub repository and ensure you are cloning the submod
 
     git clone --recurse-submodules https://github.com/hpc-io/h5bench
 
-If you are upadting your h5bench, ensure you have the latest submodules that could be included in new releases:
+If you are updating your h5bench, ensure you have the latest submodules that could be included in new releases:
 
 .. code-block:: bash
 
@@ -26,25 +26,51 @@ H5bench depends on MPI and parallel HDF5.
 Use system provided by HDF5 
 +++++++++++++++++++++++++++++++++
 
-For instance on the Cori system at NERSC:
+For instance, on the Perlmutter system at NERSC:
 
 .. code-block:: bash
     
     module load cray-hdf5-parallel
 
-You can also load any paralel HDF5 provided on your system, and you are good to go.
+You can also load any parallel HDF5 provided on your system, and you are good to go.
+
+.. warning::
+
+    If you are using ``brew install hdf5-mpi`` in MacOS to install HDF5 with parallel support, make sure you export the installation path so h5bench can correctly detect the dependency:
+
+    .. code-block:: bash
+
+        export HDF5_HOME="$(brew --prefix hdf5-mpi)"
 
 +++++++++++++++++++++++++++++++++
 Use your own installed HDF5
 +++++++++++++++++++++++++++++++++
 
-Make sure to unload any system provided HDF5 version:, and set an environment variable to specify the HDF5 install path:
+Make sure to unload any system-provided HDF5 version, and set an environment variable to specify the HDF5 install path:
 
 .. code-block:: bash
 
     export HDF5_HOME=/path/to/your/hdf5/installation
 
 It should point to a path that contains the ``include/``, ``lib/``, and ``bin/`` subdirectories.
+
+If you want to build your own HDF5, use the following:
+
+.. code-block:: bash
+
+    git clone https://github.com/HDFGroup/hdf5.git
+    cd hdf5
+    git checkout hdf5-1_14_1-2
+    cmake -DCMAKE_INSTALL_PREFIX=$HDF5_HOME \ 
+          -DHDF5_ENABLE_PARALLEL=ON \
+          -DHDF5_ENABLE_THREADSAFE=ON \ 
+          -DALLOW_UNSUPPORTED=ON \
+          -DCMAKE_C_COMPILER=mpicc ..
+    make -j && make install
+
+.. warning::
+
+    This snippet assumed you had already defined the ``HDF5_HOME`` environment variable to the location where you want HDF5 to be installed. Furthermore, it assumes you have ``mpicc`` available in your path. Notice that in some machines (e.g., Perlmutter), you might want to use ``cc` instead.
 
 Compile with CMake
 ---------------------------------------------------
