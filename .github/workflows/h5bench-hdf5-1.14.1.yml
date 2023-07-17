@@ -32,7 +32,7 @@ jobs:
       - name: Dependencies
         run: |
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.6 /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
 
       - name: Build Argobots
         run: |
