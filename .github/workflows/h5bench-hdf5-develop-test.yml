@@ -28,7 +28,7 @@ jobs:
           git clone https://github.com/HDFGroup/hdf5.git
 
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
 
           python3 -m pip install pytest
 
