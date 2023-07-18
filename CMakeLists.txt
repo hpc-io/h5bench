@@ -372,6 +372,12 @@ endif()
 if(H5BENCH_OPENPMD)
     install(
         TARGETS
+        openPMD
+        LIBRARY
+    )
+
+    install(
+        TARGETS
         h5bench_openpmd_write
         h5bench_openpmd_read
         DESTINATION bin
