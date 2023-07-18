@@ -88,6 +88,7 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           make install
+          ldconfig
 
       - name: Build h5bench ASYNC
         run: |
@@ -106,6 +107,8 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           make install
+          ldconfig
+
       - name: Test h5bench SYNC write/read
         run: |
           export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
