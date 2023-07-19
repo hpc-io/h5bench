@@ -374,6 +374,7 @@ if(H5BENCH_OPENPMD)
         TARGETS
         openPMD
         LIBRARY
+        DESTINATION lib
     )
 
     install(
