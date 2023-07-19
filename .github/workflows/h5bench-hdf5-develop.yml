@@ -101,7 +101,7 @@ jobs:
           cmake .. \
             -DH5BENCH_ALL=ON
           make -j 2
-          make install
+          sudo make install
           ldconfig
 
       - name: Build h5bench ASYNC
@@ -122,7 +122,7 @@ jobs:
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
           make -j 2
-          make install
+          sudo make install
           ldconfig
 
       - name: Test h5bench SYNC write/read
