@@ -112,10 +112,10 @@ endif()
 # h5bench WRITE varying particle based on normal distribution ######################
 #
 
-set(h5bench_write_var_normal_dist_src h5bench_patterns/h5bench_write_var_normal_dist.c)
+set(h5bench_write_normal_dist_src h5bench_patterns/h5bench_write_normal_dist.c)
 
-add_executable(h5bench_write_var_normal_dist ${h5bench_write_var_normal_dist_src})
-target_link_libraries(h5bench_write_var_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
+add_executable(h5bench_write_normal_dist ${h5bench_write_normal_dist_src})
+target_link_libraries(h5bench_write_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
 
 # h5bench WRITE ###############################################################
 #
@@ -342,7 +342,7 @@ install(
     TARGETS
     h5bench_write
     h5bench_write_unlimited
-    h5bench_write_var_normal_dist
+    h5bench_write_normal_dist
     h5bench_overwrite
     h5bench_append
     h5bench_read
@@ -352,7 +352,7 @@ install(
 if(H5BENCH_EXERCISER)
     install(
         TARGETS
-        h5bench_exerciser 
+        h5bench_exerciser
         DESTINATION bin
     )
 endif()
