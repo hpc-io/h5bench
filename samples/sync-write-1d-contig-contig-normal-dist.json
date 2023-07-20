@@ -1,14 +1,17 @@
 {
     "mpi": {
-        "command": "",
-        "configuration": "srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -n 64 -t 00:30:00"
+        "command": "mpirun",
+        "ranks": "4",
+        "configuration": "--allow-run-as-root -n 2 --oversubscribe"
     },
-    "vol": {},
-    "file-system": {},
+    "vol": {
+    },
+    "file-system": {
+    },
     "directory": "storage",
     "benchmarks": [
         {
-            "benchmark": "write_var_normal_dist",
+            "benchmark": "write_normal_dist",
             "file": "test.h5",
             "configuration": {
                 "MEM_PATTERN": "CONTIG",
