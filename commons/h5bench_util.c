@@ -935,6 +935,15 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
             return -1;
         }
     }
+    else if (strcmp(key, "STDEV_DIM_1") == 0) {
+        unsigned long long stdev_dim_1 = atoi(val);
+        if (stdev_dim_1 >= 0)
+            (*params_in_out).stdev_dim_1 = stdev_dim_1;
+        else {
+            printf("STDEV_DIM_1 must be >=0\n");
+            return -1;
+        }
+    }
     else {
         printf("Unknown Parameter: %s\n", key);
         return -1;
@@ -986,6 +995,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).chunk_dim_3   = 1;
     (*params_out).csv_path      = NULL;
     (*params_out).env_meta_path = NULL;
+    (*params_out).stdev_dim_1   = 1;
 
     (*params_out).csv_path        = NULL;
     (*params_out).csv_fs          = NULL;
@@ -1156,6 +1166,9 @@ print_params(const bench_params *p)
         printf("    align  = %d\n", p->align);
         printf("    align threshold = %ld\n", p->align_threshold);
         printf("    align length = %ld\n", p->align_len);
+    }
+    if (p->stdev_dim_1) {
+        printf("Standard deviation for varying particle size in normal distribution = %ld\n", p->stdev_dim_1);
     }
     printf("===========================================================\n");
     printf("\n");
