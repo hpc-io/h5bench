@@ -102,6 +102,7 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
+          sudo ldconfig
 
       - name: Build h5bench ASYNC
         run: |
@@ -122,6 +123,7 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
+          sudo ldconfig
 
       - name: Test h5bench SYNC write/read
         run: |
