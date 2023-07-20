@@ -22,7 +22,7 @@ class H5bench:
 
     H5BENCH_PATTERNS_WRITE = 'h5bench_write'
     H5BENCH_PATTERNS_WRITE_UNLIMITED = 'h5bench_write_unlimited'
-    H5BENCH_PATTERNS_WRITE_VAR_NORMAL_DIST= 'h5bench_write_var_normal_dist'
+    H5BENCH_PATTERNS_WRITE_VAR_NORMAL_DIST = 'h5bench_write_var_normal_dist'
     H5BENCH_PATTERNS_APPEND = 'h5bench_append'
     H5BENCH_PATTERNS_OVERWRITE = 'h5bench_overwrite'
     H5BENCH_PATTERNS_READ = 'h5bench_read'
