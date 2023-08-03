@@ -81,7 +81,7 @@ build-perlmutter-metrics:
         - perlmutter
     variables:
         GIT_SUBMODULE_STRATEGY: recursive
-        SCHEDULER_PARAMETERS: "--qos=debug -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: " -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
         HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
     script:
