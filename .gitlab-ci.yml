@@ -111,6 +111,9 @@ metrics-perlmutter:
         HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
         MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
+        - hostname
+        - echo "JOBID ${SLURM_JOB_ID}"
+        - export NERSC_HOST=`cat /etc/clustername`
         - module load python
         - module load darshan
         - export LD_PRELOAD="$DARSHAN_BASE_DIR/lib/libdarshan.so"
