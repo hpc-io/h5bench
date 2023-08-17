@@ -305,6 +305,13 @@ class H5bench:
         if 'LD_PRELOAD' in self.vol_environment:
             self.logger.debug('LD_PRELOAD: %s', self.vol_environment['LD_PRELOAD'])
 
+    def has_vol(self, vol):
+        """Check if a VOL connector has been defined."""
+        if 'connector' in vol:
+            return True
+
+        return False
+
     def enable_vol(self, vol):
         """Enable VOL by setting the connector."""
         if 'connector' in vol:
@@ -357,7 +364,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['MODE'] in ['ASYNC', 'LOG']:
+            if self.has_vol(vol):
                 self.enable_vol(vol)
 
             configuration_file = '{}/{}/h5bench.cfg'.format(self.directory, id)
@@ -437,7 +444,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['MODE'] in ['ASYNC', 'LOG']:
+            if self.has_vol(vol):
                 self.disable_vol(vol)
 
             if self.validate:
@@ -632,7 +639,7 @@ class H5bench:
             # Disable any user-defined VOL connectors as we will be handling that
             self.disable_vol(vol)
 
-            if configuration['mode'] in ['ASYNC', 'LOG']:
+            if self.has_vol(vol):
                 self.enable_vol(vol)
 
                 binary = self.H5BENCH_AMREX_ASYNC
@@ -699,7 +706,7 @@ class H5bench:
 
             end = time.time()
 
-            if configuration['mode'] in ['ASYNC', 'LOG']:
+            if self.has_vol(vol):
                 self.disable_vol(vol)
 
             self.logger.info('Runtime: {:.7f} seconds (elapsed time, includes allocation wait time)'.format(end - start))
