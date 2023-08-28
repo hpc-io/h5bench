@@ -234,7 +234,7 @@ For the ``exerciser`` benchmark, you need to provide the required runtime option
       }
    }
 
-You can find several samples of configuration file with all the optins in the our [GitHub repository] (https://github.com/hpc-io/h5bench/tree/master/samples). You can also refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
+You can find several samples of configuration file with all the options in our [GitHub repository] (https://github.com/hpc-io/h5bench/tree/master/samples). You can also refer to this sample of a complete ``configuration.json`` file that defined the workflow of the execution of multiple benchmarks from h5bench Suite:
 
 .. literalinclude:: ../../configuration.json
    :language: json
@@ -247,25 +247,25 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
 
    2021-10-25 16:31:24,866 h5bench - INFO - Starting h5bench Suite
    2021-10-25 16:31:24,889 h5bench - INFO - Lustre support detected
-   2021-10-25 16:31:24,889 h5bench - DEBUG - Lustre stripping configuration: lfs setstripe -S 1M -c 4 full-teste
+   2021-10-25 16:31:24,889 h5bench - DEBUG - Lustre stripping configuration: lfs setstripe -S 1M -c 4 your-path
    2021-10-25 16:31:24,903 h5bench - INFO - h5bench [write] - Starting
-   2021-10-25 16:31:24,903 h5bench - INFO - h5bench [write] - DIR: full-teste/504fc233/
+   2021-10-25 16:31:24,903 h5bench - INFO - h5bench [write] - DIR: your-path/504fc233/
    2021-10-25 16:31:24,904 h5bench - INFO - Parallel setup: srun --cpu_bind=cores -n 4
-   2021-10-25 16:31:24,908 h5bench - INFO - srun --cpu_bind=cores -n 4 build/h5bench_write full-teste/504fc233/h5bench.cfg full-teste/test.h5
+   2021-10-25 16:31:24,908 h5bench - INFO - srun --cpu_bind=cores -n 4 build/h5bench_write your-path/504fc233/h5bench.cfg your-path/test.h5
    2021-10-25 16:31:41,670 h5bench - INFO - SUCCESS
    2021-10-25 16:31:41,754 h5bench - INFO - Runtime: 16.8505464 seconds (elapsed time, includes allocation wait time)
    2021-10-25 16:31:41,755 h5bench - INFO - h5bench [write] - Complete
    2021-10-25 16:31:41,755 h5bench - INFO - h5bench [exerciser] - Starting
-   2021-10-25 16:31:41,755 h5bench - INFO - h5bench [exerciser] - DIR: full-teste/247659d1/
+   2021-10-25 16:31:41,755 h5bench - INFO - h5bench [exerciser] - DIR: your-path/247659d1/
    2021-10-25 16:31:41,755 h5bench - INFO - Parallel setup: srun --cpu_bind=cores -n 4
    2021-10-25 16:31:41,756 h5bench - INFO - srun --cpu_bind=cores -n 4 build/h5bench_exerciser --numdims 2  --minels 8 8  --nsizes 3  --bufmult 2 2  --dimranks 8 4 
    2021-10-25 16:31:49,174 h5bench - INFO - SUCCESS
    2021-10-25 16:31:49,174 h5bench - INFO - Finishing h5bench Suite
 
-Cori (NERSC)
+Perlmutter (NERSC)
 ^^^^^^^^^^^^
 
-In Cori you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark that is not required. 
+In Perlmutter you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark, that is not required. 
 
 .. code-block::
 
@@ -275,7 +275,7 @@ In case you are running on Cori and the benchmark fails with an MPI message indi
 
 .. code-block::
 
-   Assertion `MPI_THREAD_MULTIPLE == mpi_thread_lvl_p rovided' failed.
+   Assertion `MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided' failed.
 
 Please, make sure you define the following:
 
@@ -286,13 +286,13 @@ Please, make sure you define the following:
 Sunspot (ALCF)
 ^^^^^^^^^^^^^^
 
-In Sunspot you need to export one additional enviroment variable related to ATS. ATS is the Address Translation Service support for using the IOMMU (Input–Output Memory Management Unit) for address translation. ATS is not supported on Intel processors at this time. The default is to NTA (NIC translation).
+In Sunspot, you need to export one additional environment variable related to ATS. ATS is the Address Translation Service support for using the IOMMU (Input–Output Memory Management Unit) for address translation. ATS is not supported on Intel processors at this time. The default is to NTA (NIC translation).
 
 .. code-block::
 
    export FI_CXI_ATS=0 
 
-Otherwise you will encounter the following error:
+Otherwise, you will encounter the following error:
 
 .. code-block::
 
