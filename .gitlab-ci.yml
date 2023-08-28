@@ -10,7 +10,9 @@ stages:
 build-perlmutter:
     stage: build
     rules:
-        - if: '$METRICS == null'
+        - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+          when: manual
+
     tags:
         - perlmutter
     variables:
