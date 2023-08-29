@@ -9,8 +9,7 @@ stages:
 
 build-perlmutter:
     stage: build
-    environment:
-        name: Perlmutter
+    when: manual
     rules:
         - if: '$METRICS == null'
     tags:
