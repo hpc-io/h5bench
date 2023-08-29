@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Synchronize NERSC CI
         run: |
-          curl --request GET --header "PRIVATE-TOKEN: ${{ secrets.NERSC_GITLAB_TOKEN }}" "${{ secrets.NERSC_GITLAB_URL }}"
+          curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.NERSC_GITLAB_TOKEN }}" "${{ secrets.NERSC_GITLAB_URL }}"
