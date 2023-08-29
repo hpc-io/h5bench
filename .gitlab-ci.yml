@@ -13,7 +13,6 @@ build-perlmutter:
         name: Perlmutter
     rules:
         - if: '$METRICS == null'
-
     tags:
         - perlmutter
     variables:
