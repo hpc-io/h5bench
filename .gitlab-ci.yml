@@ -10,6 +10,7 @@ stages:
 build-perlmutter:
     stage: build
     when: manual
+    allow_failure: false
     rules:
         - if: '$METRICS == null'
     tags:
