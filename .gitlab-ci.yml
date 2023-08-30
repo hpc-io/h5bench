@@ -9,6 +9,8 @@ stages:
 
 build-perlmutter:
     stage: build
+    when: manual
+    allow_failure: false
     rules:
         - if: '$METRICS == null'
     tags:
@@ -47,7 +49,7 @@ test-perlmutter:
     script:
         - echo "Test h5bench SYNC"
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
-        - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
+        - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$H5BENCH_INSTALL_PATH/perlmutter/lib:$LD_LIBRARY_PATH
         - echo "Test h5bench SYNC write/read"
         - python3 ../../samples/update-perlmutter.py ../../samples/sync-write-read-contig-1d-small.json
         - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/sync-write-read-contig-1d-small.json
