@@ -1,0 +1,55 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "1",
+        "configuration": "--allow-run-as-root -n 1 --oversubscribe"
+    },
+    "vol": {
+    },
+    "file-system": {
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                "NUM_DIMS": "2",
+                "DIM_1": "32",
+                "DIM_2": "32",
+                "DIM_3": "1",
+                "CSV_FILE": "output.csv",
+                "MODE": "SYNC"
+            }
+        },
+        {
+            "benchmark": "read",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "READ_OPTION": "CS",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s", 
+                "NUM_DIMS": "2",
+                "DIM_1": "32",
+                "DIM_2": "32",
+                "DIM_3": "1",
+                "BLOCK_SIZE": "2",
+                "BLOCK_SIZE_2": "2",
+                "STRIDE_SIZE": "4",
+                "STRIDE_SIZE_2": "3",
+                "CSV_FILE": "output.csv",
+                "MODE": "SYNC"
+            }
+        }
+    ]
+}
