@@ -63,7 +63,7 @@ int        subfiling = 0;
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor *   MEM_MONITOR;
+mem_monitor    *MEM_MONITOR;
 
 void
 print_data(int n)
@@ -717,7 +717,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *         mode_str = NULL;
+        char          *mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
