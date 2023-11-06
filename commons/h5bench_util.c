@@ -378,7 +378,7 @@ prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3)
 data_contig_md *
 prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3)
 {
-     data_contig_md *buf_struct       = (data_contig_md *)malloc(sizeof(data_contig_md));
+    data_contig_md *buf_struct       = (data_contig_md *)malloc(sizeof(data_contig_md));
     buf_struct->dim_1                = dim_1;
     buf_struct->dim_2                = dim_2;
     buf_struct->dim_3                = dim_3;
