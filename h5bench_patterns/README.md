@@ -13,7 +13,7 @@ These patterns work with a single MPI process. In case multiple processes are us
 
 
 
-Steps for running these benchmarks are the same as the other benchmarks. Besides other parameters, the following parameters are required to be provided in the configuration:
+Steps for running these benchmarks are the same as the other benchmarks. All parameter and requirements and running instructions remain same, except for the following parameters which are additionally required to be provided in the configuration:
 1. CS  
     | Parameter | Description |  
     | --------- | ----------- |  
