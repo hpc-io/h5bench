@@ -587,7 +587,7 @@ _set_io_pattern(bench_params *params_in_out)
              (params_in_out->io_op == IO_APPEND)) { // file --> mem
         if (params_in_out->mem_pattern == PATTERN_CONTIG) {
             if (params_in_out->file_pattern == PATTERN_CONTIG) {
-                if (params_in_out->read_option == LDC){
+                if (params_in_out->read_option == LDC) {
                     switch (params_in_out->num_dims) {
                         case 2:
                             (*params_in_out).access_pattern.pattern_read = LDC_2D;
@@ -595,10 +595,12 @@ _set_io_pattern(bench_params *params_in_out)
                             break;
                         default:
                             ret = -1;
-                            printf("%s(). Unexpected Dimensions for LDC. failed on line %d\n", __func__, __LINE__);
+                            printf("%s(). Unexpected Dimensions for LDC. failed on line %d\n", __func__,
+                                   __LINE__);
                             break;
                     }
-                } else if (params_in_out->read_option == RDC){
+                }
+                else if (params_in_out->read_option == RDC) {
                     switch (params_in_out->num_dims) {
                         case 2:
                             (*params_in_out).access_pattern.pattern_read = RDC_2D;
@@ -606,10 +608,12 @@ _set_io_pattern(bench_params *params_in_out)
                             break;
                         default:
                             ret = -1;
-                            printf("%s(). Unexpected Dimensions for RDC. failed on line %d\n", __func__, __LINE__);
+                            printf("%s(). Unexpected Dimensions for RDC. failed on line %d\n", __func__,
+                                   __LINE__);
                             break;
                     }
-                } else if (params_in_out->read_option == PRL){
+                }
+                else if (params_in_out->read_option == PRL) {
                     switch (params_in_out->num_dims) {
                         case 2:
                             (*params_in_out).access_pattern.pattern_read = PRL_2D;
@@ -617,10 +621,12 @@ _set_io_pattern(bench_params *params_in_out)
                             break;
                         default:
                             ret = -1;
-                            printf("%s(). Unexpected Dimensions for PRL. failed on line %d\n", __func__, __LINE__);
+                            printf("%s(). Unexpected Dimensions for PRL. failed on line %d\n", __func__,
+                                   __LINE__);
                             break;
                     }
-                } else if (params_in_out->read_option == CS){
+                }
+                else if (params_in_out->read_option == CS) {
                     switch (params_in_out->num_dims) {
                         case 2:
                             (*params_in_out).access_pattern.pattern_read = CS_2D;
@@ -628,11 +634,12 @@ _set_io_pattern(bench_params *params_in_out)
                             break;
                         default:
                             ret = -1;
-                            printf("%s(). Unexpected Dimensions for CS. failed on line %d\n", __func__, __LINE__);
+                            printf("%s(). Unexpected Dimensions for CS. failed on line %d\n", __func__,
+                                   __LINE__);
                             break;
                     }
                 }
-                else{
+                else {
                     switch (params_in_out->num_dims) {
                         case 1:
                             (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
@@ -828,16 +835,16 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else if (strcmp(val_in, "STRIDED") == 0) { // STRIDED
             (*params_in_out).read_option = READ_STRIDED;
         }
-        else if (strcmp(val_in, "LDC") == 0) { 
+        else if (strcmp(val_in, "LDC") == 0) {
             (*params_in_out).read_option = LDC;
         }
-        else if (strcmp(val_in, "RDC") == 0) { 
+        else if (strcmp(val_in, "RDC") == 0) {
             (*params_in_out).read_option = RDC;
         }
-        else if (strcmp(val_in, "PRL") == 0) { 
+        else if (strcmp(val_in, "PRL") == 0) {
             (*params_in_out).read_option = PRL;
         }
-        else if (strcmp(val_in, "CS") == 0) { 
+        else if (strcmp(val_in, "CS") == 0) {
             (*params_in_out).read_option = CS;
         }
 
@@ -1069,11 +1076,11 @@ bench_params_init(bench_params *params_out)
     (*params_out).num_dims              = 1;
 
     (*params_out).stride        = 0;
-    (*params_out).stride_2        = 0;
-    (*params_out).stride_3        = 0;
+    (*params_out).stride_2      = 0;
+    (*params_out).stride_3      = 0;
     (*params_out).block_size    = 0;
-    (*params_out).block_size_2    = 0;
-    (*params_out).block_size_3    = 0;
+    (*params_out).block_size_2  = 0;
+    (*params_out).block_size_3  = 0;
     (*params_out).block_cnt     = 0;
     (*params_out).dim_1         = 1;
     (*params_out).dim_2         = 1;

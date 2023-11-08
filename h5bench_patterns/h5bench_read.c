@@ -63,7 +63,7 @@ int        subfiling = 0;
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor    *MEM_MONITOR;
+mem_monitor *   MEM_MONITOR;
 
 void
 print_data(int n)
@@ -201,66 +201,71 @@ _set_dataspace_seq_2D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 }
 
 /**
- * @brief Set the dataspace for LDC access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @brief Set the dataspace for LDC access pattern on a 2D datafile and set the memspace based on the number
+ * of elements to be read
  * @param params the configuration for the program
  * @param filespace_in to store the id of the selected dataspace
- * @param memspace_out to store the memspace created for reading the data 
+ * @param memspace_out to store the memspace created for reading the data
  * @return count of elements that would be read
-*/
+ */
 unsigned long
-_set_dataspace_LDC_2D(bench_params params, hid_t *filespace_in,
-                    hid_t *memspace_out){
+_set_dataspace_LDC_2D(bench_params params, hid_t *filespace_in, hid_t *memspace_out)
+{
 
-    if (MY_RANK != 0) return 0;
-    if( !(params.block_size >= params.dim_1/10 && params.block_size <= params.dim_1/5 && 
-        params.block_size_2 >= params.dim_2/10 && params.block_size_2 <= params.dim_2/5) ) 
+    if (MY_RANK != 0)
+        return 0;
+    if (!(params.block_size >= params.dim_1 / 10 && params.block_size <= params.dim_1 / 5 &&
+          params.block_size_2 >= params.dim_2 / 10 && params.block_size_2 <= params.dim_2 / 5))
         return 0;
     // block sizes should basically hold sw and sh
     hsize_t mem_dims[2], file_dims[2];
-    mem_dims[0] = 2*(hsize_t)params.block_size;
+    mem_dims[0] = 2 * (hsize_t)params.block_size;
     mem_dims[1] = (hsize_t)params.block_size_2;
 
     hsize_t count[2] = {1, 1};
-    hsize_t volatile file_starts[2], block[2], file_starts2[2];   // select start point and range in each dimension.
+    hsize_t volatile file_starts[2], block[2],
+        file_starts2[2]; // select start point and range in each dimension.
 
-    block[0]      = params.block_size;
-    block[1]      = params.block_size_2;
+    block[0]       = params.block_size;
+    block[1]       = params.block_size_2;
     file_starts[0] = params.dim_1 - block[0];
     file_starts[1] = params.dim_2 - block[1];
-    *memspace_out = H5Screate_simple(2, mem_dims, NULL);
+    *memspace_out  = H5Screate_simple(2, mem_dims, NULL);
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, file_starts, NULL, count, block);
 
     file_starts[0] = 0;
     file_starts[1] = 0;
-    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); 
+    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block);
     return mem_dims[0] * mem_dims[1];
 }
 
 /**
- * @brief Set the dataspace for RDC access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @brief Set the dataspace for RDC access pattern on a 2D datafile and set the memspace based on the number
+ * of elements to be read
  * @param params the configuration for the program
  * @param filespace_in to store the id of the selected dataspace
- * @param memspace_out to store the memspace created for reading the data 
+ * @param memspace_out to store the memspace created for reading the data
  * @return count of elements that would be read
-*/
+ */
 unsigned long
-_set_dataspace_RDC_2D(bench_params params, hid_t *filespace_in,
-                    hid_t *memspace_out){
+_set_dataspace_RDC_2D(bench_params params, hid_t *filespace_in, hid_t *memspace_out)
+{
 
-    if (MY_RANK != 0) return 0;
-    if( !(params.block_size >= params.dim_1/10 && params.block_size <= params.dim_1/5 && 
-        params.block_size_2 >= params.dim_2/10 && params.block_size_2 <= params.dim_2/5) ) 
+    if (MY_RANK != 0)
+        return 0;
+    if (!(params.block_size >= params.dim_1 / 10 && params.block_size <= params.dim_1 / 5 &&
+          params.block_size_2 >= params.dim_2 / 10 && params.block_size_2 <= params.dim_2 / 5))
         return 0;
 
     // block sizes should basically hold sw and sh
     hsize_t mem_dims[2], file_dims[2];
-    mem_dims[0] = 2*(hsize_t)params.block_size;
+    mem_dims[0] = 2 * (hsize_t)params.block_size;
     mem_dims[1] = (hsize_t)params.block_size_2;
 
     hsize_t count[2] = {1, 1};
-    hsize_t volatile file_starts[2], block[2];   // select start point and range in each dimension.
-    block[0]      = params.block_size;
-    block[1]      = params.block_size_2;
+    hsize_t volatile file_starts[2], block[2]; // select start point and range in each dimension.
+    block[0]       = params.block_size;
+    block[1]       = params.block_size_2;
     file_starts[0] = params.dim_1 - block[0]; // file offset for each rank
     file_starts[1] = 0;
 
@@ -269,29 +274,32 @@ _set_dataspace_RDC_2D(bench_params params, hid_t *filespace_in,
 
     file_starts[0] = 0;
     file_starts[1] = params.dim_2 - block[1];
-    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); 
+    H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block);
 
     return mem_dims[0] * mem_dims[1];
 }
 
 /**
- * @brief Set the dataspace for CS access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @brief Set the dataspace for CS access pattern on a 2D datafile and set the memspace based on the number of
+ * elements to be read
  * @param params the configuration for the program
  * @param filespace_in to store the id of the selected dataspace
- * @param memspace_out to store the memspace created for reading the data 
+ * @param memspace_out to store the memspace created for reading the data
  * @return count of elements that would be read
-*/
+ */
 unsigned long
-_set_dataspace_CS_2D(bench_params params, hid_t *filespace_in,
-                    hid_t *memspace_out){
+_set_dataspace_CS_2D(bench_params params, hid_t *filespace_in, hid_t *memspace_out)
+{
 
-    if (MY_RANK != 0) return 0;
-    if (params.stride_2 >= params.stride) return 0;
+    if (MY_RANK != 0)
+        return 0;
+    if (params.stride_2 >= params.stride)
+        return 0;
     // block sizes should basically hold sw and sh
     // rn params only have one stride
-    hsize_t volatile count[2] = {1,1},  file_starts[2], block[2];
-    block[0]      = params.block_size;
-    block[1]      = params.block_size_2;
+    hsize_t volatile count[2] = {1, 1}, file_starts[2], block[2];
+    block[0]                  = params.block_size;
+    block[1]                  = params.block_size_2;
 
     file_starts[0] = 0; // file offset for each rank
     file_starts[1] = 0;
@@ -299,44 +307,45 @@ _set_dataspace_CS_2D(bench_params params, hid_t *filespace_in,
     file_starts[0] += params.stride;
     file_starts[1] += params.stride_2;
 
-    while (file_starts[0] + block[0] < params.dim_1 && file_starts[1] + block[1] < params.dim_2){
+    while (file_starts[0] + block[0] < params.dim_1 && file_starts[1] + block[1] < params.dim_2) {
         printf("Reading offset (%d, %d)\n", file_starts[0], file_starts[1]);
-        H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); 
+        H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block);
         file_starts[0] += params.stride;
         file_starts[1] += params.stride_2;
     }
-    hid_t element_count = H5Sget_select_npoints(*filespace_in);
-    hsize_t mem_dims[2] = {element_count, 1};
-    *memspace_out = H5Screate_simple(2, mem_dims, NULL);
+    hid_t   element_count = H5Sget_select_npoints(*filespace_in);
+    hsize_t mem_dims[2]   = {element_count, 1};
+    *memspace_out         = H5Screate_simple(2, mem_dims, NULL);
     printf("Selected number of elements: %ld", element_count);
     return element_count;
-
 }
 
 /**
- * @brief Set the dataspace for PRL access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @brief Set the dataspace for PRL access pattern on a 2D datafile and set the memspace based on the number
+ * of elements to be read
  * @param params the configuration for the program
  * @param filespace_in to store the id of the selected dataspace
- * @param memspace_out to store the memspace created for reading the data 
+ * @param memspace_out to store the memspace created for reading the data
  * @return count of elements that would be read
-*/
+ */
 unsigned long
-_set_dataspace_PRL_2D(bench_params params, hid_t *filespace_in,
-                    hid_t *memspace_out){
+_set_dataspace_PRL_2D(bench_params params, hid_t *filespace_in, hid_t *memspace_out)
+{
 
-    if (MY_RANK != 0) return 0;
-    if( !(params.block_size >= params.dim_1/10 && params.block_size <= params.dim_1/5 && 
-        params.block_size_2 >= params.dim_2/10 && params.block_size_2 <= params.dim_2/5) )
+    if (MY_RANK != 0)
+        return 0;
+    if (!(params.block_size >= params.dim_1 / 10 && params.block_size <= params.dim_1 / 5 &&
+          params.block_size_2 >= params.dim_2 / 10 && params.block_size_2 <= params.dim_2 / 5))
         return 0;
     // block sizes should basically hold sw and sh
     hsize_t mem_dims[2], file_dims[2];
-    hsize_t volatile file_starts[2], block[2];   // select start point and range in each dimension.
-    hsize_t count[2] = {1, 1};
+    hsize_t volatile file_starts[2], block[2]; // select start point and range in each dimension.
+    hsize_t count[2]       = {1, 1};
     int64_t total_elements = 0;
 
-    block[0]      = params.dim_1;
-    block[1]      = params.block_size_2; //sH
-    file_starts[0] = 0; // file offset for each rank
+    block[0]       = params.dim_1;
+    block[1]       = params.block_size_2; // sH
+    file_starts[0] = 0;                   // file offset for each rank
     file_starts[1] = 0;
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_SET, file_starts, NULL, count, block); // top section
     total_elements += block[0] * block[1];
@@ -346,9 +355,9 @@ _set_dataspace_PRL_2D(bench_params params, hid_t *filespace_in,
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); // bottom section
     total_elements += block[0] * block[1];
 
-    block[0]      = params.block_size;
-    block[1]      = params.dim_2 - 2 * params.block_size_2; //sH
-    file_starts[0] = 0; // file offset for each rank
+    block[0]       = params.block_size;
+    block[1]       = params.dim_2 - 2 * params.block_size_2; // sH
+    file_starts[0] = 0;                                      // file offset for each rank
     file_starts[1] = params.block_size_2;
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); // left section
     total_elements += block[0] * block[1];
@@ -358,9 +367,9 @@ _set_dataspace_PRL_2D(bench_params params, hid_t *filespace_in,
     H5Sselect_hyperslab(*filespace_in, H5S_SELECT_OR, file_starts, NULL, count, block); // right section
     total_elements += block[0] * block[1];
 
-    mem_dims[0] = (hid_t)total_elements;
-    mem_dims[1] = 1;
-    *memspace_out = H5Screate_simple(2, mem_dims, NULL);
+    mem_dims[0]         = (hid_t)total_elements;
+    mem_dims[1]         = 1;
+    *memspace_out       = H5Screate_simple(2, mem_dims, NULL);
     hid_t element_count = H5Sget_select_npoints(*filespace_in);
     return element_count;
 }
@@ -434,23 +443,19 @@ set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t *
             break;
 
         case LDC_2D:
-            actual_read_cnt =
-                _set_dataspace_LDC_2D(params, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_LDC_2D(params, filespace_in_out, memspace_out);
             break;
 
         case RDC_2D:
-            actual_read_cnt =
-                _set_dataspace_RDC_2D(params, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_RDC_2D(params, filespace_in_out, memspace_out);
             break;
 
         case CS_2D:
-            actual_read_cnt =
-                _set_dataspace_CS_2D(params, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_CS_2D(params, filespace_in_out, memspace_out);
             break;
 
         case PRL_2D:
-            actual_read_cnt =
-                _set_dataspace_PRL_2D(params, filespace_in_out, memspace_out);
+            actual_read_cnt = _set_dataspace_PRL_2D(params, filespace_in_out, memspace_out);
             break;
 
         default:
@@ -476,7 +481,8 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     hid_t              memspace;
     actual_read_cnt = set_dataspace(params, read_elem_cnt, &filespace, &memspace);
 
-    if (actual_read_cnt == 0) return 1;
+    if (actual_read_cnt == 0)
+        return 1;
 
     hid_t plist_id; //, filespace, memspace;
 
@@ -745,7 +751,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char          *mode_str = NULL;
+        char *         mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
