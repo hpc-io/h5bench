@@ -200,8 +200,15 @@ _set_dataspace_seq_2D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
     return dim_1 * dim_2;
 }
 
+/**
+ * @brief Set the dataspace for LDC access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @param params the configuration for the program
+ * @param filespace_in to store the id of the selected dataspace
+ * @param memspace_out to store the memspace created for reading the data 
+ * @return count of elements that would be read
+*/
 unsigned long
-_set_dataspace_LDC_2D(unsigned long read_elem_cnt, bench_params params, hid_t *filespace_in,
+_set_dataspace_LDC_2D(bench_params params, hid_t *filespace_in,
                     hid_t *memspace_out){
 
     if (MY_RANK != 0) return 0;
@@ -229,8 +236,15 @@ _set_dataspace_LDC_2D(unsigned long read_elem_cnt, bench_params params, hid_t *f
     return mem_dims[0] * mem_dims[1];
 }
 
+/**
+ * @brief Set the dataspace for RDC access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @param params the configuration for the program
+ * @param filespace_in to store the id of the selected dataspace
+ * @param memspace_out to store the memspace created for reading the data 
+ * @return count of elements that would be read
+*/
 unsigned long
-_set_dataspace_RDC_2D(unsigned long read_elem_cnt, bench_params params, hid_t *filespace_in,
+_set_dataspace_RDC_2D(bench_params params, hid_t *filespace_in,
                     hid_t *memspace_out){
 
     if (MY_RANK != 0) return 0;
@@ -260,8 +274,15 @@ _set_dataspace_RDC_2D(unsigned long read_elem_cnt, bench_params params, hid_t *f
     return mem_dims[0] * mem_dims[1];
 }
 
+/**
+ * @brief Set the dataspace for CS access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @param params the configuration for the program
+ * @param filespace_in to store the id of the selected dataspace
+ * @param memspace_out to store the memspace created for reading the data 
+ * @return count of elements that would be read
+*/
 unsigned long
-_set_dataspace_CS_2D(unsigned long read_elem_cnt, bench_params params, hid_t *filespace_in,
+_set_dataspace_CS_2D(bench_params params, hid_t *filespace_in,
                     hid_t *memspace_out){
 
     if (MY_RANK != 0) return 0;
@@ -292,8 +313,15 @@ _set_dataspace_CS_2D(unsigned long read_elem_cnt, bench_params params, hid_t *fi
 
 }
 
+/**
+ * @brief Set the dataspace for PRL access pattern on a 2D datafile and set the memspace based on the number of elements to be read
+ * @param params the configuration for the program
+ * @param filespace_in to store the id of the selected dataspace
+ * @param memspace_out to store the memspace created for reading the data 
+ * @return count of elements that would be read
+*/
 unsigned long
-_set_dataspace_PRL_2D(unsigned long read_elem_cnt, bench_params params, hid_t *filespace_in,
+_set_dataspace_PRL_2D(bench_params params, hid_t *filespace_in,
                     hid_t *memspace_out){
 
     if (MY_RANK != 0) return 0;
@@ -407,22 +435,22 @@ set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t *
 
         case LDC_2D:
             actual_read_cnt =
-                _set_dataspace_LDC_2D(try_read_elem_cnt, params, filespace_in_out, memspace_out);
+                _set_dataspace_LDC_2D(params, filespace_in_out, memspace_out);
             break;
 
         case RDC_2D:
             actual_read_cnt =
-                _set_dataspace_RDC_2D(try_read_elem_cnt, params, filespace_in_out, memspace_out);
+                _set_dataspace_RDC_2D(params, filespace_in_out, memspace_out);
             break;
 
         case CS_2D:
             actual_read_cnt =
-                _set_dataspace_CS_2D(try_read_elem_cnt, params, filespace_in_out, memspace_out);
+                _set_dataspace_CS_2D(params, filespace_in_out, memspace_out);
             break;
 
         case PRL_2D:
             actual_read_cnt =
-                _set_dataspace_PRL_2D(try_read_elem_cnt, params, filespace_in_out, memspace_out);
+                _set_dataspace_PRL_2D(params, filespace_in_out, memspace_out);
             break;
 
         default:
