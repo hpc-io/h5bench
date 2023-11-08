@@ -1192,10 +1192,32 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
                 params_out->num_particles = params_out->try_num_particles;
         }
         if (params_out->access_pattern.pattern_read == STRIDED_1D) {
-            if (params_out->stride < 1 || params_out->stride_2 < 1 || params_out->stride_3 < 1 ||
-             params_out->block_size < 1 || params_out->block_size_2 < 1 || params_out->block_size_3 < 1 ||
-            params_out->block_cnt < 1) {
+            if (params_out->stride < 1 || params_out->block_size < 1 || params_out->block_cnt < 1) {
                 printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == LDC_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("LDC read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == RDC_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("RDC read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == PRL_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("PRL read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == CS_2D) {
+            if (params_out->stride < 1 || params_out->stride_2 < 1) {
+                printf("CS read requires STRIDE_SIZE/STRIDE_SIZE_2 no less than 1.\n");
                 return -1;
             }
         }
