@@ -587,23 +587,77 @@ _set_io_pattern(bench_params *params_in_out)
              (params_in_out->io_op == IO_APPEND)) { // file --> mem
         if (params_in_out->mem_pattern == PATTERN_CONTIG) {
             if (params_in_out->file_pattern == PATTERN_CONTIG) {
-                switch (params_in_out->num_dims) {
-                    case 1:
-                        (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
-                        ret                                          = 0;
-                        break;
-                    case 2:
-                        (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
-                        ret                                          = 0;
-                        break;
-                    case 3:
-                        (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
-                        ret                                          = 0;
-                        break;
-                    default:
-                        ret = -1;
-                        printf("%s() failed on line %d\n", __func__, __LINE__);
-                        break;
+                if (params_in_out->read_option == LDC) {
+                    switch (params_in_out->num_dims) {
+                        case 2:
+                            (*params_in_out).access_pattern.pattern_read = LDC_2D;
+                            ret                                          = 0;
+                            break;
+                        default:
+                            ret = -1;
+                            printf("%s(). Unexpected Dimensions for LDC. failed on line %d\n", __func__,
+                                   __LINE__);
+                            break;
+                    }
+                }
+                else if (params_in_out->read_option == RDC) {
+                    switch (params_in_out->num_dims) {
+                        case 2:
+                            (*params_in_out).access_pattern.pattern_read = RDC_2D;
+                            ret                                          = 0;
+                            break;
+                        default:
+                            ret = -1;
+                            printf("%s(). Unexpected Dimensions for RDC. failed on line %d\n", __func__,
+                                   __LINE__);
+                            break;
+                    }
+                }
+                else if (params_in_out->read_option == PRL) {
+                    switch (params_in_out->num_dims) {
+                        case 2:
+                            (*params_in_out).access_pattern.pattern_read = PRL_2D;
+                            ret                                          = 0;
+                            break;
+                        default:
+                            ret = -1;
+                            printf("%s(). Unexpected Dimensions for PRL. failed on line %d\n", __func__,
+                                   __LINE__);
+                            break;
+                    }
+                }
+                else if (params_in_out->read_option == CS) {
+                    switch (params_in_out->num_dims) {
+                        case 2:
+                            (*params_in_out).access_pattern.pattern_read = CS_2D;
+                            ret                                          = 0;
+                            break;
+                        default:
+                            ret = -1;
+                            printf("%s(). Unexpected Dimensions for CS. failed on line %d\n", __func__,
+                                   __LINE__);
+                            break;
+                    }
+                }
+                else {
+                    switch (params_in_out->num_dims) {
+                        case 1:
+                            (*params_in_out).access_pattern.pattern_read = CONTIG_1D;
+                            ret                                          = 0;
+                            break;
+                        case 2:
+                            (*params_in_out).access_pattern.pattern_read = CONTIG_2D;
+                            ret                                          = 0;
+                            break;
+                        case 3:
+                            (*params_in_out).access_pattern.pattern_read = CONTIG_3D;
+                            ret                                          = 0;
+                            break;
+                        default:
+                            ret = -1;
+                            printf("%s() failed on line %d\n", __func__, __LINE__);
+                            break;
+                    }
                 }
             }
             else if (params_in_out->file_pattern == PATTERN_STRIDED) {
@@ -772,15 +826,28 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         }
     }
     else if (strcmp(key, "READ_OPTION") == 0) {
-        if (val_in[0] == 'F') { // FULL
+        if (strcmp(val_in, "FULL") == 0) { // FULL
             (*params_in_out).read_option = READ_FULL;
         }
-        else if (val_in[0] == 'P') { // PARTIAL
+        else if (strcmp(val_in, "PARTIAL") == 0) { // PARTIAL
             (*params_in_out).read_option = READ_PARTIAL;
         }
-        else if (val_in[0] == 'S') { // STRIDED
+        else if (strcmp(val_in, "STRIDED") == 0) { // STRIDED
             (*params_in_out).read_option = READ_STRIDED;
         }
+        else if (strcmp(val_in, "LDC") == 0) {
+            (*params_in_out).read_option = LDC;
+        }
+        else if (strcmp(val_in, "RDC") == 0) {
+            (*params_in_out).read_option = RDC;
+        }
+        else if (strcmp(val_in, "PRL") == 0) {
+            (*params_in_out).read_option = PRL;
+        }
+        else if (strcmp(val_in, "CS") == 0) {
+            (*params_in_out).read_option = CS;
+        }
+
         else
             (*params_in_out).read_option = READ_OPTION_INVALID;
     }
@@ -873,11 +940,35 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
             return -1;
         (*params_in_out).stride = num;
     }
+    else if (strcmp(key, "STRIDE_SIZE_2") == 0) {
+        unsigned long long num = 0;
+        if (str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).stride_2 = num;
+    }
+    else if (strcmp(key, "STRIDE_SIZE_3") == 0) {
+        unsigned long long num = 0;
+        if (str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).stride_3 = num;
+    }
     else if (strcmp(key, "BLOCK_SIZE") == 0) {
         unsigned long long num = 0;
         if (str_to_ull(val, &num) < 0)
             return -1;
         (*params_in_out).block_size = num;
+    }
+    else if (strcmp(key, "BLOCK_SIZE_2") == 0) {
+        unsigned long long num = 0;
+        if (str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).block_size_2 = num;
+    }
+    else if (strcmp(key, "BLOCK_SIZE_3") == 0) {
+        unsigned long long num = 0;
+        if (str_to_ull(val, &num) < 0)
+            return -1;
+        (*params_in_out).block_size_3 = num;
     }
     else if (strcmp(key, "BLOCK_CNT") == 0) {
         unsigned long long num = 0;
@@ -985,7 +1076,11 @@ bench_params_init(bench_params *params_out)
     (*params_out).num_dims              = 1;
 
     (*params_out).stride        = 0;
+    (*params_out).stride_2      = 0;
+    (*params_out).stride_3      = 0;
     (*params_out).block_size    = 0;
+    (*params_out).block_size_2  = 0;
+    (*params_out).block_size_3  = 0;
     (*params_out).block_cnt     = 0;
     (*params_out).dim_1         = 1;
     (*params_out).dim_2         = 1;
@@ -1106,6 +1201,30 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
         if (params_out->access_pattern.pattern_read == STRIDED_1D) {
             if (params_out->stride < 1 || params_out->block_size < 1 || params_out->block_cnt < 1) {
                 printf("Strided read requires STRIDE_SIZE/BLOCK_SIZE/BLOCK_CNT no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == LDC_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("LDC read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == RDC_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("RDC read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == PRL_2D) {
+            if (params_out->block_size < 1 || params_out->block_size_2 < 1) {
+                printf("PRL read requires BLOCK_SIZE/BLOCK_SIZE_2 no less than 1.\n");
+                return -1;
+            }
+        }
+        if (params_out->access_pattern.pattern_read == CS_2D) {
+            if (params_out->stride < 1 || params_out->stride_2 < 1) {
+                printf("CS read requires STRIDE_SIZE/STRIDE_SIZE_2 no less than 1.\n");
                 return -1;
             }
         }
