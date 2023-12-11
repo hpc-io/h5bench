@@ -133,7 +133,7 @@ metrics-perlmutter:
         - export RESULTS="/global/homes/j/jeanbez/h5bench-ci-metrics/perlmutter/$(date +%s)"
         - mkdir -p $RESULTS
         - echo "Fetching Darshan log file"
-        - cp /pscratch/darshanlogs/$(date +%Y)/$(date +%-m)/$(date +%d | sed 's/^0*//')/jeanbez_h5bench* ${RESULTS}
+        - cp /pscratch/darshanlogs/$(date +%Y)/$(date +%-m)/$(date +%d | sed 's/^0*//')/jeanbez_h5bench* ${RESULTS} 2> /dev/null || true
         - echo "Fetching runtime files"
         - cp h5bench-suite-sync.err ${RESULTS}
         - cp h5bench-suite-sync.out ${RESULTS}

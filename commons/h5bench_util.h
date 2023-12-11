@@ -68,6 +68,10 @@ typedef enum read_pattern {
     STRIDED_1D,
     CONTIG_2D,
     CONTIG_3D,
+    LDC_2D,
+    RDC_2D,
+    CS_2D,
+    PRL_2D,
 } read_pattern;
 
 typedef enum pattern {
@@ -85,7 +89,16 @@ typedef enum io_operation {
     IO_APPEND,
 } io_operation;
 
-typedef enum read_option { READ_OPTION_INVALID, READ_FULL, READ_PARTIAL, READ_STRIDED } read_option;
+typedef enum read_option {
+    READ_OPTION_INVALID,
+    READ_FULL,
+    READ_PARTIAL,
+    READ_STRIDED,
+    LDC,
+    RDC,
+    PRL,
+    CS
+} read_option;
 
 typedef struct bench_params {
     io_operation io_op;
@@ -115,7 +128,11 @@ typedef struct bench_params {
     duration      compute_time;
     int           num_dims;
     unsigned long stride;
+    unsigned long stride_2;
+    unsigned long stride_3;
     unsigned long block_size;
+    unsigned long block_size_2;
+    unsigned long block_size_3;
     unsigned long block_cnt;
     unsigned long dim_1;
     unsigned long dim_2;
