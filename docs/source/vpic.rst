@@ -199,28 +199,28 @@ Contiguously read the first ``TO_READ_NUM_PARTICLES`` elements:
 
 - 4 patterns for 2D read
 
-1. PRL: Refers to the Peripheral data access pattern. Data is read from the periphery of the file, which is a frame of fixed width and height around the dataset.
+1. PRL: Refers to the Peripheral data access pattern. Data is read from the periphery of the 2D dataset, which is a frame of fixed width and height around the dataset.
 .. code-block:: none
 
 	'MEM_PATTERN': 'CONTIG'
 	'FILE_PATTERN': 'CONTIG'
 	'READ_OPTION': 'PRL'
 
-2. RDC: Refers to the Right Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top right corner and the other in the bottom left corner in the 2D HDF5 file
+2. RDC: Refers to the Right Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top right corner and the other in the bottom left corner in the 2D HDF5 dataset
 .. code-block:: none
 
 	'MEM_PATTERN': 'CONTIG'
 	'FILE_PATTERN': 'CONTIG'
 	'READ_OPTION': 'RDC'
 
-3. LDC: Refers to the Left Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top left corner and the other in the bottom right corner in the 2D HDF5 file
+3. LDC: Refers to the Left Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top left corner and the other in the bottom right corner in the 2D HDF5 dataset
 .. code-block:: none
 
 	'MEM_PATTERN': 'CONTIG'
 	'FILE_PATTERN': 'CONTIG'
 	'READ_OPTION': 'LDC'
 
-4. CS: Refers to the Cross Stencil data access pattern. A block of fixed sides is used to read data from an HDF5 file. This block is given a fixed stride in each dimension and data till end of file is read.
+4. CS: Refers to the Cross Stencil data access pattern. A block of fixed sides is used to read data from an HDF5 dataset. This block is given a fixed stride in each dimension and data till end of dataset is read.
 .. code-block:: none
 
 	'MEM_PATTERN': 'CONTIG'
