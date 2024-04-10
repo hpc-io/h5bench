@@ -1088,10 +1088,42 @@ main(int argc, char *argv[])
         printf("Given standard deviation : %ld \n", STDEV_DIM_1);
         printf("Total ranks %i \n", NUM_RANKS);
 
-        for (int i = 0; i < NUM_RANKS; i++) {
-            holder[i] = (long long)normal_dist_particle_giver(NUM_PARTICLES, STDEV_DIM_1);
-        }
+
+	if (params.useDataDist) {
+	  // read data file listed in config file
+	  char size_line[256] = "";
+
+	  printf("Begin data dist processing\n");
+	  printf("Read data file %s\n", params.data_dist_path);
+
+	  FILE *file = fopen(params.data_dist_path, "r");
+
+	  while (fgets(size_line, 256, file)) {
+
+	    printf("Read line: %s\n", size_line);
+	    char *tokens[2];
+	    int index;
+	    long long size;
+	    char *tok = strtok(size_line, " ");
+	    if (tok) {
+	      index = atoi(tok);
+	      tok       = strtok(NULL, " ");
+	      if (tok) {
+		holder[index] = strtoll(tok, NULL, 10);
+	      }
+	    } else {
+	      return -1;
+	    }
+	  }
+	}
+
+	else {
+	  for (int i = 0; i < NUM_RANKS; i++) {
+	    holder[i] = (long long)normal_dist_particle_giver(NUM_PARTICLES, STDEV_DIM_1);
+	  }
+	}
     }
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Scatter(&holder[0], 1, MPI_LONG_LONG, &NUM_PARTICLES, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
