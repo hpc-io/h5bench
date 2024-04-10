@@ -107,6 +107,7 @@ typedef struct bench_params {
     read_option  read_option;
     int          useCompress;
     int          useCSV;
+    int          useDataDist;
     async_mode   asyncMode;
     int          subfiling;
     union access_pattern {
@@ -143,6 +144,7 @@ typedef struct bench_params {
     char *        csv_path;
     char *        env_meta_path;
     FILE *        csv_fs;
+    char *        data_dist_path;
     int           file_per_proc;
     int           align;
     unsigned long align_threshold;

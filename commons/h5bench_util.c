@@ -978,7 +978,11 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
     }
     else if (strcmp(key, "CSV_FILE") == 0) {
         (*params_in_out).useCSV   = 1;
-        (*params_in_out).csv_path = strdup(val);
+        (*params_in_out).csv_path = strdup(val);\
+    }
+    else if (strcmp(key, "DATA_DIST_PATH") == 0) {
+        (*params_in_out).useDataDist   = 1;
+        (*params_in_out).data_dist_path = strdup(val);
     }
     else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);
