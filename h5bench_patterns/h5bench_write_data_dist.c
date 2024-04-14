@@ -1218,7 +1218,7 @@ main(int argc, char *argv[])
     std_1      = pow(NUM_PARTICLES - final_mean, 2);
     MPI_Allreduce(&std_1, &final_std, 1, MPI_LONG_LONG, MPI_SUM, comm);
 
-    if (MY_RANK == 0) {
+    //if (MY_RANK == 0) {
         human_readable value;
         char *         mode_str = NULL;
 
@@ -1238,7 +1238,8 @@ main(int argc, char *argv[])
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
-        double total_size_bytes = NUM_RANKS * local_data_size;
+        //double total_size_bytes = NUM_RANKS * local_data_size;
+	double total_size_bytes = local_data_size;
         value                   = format_human_readable(total_size_bytes);
         printf("Total write size: %.3lf %cB\n", value.value, value.unit);
 
@@ -1293,7 +1294,7 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
-    }
+	//}
 
     MPI_Finalize();
     return 0;
