@@ -1109,7 +1109,11 @@ main(int argc, char *argv[])
 	      index = atoi(tok);
 	      tok       = strtok(NULL, " ");
 	      if (tok) {
-		holder[index] = strtoll(tok, NULL, 10);
+		/* don't compute scale if factor is 1, identity */
+		if (params.data_dist_scale == 1.0)
+		  holder[index] = strtoll(tok, NULL, 10);
+		else
+		  holder[index] = (long long) (params.data_dist_scale * strtoll(tok, NULL, 10));
 	      }
 	    } else {
 	      return -1;

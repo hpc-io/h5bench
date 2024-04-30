@@ -984,6 +984,15 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         (*params_in_out).useDataDist   = 1;
         (*params_in_out).data_dist_path = strdup(val);
     }
+    else if (strcmp(key, "DATA_DIST_SCALE") == 0) {
+      float num = 0.0;
+      char *tok;
+      tok = strtok(val, "/");
+      num = strtof(tok, NULL);
+      if (tok = strtok(NULL, "/"))
+	num = num / strtof(tok, NULL); // two terms with / delim is fraction
+      (*params_in_out).data_dist_scale = num;
+    }
     else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);
     }
@@ -1070,6 +1079,7 @@ bench_params_init(bench_params *params_out)
     (*params_out).data_coll    = 0;
     (*params_out).asyncMode    = MODE_SYNC;
     (*params_out).subfiling    = 0;
+    (*params_out).useDataDist  = 0;
 
     (*params_out).cnt_time_step         = 0;
     (*params_out).cnt_time_step_delay   = 0;
@@ -1098,6 +1108,8 @@ bench_params_init(bench_params *params_out)
 
     (*params_out).csv_path        = NULL;
     (*params_out).csv_fs          = NULL;
+    (*params_out).data_dist_path  = NULL;
+    (*params_out).data_dist_scale = 1.0;
     (*params_out).env_meta_path   = NULL;
     (*params_out).file_per_proc   = 0;
     (*params_out).align           = 0;

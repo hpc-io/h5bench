@@ -145,6 +145,7 @@ typedef struct bench_params {
     char *        env_meta_path;
     FILE *        csv_fs;
     char *        data_dist_path;
+    float         data_dist_scale;
     int           file_per_proc;
     int           align;
     unsigned long align_threshold;
