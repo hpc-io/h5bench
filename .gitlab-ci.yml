@@ -11,6 +11,9 @@ build-perlmutter:
     stage: build
     when: manual
     allow_failure: false
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$METRICS == null'
     tags:
@@ -36,6 +39,9 @@ build-perlmutter:
 
 test-perlmutter:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$METRICS == null'
     needs: ["build-perlmutter"]
@@ -77,6 +83,9 @@ test-perlmutter:
 
 build-perlmutter-metrics:
     stage: build
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
     tags:
@@ -102,6 +111,9 @@ build-perlmutter-metrics:
 
 metrics-perlmutter:
     stage: metrics
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
     needs: ["build-perlmutter-metrics"]
