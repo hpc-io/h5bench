@@ -233,7 +233,7 @@ if(H5BENCH_E3SM)
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
         CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME}
-        BUILD_COMMAND MAKEFLAGS= && make
+        BUILD_COMMAND make -j 1
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
         LOG_CONFIGURE 1
