@@ -29,6 +29,7 @@ option(H5BENCH_AMREX            "Enable AMReX benchmark"            OFF)
 option(H5BENCH_OPENPMD          "Enable OpenPMD benchmark"          OFF)
 option(H5BENCH_E3SM             "Enable E3SM benchmark"             OFF)
 option(H5BENCH_MACSIO           "Enable MACSio benchmark"           OFF)
+option(H5BENCH_DLIO           "Enable DLIO benchmark"           OFF)
 
 message(STATUS "h5bench baseline: ON")
 
@@ -41,6 +42,7 @@ if(H5BENCH_ALL)
     set(H5BENCH_OPENPMD ON)
     set(H5BENCH_E3SM ON)
     set(H5BENCH_MACSIO ON)
+    set(H5BENCH_DLIO ON)
 endif()
 
 message(STATUS "h5bench METADATA: ${H5BENCH_METADATA}")
@@ -49,6 +51,7 @@ message(STATUS "h5bench AMREX: ${H5BENCH_AMREX}")
 message(STATUS "h5bench OPENPMD: ${H5BENCH_OPENPMD}")
 message(STATUS "h5bench E3SM: ${H5BENCH_E3SM}")
 message(STATUS "h5bench MACSIO: ${H5BENCH_MACSIO}")
+message(STATUS "h5bench DLIO: ${H5BENCH_DLIO}")
 
 # HDF5 Dependency #############################################################
 #
@@ -328,6 +331,17 @@ configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench CO
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
 
+# DLIO ######################################################################
+#
+# https://github.com/arcturus5340/h5bench
+
+if(H5BENCH_DLIO)
+    set(h5bench_dlio_src dlio/h5bench_dlio.c dlio/utils.c dlio/stats.c)
+
+    add_executable(h5bench_dlio ${h5bench_dlio_src})
+    target_link_libraries(h5bench_dlio h5bench_util hdf5 m MPI::MPI_C)
+endif()
+
 # Install binaries ############################################################
 
 install(
@@ -415,6 +429,14 @@ if(H5BENCH_MACSIO)
         FILES
         ${CMAKE_BINARY_DIR}/h5bench_macsio
         PERMISSIONS WORLD_EXECUTE OWNER_WRITE OWNER_READ
+        DESTINATION bin
+    )
+endif()
+
+if(H5BENCH_DLIO)
+    install(
+        TARGETS
+        h5bench_dlio
         DESTINATION bin
     )
 endif()

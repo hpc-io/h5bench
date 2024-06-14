@@ -1,0 +1,68 @@
+{
+  "mpi": {
+    "command": "srun",
+    "ranks": "8"
+  },
+  "vol": {
+
+  },
+  "file-system": {
+
+  },
+  "directory": "storage",
+  "benchmarks": [
+    {
+      "benchmark": "dlio",
+      "configuration": {
+        "generate-data": "true",
+        "chunking": "true",
+        "keep-files": "true",
+        "compression": "true",
+        "record-length": "67108864",
+        "num-files-train": "64",
+        "num-files-eval": "8",
+        "num-samples-per-file": "4",
+        "data-folder": "data",
+        "file-prefix": "img",
+        "chunk-size": "1024",
+        "compression-level": "4",
+        "random-seed": "42",
+        "train-data-folder": "train",
+        "valid-data-folder": "valid",
+        "records-dataset-name": "records",
+        "labels-dataset-name": "labels"
+      }
+    },
+    {
+      "benchmark": "dlio",
+      "configuration": {
+        "train": "true",
+        "evaluation": "true",
+        "keep-files": "true",
+        "shuffle": "true",
+        "seed-change-epoch": "true",
+        "record-length": "67108864",
+        "num-files-train": "64",
+        "num-files-eval": "8",
+        "num-samples-per-file": "4",
+        "data-folder": "./data",
+        "file-prefix": "img",
+        "batch-size": "4",
+        "batch-size-eval": "2",
+        "preprocess-time": "0.0",
+        "preprocess-time-stdev": "0.0",
+        "epochs": "5",
+        "computation-time": "0.323",
+        "computation-time-stdev": "0.0",
+        "random-seed": "42",
+        "eval-time": "0.323",
+        "eval-time-stdev": "0.323",
+        "epochs-between-evals": "1",
+        "train-data-folder": "train",
+        "valid-data-folder": "valid",
+        "records-dataset-name": "records",
+        "labels-dataset-name": "labels"
+      }
+    }
+  ]
+}
