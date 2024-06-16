@@ -1,7 +1,7 @@
 {
     "mpi": {
         "command": "srun",
-        "configuration": "--tasks-per-node=64 -N 8 -n 512 -t 00:30:00"
+        "configuration": "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 8 -n 512 -t 00:30:00"
     },
     "vol": {
 

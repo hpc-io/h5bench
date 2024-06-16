@@ -851,6 +851,32 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).read_option = READ_OPTION_INVALID;
     }
+    else if (strcmp(key, "COMPRESS_FILTER") == 0) {		// new
+		if (strcmp(val_in, "N_BIT") == 0) {
+			(*params_in_out).compress_filter = N_BIT;
+		}	
+		else if (strcmp(val_in, "SCALE_OFFSET") == 0) {
+			(*params_in_out).compress_filter = SCALE_OFFSET;
+		}	
+		else if (strcmp(val_in, "SZIP") == 0) {
+			(*params_in_out).compress_filter = SZIP;
+		}
+		else if (strcmp(val_in, "GZIP") == 0) {
+			(*params_in_out).compress_filter = GZIP;
+		}
+		else if (strcmp(val_in, "SZ") == 0) {
+			(*params_in_out).compress_filter = SZ;
+		}
+		else if (strcmp(val_in, "SZ3") == 0) {
+			(*params_in_out).compress_filter = SZ3;
+		}
+		else if (strcmp(val_in, "ZFP") == 0) {
+			(*params_in_out).compress_filter = ZFP;
+		}
+		
+		else
+			(*params_in_out).compress_filter = COMPRESS_FILTER_INVALID;	
+	}
     else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
         if (num > 0)

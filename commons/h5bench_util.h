@@ -100,11 +100,23 @@ typedef enum read_option {
     CS
 } read_option;
 
+typedef enum compress_filter {		// new
+    COMPRESS_FILTER_INVALID,
+    N_BIT,
+    SCALE_OFFSET,
+    SZIP,
+    GZIP,
+	SZ,
+	SZ3,
+	ZFP 
+} compress_filter;
+
 typedef struct bench_params {
     io_operation io_op;
     pattern      mem_pattern;
     pattern      file_pattern;
     read_option  read_option;
+    compress_filter compress_filter;	// new
     int          useCompress;
     int          useCSV;
     async_mode   asyncMode;

@@ -882,6 +882,10 @@ set_globals(const bench_params *params)
 
     if (COMPRESS_INFO.USE_COMPRESS) { // set DCPL
         herr_t ret;
+		// Auxiliary data required as input by the H5Pset_filter(), by default I set it to 0. - Henry
+		unsigned int cd_values = 0;
+
+		// Create a new property list instance
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         assert(COMPRESS_INFO.dcpl_id > 0);
 
@@ -891,7 +895,30 @@ set_globals(const bench_params *params)
         ret =
             H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->num_dims, (const hsize_t *)COMPRESS_INFO.chunk_dims);
         assert(ret >= 0);
-        ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
+
+		// Adds the specified filter to pipeline
+		if (params->compress_filter == N_BIT) {
+			ret = H5Pset_nbit(COMPRESS_INFO.dcpl_id);	
+		}
+		else if (params->compress_filter == SCALE_OFFSET) {
+			ret = H5Pset_scaleoffset(COMPRESS_INFO.dcpl_id, H5Z_SO_FLOAT_DSCALE, 0);
+		}
+		else if (params->compress_filter == SZIP) {
+			ret = H5Pset_szip(COMPRESS_INFO.dcpl_id, H5_SZIP_EC_OPTION_MASK, 8); 
+		}
+		else if (params->compress_filter == GZIP) {
+        	ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
+		}
+		else if (params->compress_filter == SZ) {
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32017, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);
+		}
+		else if (params->compress_filter == SZ3) {
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32024, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);	
+		}
+		else if (params->compress_filter == ZFP) {
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32013, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);
+		}
+
         assert(ret >= 0);
     }
 
@@ -976,6 +1003,8 @@ main(int argc, char *argv[])
 {
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
+    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
@@ -1184,8 +1213,6 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "operation, %s, %s\n", "write", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
             fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
             value = format_human_readable(total_size_bytes);

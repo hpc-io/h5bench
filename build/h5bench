@@ -203,7 +203,6 @@ class H5bench:
 
             # Check if filters were enabled
             if self.filter:
-		# Skip the benchmark if no specified in the argument
                 if name not in self.filter:
                     self.logger.warning('Skipping "{}" due to active filters'.format(name))
 

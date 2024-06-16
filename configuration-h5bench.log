@@ -1,0 +1,28 @@
+2024-03-14 06:25:11,586 h5bench - INFO - Starting h5bench Suite
+2024-03-14 06:25:11,612 h5bench - INFO - Lustre support not detected
+2024-03-14 06:25:11,613 h5bench - INFO - h5bench [e3sm] - Starting
+2024-03-14 06:25:11,613 h5bench - INFO - h5bench [e3sm] - DIR: full-teste/85d5e926/
+2024-03-14 06:25:11,614 h5bench - INFO - Parallel setup: mpirun -np 8 --oversubscribe
+2024-03-14 06:25:11,618 h5bench - CRITICAL - h5bench_e3sm is not available
+2024-03-14 06:26:09,624 h5bench - INFO - Starting h5bench Suite
+2024-03-14 06:26:09,626 h5bench - WARNING - Base directory already exists: full-teste
+2024-03-14 06:26:09,630 h5bench - INFO - Lustre support not detected
+2024-03-14 06:26:09,631 h5bench - DEBUG - HDF5_PLUGIN_PATH: /vol-async/src
+2024-03-14 06:26:09,632 h5bench - DEBUG - LD_LIBRARY_PATH: /opt/mvapich2/intel/19.0/2.3.3/lib:/usr/local/gnu/8.4.0/lib64:/usr/local/gnu/8.4.0/lib:/opt/intel/debugger_2019/libipt/intel64/lib:/opt/intel/compilers_and_libraries_2019.5.281/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/daal/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/ipp/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/mkl/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/tbb/lib/intel64_lin/gcc4.4:/opt/ddn/cci/lib:/opt/ddn/ime/lib:/opt/ddn/isa-l/lib:/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:
+2024-03-14 06:26:09,632 h5bench - DEBUG - DYLD_LIBRARY_PATH: :/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:
+2024-03-14 06:26:09,632 h5bench - DEBUG - LD_PRELOAD: /usr/local/xalt/xalt/lib64/libxalt_init.so
+2024-03-14 06:26:09,633 h5bench - INFO - h5bench [e3sm] - Starting
+2024-03-14 06:26:09,633 h5bench - INFO - h5bench [e3sm] - DIR: full-teste/5e428961/
+2024-03-14 06:26:09,633 h5bench - INFO - Parallel setup: mpirun -np 8 --oversubscribe
+2024-03-14 06:26:09,634 h5bench - CRITICAL - h5bench_e3sm is not available
+2024-03-14 06:28:57,348 h5bench - INFO - Starting h5bench Suite
+2024-03-14 06:28:57,350 h5bench - WARNING - Base directory already exists: full-teste
+2024-03-14 06:28:57,354 h5bench - INFO - Lustre support not detected
+2024-03-14 06:28:57,355 h5bench - DEBUG - HDF5_PLUGIN_PATH: /vol-async/src
+2024-03-14 06:28:57,356 h5bench - DEBUG - LD_LIBRARY_PATH: /opt/mvapich2/intel/19.0/2.3.3/lib:/usr/local/gnu/8.4.0/lib64:/usr/local/gnu/8.4.0/lib:/opt/intel/debugger_2019/libipt/intel64/lib:/opt/intel/compilers_and_libraries_2019.5.281/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/daal/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/ipp/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/mkl/lib/intel64_lin:/opt/intel/compilers_and_libraries_2019.5.281/linux/tbb/lib/intel64_lin/gcc4.4:/opt/ddn/cci/lib:/opt/ddn/ime/lib:/opt/ddn/isa-l/lib:/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:
+2024-03-14 06:28:57,356 h5bench - DEBUG - DYLD_LIBRARY_PATH: :/vol-async/src:/hdf5-async-vol-register-install/lib:/argobots/install/lib:/hdf5-install/install:
+2024-03-14 06:28:57,356 h5bench - DEBUG - LD_PRELOAD: /usr/local/xalt/xalt/lib64/libxalt_init.so
+2024-03-14 06:28:57,356 h5bench - INFO - h5bench [e3sm] - Starting
+2024-03-14 06:28:57,357 h5bench - INFO - h5bench [e3sm] - DIR: full-teste/3e21d37b/
+2024-03-14 06:28:57,358 h5bench - INFO - Parallel setup: mpirun -np 8 --oversubscribe
+2024-03-14 06:28:57,359 h5bench - CRITICAL - h5bench_e3sm is not available
