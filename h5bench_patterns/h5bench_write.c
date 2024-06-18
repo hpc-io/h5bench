@@ -911,13 +911,13 @@ set_globals(const bench_params *params)
         	ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
 		}
 		else if (params->compress_filter == SZ){
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ, H5Z_FLAG_OPTIONAL, 0, NULL);
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ, H5Z_FLAG_MANDATORY, 0, NULL);
 		}
 		else if (params->compress_filter == SZ3) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_OPTIONAL, 0, NULL);	
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_MANDATORY, 0, NULL);	
 		}
 		else if (params->compress_filter == ZFP) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_OPTIONAL, 0, NULL);
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_MANDATORY, 0, NULL);
 		}
 
         assert(ret >= 0);
