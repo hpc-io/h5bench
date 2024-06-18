@@ -53,6 +53,9 @@
 #include "H5FDioc.h"
 #endif
 #define DIM_MAX 3
+#define H5Z_FILTER_ZFP 32013
+#define H5Z_FILTER_SZ 32017
+#define H5Z_FILTER_SZ3 32024
 
 herr_t ierr;
 
@@ -882,8 +885,6 @@ set_globals(const bench_params *params)
 
     if (COMPRESS_INFO.USE_COMPRESS) { // set DCPL
         herr_t ret;
-		// Auxiliary data required as input by the H5Pset_filter(), by default I set it to 0. - Henry
-		unsigned int cd_values = 0;
 
 		// Create a new property list instance
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
@@ -909,18 +910,18 @@ set_globals(const bench_params *params)
 		else if (params->compress_filter == GZIP) {
         	ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
 		}
-		else if (params->compress_filter == SZ) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32017, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);
+		else if (params->compress_filter == SZ){
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ, H5Z_FLAG_OPTIONAL, 0, NULL);
 		}
 		else if (params->compress_filter == SZ3) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32024, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);	
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_OPTIONAL, 0, NULL);	
 		}
 		else if (params->compress_filter == ZFP) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, (H5Z_filter_t)32013, H5Z_FLAG_MANDATORY, (size_t)1, &cd_values);
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_OPTIONAL, 0, NULL);
 		}
 
         assert(ret >= 0);
-    }
+	}
 
     ASYNC_MODE = params->asyncMode;
 }
