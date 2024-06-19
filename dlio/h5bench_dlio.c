@@ -5,9 +5,10 @@
 // - Add more DLIO features
 // - Add more data loaders: Tensorflow & dali
 // - Add prefetcher configuration?
-// - Add read_threads/computation_threads
+// - Add computation_threads only for Tensorflow
 // - Add file shuffle configuration
 // - Add more compression filters
+// - Add drop_last = False setting
 
 #include <assert.h>
 #include <hdf5.h>
@@ -16,11 +17,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "h5bench_dlio.h"
 #include "stats.h"
 #include "utils.h"
+#include "workers.h"
 
 //#ifdef HAVE_SUBFILING
 //#include "H5FDsubfiling.h"
@@ -173,7 +177,7 @@ void read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time
     uint64_t t4 = get_time_usec();
     assert(status >= 0);
 
-    free(data);
+    free(data);  // TODO: free memory only after compute() call?
 
     uint64_t t5 = get_time_usec();
     H5Sclose(memspace);
@@ -184,6 +188,8 @@ void read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time
 
     *metadata_time_out = (t2 - t1) + (t6 - t5);
     *read_time_out = t4 - t3;
+
+    compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
 }
 
 uint64_t compute(float time, float time_stdev) {
@@ -195,156 +201,252 @@ uint64_t compute(float time, float time_stdev) {
     return 0;
 }
 
-void eval(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
-    uint32_t total_samples = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE;
-
-    if (config.DO_SHUFFLE) {
-        shuffle(indices, total_samples);
-    }
-
-    uint32_t samples_per_rank = total_samples / NUM_RANKS;
-    uint32_t read_from = MY_RANK * samples_per_rank;
-    uint32_t read_to = (MY_RANK + 1) * samples_per_rank;
-    uint32_t read_counter = 0;
+void eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
+    uint32_t batches_per_rank = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS;
+    uint32_t offset = MY_RANK * batches_per_rank;
 
     uint64_t t0 = get_time_usec();
-    for (uint32_t i = read_from; i < read_to; i++) {
-        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-        char file_path[256];
-        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.VALID_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_EVAL);
+    for (uint32_t i = 0; i < batches_per_rank; i++) {
+        for (uint32_t j = 0; j < config.BATCH_SIZE_EVAL; j++) {
+            uint32_t file_num = indices[offset + i * config.BATCH_SIZE_EVAL + j] / config.NUM_SAMPLES_PER_FILE + 1;
+            uint32_t sample_num = indices[offset + i * config.BATCH_SIZE_EVAL + j] % config.NUM_SAMPLES_PER_FILE;
+            char file_path[256];
+            snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.VALID_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_EVAL);
 
-        uint64_t metadata_time = 0, read_time = 0;
-        read_sample(file_path, sample_num, &metadata_time, &read_time);
-        read_counter++;
-        compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
+            uint64_t metadata_time = 0, read_time = 0;
+            read_sample(file_path, sample_num, &metadata_time, &read_time);
 
-        *local_metadata_time_out += metadata_time;
-        *local_read_time_out += read_time;
-
-        if (read_counter % config.BATCH_SIZE_EVAL == 0 && read_counter != 0) {
-            batch_loaded_eval(epoch, t0);
-
-            uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
-            batch_processed_eval(epoch, t, t0);
-            read_counter = 0;
-
-            t0 = get_time_usec();
+            *local_metadata_time_out += metadata_time;
+            *local_read_time_out += read_time;
         }
-    }
 
-    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank; iteration += NUM_RANKS) {
-        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
-        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-        char file_path[256];
-        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.VALID_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_EVAL);
-
-        uint64_t metadata_time = 0, read_time = 0;
-        read_sample(file_path, sample_num, &metadata_time, &read_time);
-        read_counter++;
-        compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
-
-        *local_metadata_time_out += metadata_time;
-        *local_read_time_out += read_time;
-
-        if (read_counter % config.BATCH_SIZE_EVAL == 0){
-            batch_loaded_eval(epoch, t0);
-
-            uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
-            batch_processed_eval(epoch, t, t0);
-            read_counter = 0;
-
-            t0 = get_time_usec();
-        }
-    }
-
-    if (read_counter != 0) {
         batch_loaded_eval(epoch, t0);
 
         uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
         batch_processed_eval(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        t0 = get_time_usec();
+    }
+
+//    TODO: drop_data = False
+//    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank; iteration += NUM_RANKS) {
+//        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
+//        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
+//        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
+//        char file_path[256];
+//        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.VALID_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_EVAL);
+//
+//        uint64_t metadata_time = 0, read_time = 0;
+//        read_sample(file_path, sample_num, &metadata_time, &read_time);
+//        read_counter++;
+//
+//        *local_metadata_time_out += metadata_time;
+//        *local_read_time_out += read_time;
+//
+//        if (read_counter % config.BATCH_SIZE_EVAL == 0){
+//            batch_loaded_eval(epoch, t0);
+//
+//            uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
+//            batch_processed_eval(epoch, t, t0);
+//            read_counter = 0;
+//
+//            t0 = get_time_usec();
+//        }
+//    }
+//
+//    if (read_counter != 0) {
+//        batch_loaded_eval(epoch, t0);
+//
+//        uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
+//        batch_processed_eval(epoch, t, t0);
+//    }
+}
+
+void eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
+    force_workers_to_shuffle(get_eval_read_fd(), get_eval_write_fd(), get_eval_system_fd());
+
+    uint32_t batches_per_rank = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS;
+    uint32_t offset = MY_RANK * batches_per_rank;
+
+    for (uint32_t i = 0; i < (config.READ_THREADS > batches_per_rank? batches_per_rank: config.READ_THREADS); i++) {
+        int32_t batch = offset + i;
+        write(get_eval_write_fd(), &batch, sizeof(batch));
+    }
+
+    for (uint32_t i = config.READ_THREADS; i < batches_per_rank; i++) {
+        execution_time_t data_from_child_process;
+        uint64_t t0 = get_time_usec();
+        read(get_eval_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
+
+        batch_loaded_eval(epoch, t0);
+
+        *local_metadata_time_out += data_from_child_process.metadata_time;
+        *local_read_time_out += data_from_child_process.read_time;
+
+        int32_t batch = offset + i;
+        write(get_eval_write_fd(), &batch, sizeof(batch));
+
+        uint64_t t = compute(config.EVAL_TIME_STDEV, config.EVAL_TIME_STDEV);
+        batch_processed_eval(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    for (uint32_t i = 0; i < (config.READ_THREADS > batches_per_rank? batches_per_rank: config.READ_THREADS); i++) {
+        execution_time_t data_from_child_process;
+        uint64_t t0 = get_time_usec();
+        read(get_eval_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
+
+        batch_loaded_eval(epoch, t0);
+
+        *local_metadata_time_out += data_from_child_process.metadata_time;
+        *local_read_time_out += data_from_child_process.read_time;
+
+        uint64_t t = compute(config.EVAL_TIME_STDEV, config.EVAL_TIME_STDEV);
+        batch_processed_eval(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
-void train(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
-    if (indices == NULL) return;
-    uint32_t total_samples = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE;
-
-    if (config.DO_SHUFFLE) {
-        shuffle(indices, total_samples);
+void eval(uint32_t epoch, uint32_t *indices, uint64_t *local_eval_metadata_time, uint64_t *local_eval_read_time, bool enable_multiprocessing) {
+    if (enable_multiprocessing) {
+        start_eval(epoch);
+        eval_using_workers(epoch, local_eval_metadata_time, local_eval_read_time);
+        end_eval(epoch);
+        return;
     }
 
-    uint32_t samples_per_rank = total_samples / NUM_RANKS;
-    uint32_t read_from = MY_RANK * samples_per_rank;
-    uint32_t read_to = (MY_RANK + 1) * samples_per_rank;
-    uint32_t read_counter = 0;
+    if (config.SEED_CHANGE_EPOCH) srand(config.RANDOM_SEED * 2 + epoch);
+    if (config.DO_SHUFFLE) shuffle(indices, config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE);
+
+    start_eval(epoch);
+    eval_without_workers(epoch, indices, local_eval_metadata_time, local_eval_read_time);
+    end_eval(epoch);
+}
+
+void train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
+    uint32_t batches_per_rank = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
+    uint32_t offset = MY_RANK * batches_per_rank;
 
     uint64_t t0 = get_time_usec();
-    for (uint32_t i = read_from; i < read_to; i++) {
-        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-        char file_path[256];
-        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_TRAIN);
+    for (uint32_t i = 0; i < batches_per_rank; i++) {
+        for (uint32_t j = 0; j < config.BATCH_SIZE; j++) {
+            uint32_t file_num = indices[offset + i * config.BATCH_SIZE + j] / config.NUM_SAMPLES_PER_FILE + 1;
+            uint32_t sample_num = indices[offset + i * config.BATCH_SIZE + j] % config.NUM_SAMPLES_PER_FILE;
+            char file_path[256];
+            snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_TRAIN);
 
-        uint64_t metadata_time = 0, read_time = 0;
-        read_sample(file_path, sample_num, &metadata_time, &read_time);
-        read_counter++;
-        compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
+            uint64_t metadata_time = 0, read_time = 0;
+            read_sample(file_path, sample_num, &metadata_time, &read_time);
 
-        *local_metadata_time_out += metadata_time;
-        *local_read_time_out += read_time;
-
-        if (read_counter % config.BATCH_SIZE == 0 && read_counter != 0) {
-            batch_loaded_train(epoch, t0);
-
-            uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
-            batch_processed_train(epoch, t, t0);
-            MPI_Barrier(MPI_COMM_WORLD);
-
-            read_counter = 0;
-            t0 = get_time_usec();
+            *local_metadata_time_out += metadata_time;
+            *local_read_time_out += read_time;
         }
-    }
 
-    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank; iteration += NUM_RANKS) {
-        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
-        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-        char file_path[256];
-        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_TRAIN);
-
-        uint64_t metadata_time = 0, read_time = 0;
-        read_sample(file_path, sample_num, &metadata_time, &read_time);
-        read_counter++;
-        compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
-
-        *local_metadata_time_out += metadata_time;
-        *local_read_time_out += read_time;
-
-        if (read_counter % config.BATCH_SIZE == 0){
-            batch_loaded_train(epoch, t0);
-
-            uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
-            batch_processed_train(epoch, t, t0);
-
-            read_counter = 0;
-            t0 = get_time_usec();
-        }
-    }
-
-    if (read_counter != 0) {
         batch_loaded_train(epoch, t0);
 
         uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
         batch_processed_train(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        t0 = get_time_usec();
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
+//    TODO: drop_data = True
+//    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank; iteration += NUM_RANKS) {
+//        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
+//        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
+//        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
+//        char file_path[256];
+//        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER, config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_TRAIN);
+//
+//        uint64_t metadata_time = 0, read_time = 0;
+//        read_sample(file_path, sample_num, &metadata_time, &read_time);
+//        read_counter++;
+//
+//        *local_metadata_time_out += metadata_time;
+//        *local_read_time_out += read_time;
+//
+//        if (read_counter % config.BATCH_SIZE == 0){
+//            batch_loaded_train(epoch, t0);
+//
+//            uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
+//            batch_processed_train(epoch, t, t0);
+//
+//            read_counter = 0;
+//            t0 = get_time_usec();
+//        }
+//    }
+//
+//    if (read_counter != 0) {
+//        batch_loaded_train(epoch, t0);
+//
+//        uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
+//        batch_processed_train(epoch, t, t0);
+//    }
 }
 
-void run(uint64_t *train_metadata_time, uint64_t *train_read_time,
-         uint64_t *eval_metadata_time, uint64_t *eval_read_time) {
+void train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out) {
+    force_workers_to_shuffle(get_train_read_fd(), get_train_write_fd(), get_train_system_fd());
+    uint32_t batches_per_rank = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
+    uint32_t offset = MY_RANK * batches_per_rank;
+
+    for (uint32_t i = 0; i < (config.READ_THREADS > batches_per_rank? batches_per_rank: config.READ_THREADS); i++) {
+        int32_t batch = offset + i;
+        write(get_train_write_fd(), &batch, sizeof(batch));
+    }
+
+    for (uint32_t i = config.READ_THREADS; i < batches_per_rank; i++) {
+        execution_time_t data_from_child_process;
+        uint64_t t0 = get_time_usec();
+        read(get_train_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
+
+        batch_loaded_train(epoch, t0);
+
+        *local_metadata_time_out += data_from_child_process.metadata_time;
+        *local_read_time_out += data_from_child_process.read_time;
+
+        int32_t batch = offset + i;
+        write(get_train_write_fd(), &batch, sizeof(batch));
+
+        uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
+        batch_processed_train(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    for (uint32_t i = 0; i < (config.READ_THREADS > batches_per_rank? batches_per_rank: config.READ_THREADS); i++) {
+        execution_time_t data_from_child_process;
+        uint64_t t0 = get_time_usec();
+        read(get_train_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
+
+        batch_loaded_train(epoch, t0);
+
+        *local_metadata_time_out += data_from_child_process.metadata_time;
+        *local_read_time_out += data_from_child_process.read_time;
+
+        uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
+        batch_processed_train(epoch, t, t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+}
+
+void train(uint32_t epoch, uint32_t *indices, uint64_t *local_train_metadata_time, uint64_t *local_train_read_time, bool enable_multiprocessing) {
+    if (enable_multiprocessing) {
+        start_train(epoch);
+        train_using_workers(epoch, local_train_metadata_time, local_train_read_time);
+        end_train(epoch);
+        return;
+    }
+
+    if (config.SEED_CHANGE_EPOCH) srand(config.RANDOM_SEED + epoch);
+    if (config.DO_SHUFFLE) shuffle(indices, config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE);
+
+    start_train(epoch);
+    train_without_workers(epoch, indices, local_train_metadata_time, local_train_read_time);
+    end_train(epoch);
+}
+
+void run(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *eval_metadata_time, uint64_t *eval_read_time) {
     uint32_t total_train_samples = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE;
     uint32_t *indices_train = (uint32_t *)malloc(total_train_samples * sizeof(uint32_t));
     if (indices_train == NULL) {
@@ -367,24 +469,27 @@ void run(uint64_t *train_metadata_time, uint64_t *train_read_time,
              local_eval_metadata_time = 0, local_eval_read_time = 0;
     uint32_t next_eval_epoch = config.EPOCHS_BETWEEN_EVALS;
 
+    bool enable_multiprocessing = config.READ_THREADS > 0;
+    if (enable_multiprocessing) {
+        init_workers(indices_train, indices_eval);
+    }
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (uint32_t epoch = 0; epoch < config.EPOCHS; epoch++) {
 //        if (MY_RANK == 0) printf("New Epoch %u\n", epoch + 1);
-        if (config.SEED_CHANGE_EPOCH) srand(config.RANDOM_SEED + epoch);
 
-        start_train(epoch);
-        train(epoch, indices_train, &local_train_metadata_time, &local_train_read_time);
-        end_train(epoch);
+        train(epoch, indices_train, &local_train_metadata_time, &local_train_read_time, enable_multiprocessing);
+        MPI_Barrier(MPI_COMM_WORLD);
 
         if (config.DO_EVALUATION && (epoch + 1 >= next_eval_epoch)) {
+            eval(epoch, indices_eval, &local_eval_metadata_time, &local_eval_read_time, enable_multiprocessing);
             next_eval_epoch += config.EPOCHS_BETWEEN_EVALS;
-            start_eval(epoch);
-            eval(epoch, indices_eval, &local_eval_metadata_time, &local_eval_read_time);
-            end_eval(epoch);
+            MPI_Barrier(MPI_COMM_WORLD);
         }
-
-        MPI_Barrier(MPI_COMM_WORLD);
+    }
+    if (enable_multiprocessing) {
+        fin_workers();
     }
 
     MPI_Reduce(&local_train_metadata_time, train_metadata_time, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -394,11 +499,11 @@ void run(uint64_t *train_metadata_time, uint64_t *train_read_time,
 
     free(indices_train);
     free(indices_eval);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void init(int num_ranks) {
-    config.NUM_RANKS = num_ranks;
-
+void init_global_variables() {
     DIM = (uint32_t)sqrt(config.RECORD_LENGTH);
     config.RECORD_LENGTH = DIM * DIM;
 
@@ -410,6 +515,8 @@ void init(int num_ranks) {
     GENERATION_SIZE = data_length > GENERATION_BUFFER_SIZE? GENERATION_BUFFER_SIZE: data_length;
 
     srand(config.RANDOM_SEED);
+
+    // check if read_threads < batch size and print warning
 
     DCPL = H5Pcreate(H5P_DATASET_CREATE);
     if (config.DO_CHUNKING) {
@@ -460,16 +567,11 @@ int main(int argc, char *argv[]) {
         create_directory(dir_name);
         printf("OK\n");
     }
-
-    init(NUM_RANKS);
-
-    MPI_Barrier(MPI_COMM_WORLD);
+    init_global_variables();
 
     if (config.DO_DATA_GENERATION) {
         generate_data();
     }
-
-    MPI_Barrier(MPI_COMM_WORLD);
 
     if (config.DO_TRAIN) {
         // TODO: check files dimension if generate=no
@@ -477,7 +579,6 @@ int main(int argc, char *argv[]) {
 
         uint64_t train_metadata_time = 0, train_read_time = 0, eval_metadata_time = 0, eval_read_time = 0;
         run(&train_metadata_time, &train_read_time, &eval_metadata_time, &eval_read_time);
-
         prepare_data();
 
         MPI_Reduce(MY_RANK == 0? MPI_IN_PLACE: &train_metadata_time, &train_metadata_time, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -485,10 +586,10 @@ int main(int argc, char *argv[]) {
         MPI_Reduce(MY_RANK == 0? MPI_IN_PLACE: &eval_metadata_time, &eval_metadata_time, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(MY_RANK == 0? MPI_IN_PLACE: &eval_read_time, &eval_read_time, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
-        train_metadata_time /= NUM_RANKS;
-        train_read_time /= NUM_RANKS;
-        eval_metadata_time /= NUM_RANKS;
-        eval_read_time /= NUM_RANKS;
+        train_metadata_time /= NUM_RANKS / (config.READ_THREADS > 0? config.READ_THREADS: 1);
+        train_read_time /= NUM_RANKS / (config.READ_THREADS > 0? config.READ_THREADS: 1);
+        eval_metadata_time /= NUM_RANKS / (config.READ_THREADS > 0? config.READ_THREADS: 1);
+        eval_read_time /= NUM_RANKS / (config.READ_THREADS > 0? config.READ_THREADS: 1);
 
         MPI_Barrier(MPI_COMM_WORLD);
 

@@ -37,7 +37,7 @@ typedef struct config_datatype {
 //    DATA_LOADER;
     uint32_t BATCH_SIZE;
     uint32_t BATCH_SIZE_EVAL;
-//    int READ_THREADS;
+    uint32_t READ_THREADS;
 //    int COMPUTATION_THREADS;
 //    unsigned int PREFETCH_SIZE;
     bool DO_SHUFFLE;  // sample shuffle vs file_shuffle
@@ -62,8 +62,6 @@ typedef struct config_datatype {
     char *VALID_DATA_FOLDER;
     char *RECORDS_DATASET_NAME;
     char *LABELS_DATASET_NAME;
-
-    int NUM_RANKS;
 } config_datatype_t;
 
 extern config_datatype_t config;

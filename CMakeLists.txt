@@ -336,7 +336,11 @@ configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINAR
 # https://github.com/arcturus5340/h5bench
 
 if(H5BENCH_DLIO)
-    set(h5bench_dlio_src dlio/h5bench_dlio.c dlio/utils.c dlio/stats.c)
+    set(h5bench_dlio_src
+            dlio/h5bench_dlio.c
+            dlio/utils.c
+            dlio/stats.c
+            dlio/workers.c)
 
     add_executable(h5bench_dlio ${h5bench_dlio_src})
     target_link_libraries(h5bench_dlio h5bench_util hdf5 m MPI::MPI_C)

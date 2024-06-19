@@ -42,9 +42,9 @@ config_datatype_t config = {
 
     // Reader
 //    .DATA_LOADER = PYTORCH,
-    .BATCH_SIZE = 4,
+    .BATCH_SIZE = 7,
     .BATCH_SIZE_EVAL = 2,
-//    .READ_THREADS = 1,
+    .READ_THREADS = 4,
 //    .COMPUTATION_THREADS = 1,
 //    .PREFETCH_SIZE = 0,
     .DO_SHUFFLE = false,  // sample shuffle vs file_shuffle
@@ -189,7 +189,7 @@ void parse_args(int argc, char *argv[]) {
             config.PREPROCESS_TIME_STDEV = atof(argv[i]);
         } else if (strcmp(argv[i], "--epochs") == 0) {
             i++;
-            config.PREPROCESS_TIME_STDEV = atoi(argv[i]);
+            config.EPOCHS = atoi(argv[i]);
         } else if (strcmp(argv[i], "--computation-time") == 0) {
             i++;
             config.COMPUTATION_TIME = atof(argv[i]);
@@ -201,10 +201,10 @@ void parse_args(int argc, char *argv[]) {
             config.RANDOM_SEED = atoi(argv[i]);
         } else if (strcmp(argv[i], "--eval-time") == 0) {
             i++;
-            config.RANDOM_SEED = atof(argv[i]);
+            config.EVAL_TIME = atof(argv[i]);
         } else if (strcmp(argv[i], "--eval-time-stdev") == 0) {
             i++;
-            config.RANDOM_SEED = atof(argv[i]);
+            config.EVAL_TIME_STDEV = atof(argv[i]);
         } else if (strcmp(argv[i], "--epochs-between-evals") == 0) {
             i++;
             config.EPOCHS_BETWEEN_EVALS = atoi(argv[i]);
@@ -222,6 +222,9 @@ void parse_args(int argc, char *argv[]) {
             config.LABELS_DATASET_NAME = argv[i];
         } else if (strcmp(argv[i], "--seed-change-epoch") == 0) {
             config.SEED_CHANGE_EPOCH = true;
+        } else if (strcmp(argv[i], "--read-threads") == 0) {
+            i++;
+            config.READ_THREADS = atoi(argv[i]);
         } else {
             printf("WARNING: %s not found\n", argv[i]);
         }

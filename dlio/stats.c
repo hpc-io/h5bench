@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "h5bench_dlio.h"
 #include "stats.h"
 #include "utils.h"
 
@@ -24,13 +25,17 @@ double AU;
 void stats_initialize() {
     AU = 0.90;
 
-    uint32_t train_steps_count = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / (config.BATCH_SIZE * config.NUM_RANKS);
-    uint32_t train_steps_count_remainder = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE * config.NUM_RANKS);
-    uint32_t eval_steps_count = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / (config.BATCH_SIZE_EVAL * config.NUM_RANKS);
-    uint32_t eval_steps_count_remainder = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE_EVAL * config.NUM_RANKS);
+    uint32_t train_steps_count = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
+    uint32_t train_steps_count_remainder = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE * NUM_RANKS);
+    uint32_t eval_steps_count = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS;
+    uint32_t eval_steps_count_remainder = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE_EVAL * NUM_RANKS);
 
-    TRAIN_MAX_STEPS = train_steps_count + (train_steps_count_remainder > 0);
-    EVAL_MAX_STEPS = eval_steps_count + (eval_steps_count_remainder > 0);
+    TRAIN_MAX_STEPS = train_steps_count;
+    EVAL_MAX_STEPS = eval_steps_count;
+
+//    TODO: drop_last = False
+//    TRAIN_MAX_STEPS = train_steps_count + (train_steps_count_remainder > 0);
+//    EVAL_MAX_STEPS = eval_steps_count + (eval_steps_count_remainder > 0);
 
     stats = (struct epoch_data *)malloc(config.EPOCHS * sizeof(struct epoch_data));
     if (stats == NULL) {
@@ -170,23 +175,23 @@ void prepare_data() {
         MPI_Reduce(&stats[i].observed_time.eval, &global_stats[i].observed_time.eval, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
         for (int j = 0; j < TRAIN_MAX_STEPS; j++) {
-            global_stats[i].load.train[j] /= config.NUM_RANKS;
-            global_stats[i].proc.train[j] /= config.NUM_RANKS;
-            global_stats[i].compute.train[j] /= config.NUM_RANKS;
+            global_stats[i].load.train[j] /= NUM_RANKS;
+            global_stats[i].proc.train[j] /= NUM_RANKS;
+            global_stats[i].compute.train[j] /= NUM_RANKS;
         }
 
         for (int j = 0; j < EVAL_MAX_STEPS; j++) {
-            global_stats[i].load.eval[j] /= config.NUM_RANKS;
-            global_stats[i].proc.eval[j] /= config.NUM_RANKS;
-            global_stats[i].compute.eval[j] /= config.NUM_RANKS;
+            global_stats[i].load.eval[j] /= NUM_RANKS;
+            global_stats[i].proc.eval[j] /= NUM_RANKS;
+            global_stats[i].compute.eval[j] /= NUM_RANKS;
         }
 
-        global_stats[i].au.train /= config.NUM_RANKS;
-        global_stats[i].au.eval /= config.NUM_RANKS;
-        global_stats[i].throughput.train /= config.NUM_RANKS;
-        global_stats[i].throughput.eval /= config.NUM_RANKS;
-        global_stats[i].observed_time.train /= config.NUM_RANKS;
-        global_stats[i].observed_time.eval /= config.NUM_RANKS;
+        global_stats[i].au.train /= NUM_RANKS;
+        global_stats[i].au.eval /= NUM_RANKS;
+        global_stats[i].throughput.train /= NUM_RANKS;
+        global_stats[i].throughput.eval /= NUM_RANKS;
+        global_stats[i].observed_time.train /= NUM_RANKS;
+        global_stats[i].observed_time.eval /= NUM_RANKS;
     }
 }
 
@@ -195,7 +200,7 @@ void print_data(uint64_t *train_metadata_time, uint64_t *train_read_time,
 
     printf("metric, value\n");
     printf("operation, dlio\n");
-    printf("ranks, %d\n", config.NUM_RANKS);
+    printf("ranks, %d\n", NUM_RANKS);
 //    printf("collective meta");
 //    printf("collective data");
     // Train
@@ -212,7 +217,9 @@ void print_data(uint64_t *train_metadata_time, uint64_t *train_read_time,
     }
     printf("\"\ntrain total compute time, %lf\n", train_total_compute_time / 1000000.0);
 
-    uint64_t train_total_size_bytes = (uint64_t)config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
+    // TODO: drop_last = False
+    uint64_t train_total_batches = (uint64_t)config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS * NUM_RANKS;
+    uint64_t train_total_size_bytes = train_total_batches * config.BATCH_SIZE_EVAL * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
     printf("train total size, %lu\n", train_total_size_bytes);
 
     printf("train total metadata time, %lf\n", *train_metadata_time / 1000000.0);
@@ -294,8 +301,9 @@ void print_data(uint64_t *train_metadata_time, uint64_t *train_read_time,
         if (i != config.EPOCHS - 1) printf(", ");
     }
     printf("\"\neval total compute time, %lf\n", eval_total_compute_time / 1000000.0);
-
-    uint64_t eval_total_size_bytes = (uint64_t)config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
+    // TODO: drop_last = False
+    uint64_t eval_total_batches = (uint64_t)config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS * NUM_RANKS;
+    uint64_t eval_total_size_bytes = eval_total_batches * config.BATCH_SIZE_EVAL * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
     printf("eval total size, %lu\n", eval_total_size_bytes);
 
     printf("eval metadata time, %lf\n", *eval_metadata_time / 1000000.0);
@@ -418,7 +426,7 @@ void end_eval(uint32_t epoch) {
     }
     if (total_compute_time > 0) {
         stats[epoch].observed_time.eval = end_time - stats[epoch].start_time.eval;
-        au = (double)total_compute_time / (double)stats[epoch].observed_time.eval;
+        au = (double)total_compute_time / stats[epoch].observed_time.eval;
     }
     stats[epoch].au.eval = au * 100;
     stats[epoch].throughput.eval = (double)EVAL_MAX_STEPS * config.BATCH_SIZE_EVAL * 1000000.0 / (end_time - stats[epoch].start_time.eval);

@@ -20,7 +20,7 @@ The benchmark is designed to measure the performance of training and evaluation 
 - ``--keep-files``: Does not delete data after the benchmark is finished [default: *1024*]
 - ``--compression``: Enable compression [default: *false*]
 - ``--compression-level <x>``: Compression level from 1 to 9 [default: *4*]
-- ``--batch-size <x>``: Training batch size [default: *4*]
+- ``--batch-size <x>``: Training batch size [default: *7*]
 - ``--batch-size-eval <x>``: Evaluation batch size [default: *2*]
 - ``--shuffle``: Enable samples shuffle [default: *false*]
 - ``--preprocess-time <x>``: Preprocessing time after reading each sample in seconds [default: *0.0*]
@@ -37,6 +37,7 @@ The benchmark is designed to measure the performance of training and evaluation 
 - ``--records-dataset-name <x>``: Name of the dataset with records [default: *records*]
 - ``--labels-dataset-name <x>``: Name of the dataset with labels [default: *labels*]
 - ``--seed-change-epoch``: Enable seed changes every epoch [default: *false*]
+- ``--read-threads``: The number of workers used to read the data [default: *4*]
 
 ### Exerciser Basics
 
