@@ -26,6 +26,7 @@ void fin_workers();
 
 void force_workers_to_shuffle(int read_fd, int write_fd, int system_fd);
 
-void run_worker(uint32_t *indices, int pipe_task_fd[2], int pipe_result_fd[2], int pipe_system_fd[2], bool is_train_worker);
+void run_worker(uint32_t *indices, int pipe_task_fd[2], int pipe_result_fd[2], int pipe_system_fd[2],
+                bool is_train_worker);
 
 #endif // H5BENCH_WORKERS_H

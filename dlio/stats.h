@@ -37,12 +37,12 @@ struct observed_time_data {
 };
 
 typedef struct epoch_data {
-    struct start_time_data start_time;
-    struct load_data load;
-    struct proc_data proc;
-    struct throughput_data throughput;
-    struct au_data au;
-    struct compute_data compute;
+    struct start_time_data    start_time;
+    struct load_data          load;
+    struct proc_data          proc;
+    struct throughput_data    throughput;
+    struct au_data            au;
+    struct compute_data       compute;
     struct observed_time_data observed_time;
 } epoch_data_t;
 
@@ -52,8 +52,8 @@ void stats_finalize();
 
 void prepare_data();
 
-void print_data(uint64_t *train_metadata_time, uint64_t *train_read_time,
-                uint64_t *eval_metadata_time, uint64_t *eval_read_time);
+void print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *eval_metadata_time,
+                uint64_t *eval_read_time);
 
 void batch_loaded_train(uint32_t epoch, uint64_t start_time);
 
@@ -71,4 +71,4 @@ void start_eval(uint32_t epoch);
 
 void end_eval(uint32_t epoch);
 
-#endif //SANDBOX_STATS_H
+#endif // SANDBOX_STATS_H

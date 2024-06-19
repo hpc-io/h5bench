@@ -18,43 +18,43 @@ typedef struct config_datatype {
 
     // Dataset
     uint32_t RECORD_LENGTH; // should be a square number
-//    float RECORD_LENGTH_STDEV;
-//    float RECORD_LENGTH_RESIZE;
+                            //    float RECORD_LENGTH_STDEV;
+                            //    float RECORD_LENGTH_RESIZE;
     uint32_t NUM_FILES_TRAIN;
     uint32_t NUM_FILES_EVAL;
     uint32_t NUM_SAMPLES_PER_FILE;
-    char *DATA_FOLDER;
-//    unsigned int NUM_SUBFOLDERS_TRAIN;
-//    unsigned int NUM_SUBFOLDERS_EVAL;
-    char *FILE_PREFIX;
-    bool DO_COMPRESSION;
+    char *   DATA_FOLDER;
+    //    unsigned int NUM_SUBFOLDERS_TRAIN;
+    //    unsigned int NUM_SUBFOLDERS_EVAL;
+    char *   FILE_PREFIX;
+    bool     DO_COMPRESSION;
     uint32_t COMPRESSION_LEVEL;
-    bool DO_CHUNKING;
+    bool     DO_CHUNKING;
     uint32_t CHUNK_SIZE; // should be a square number
-    bool KEEP_FILES;
+    bool     KEEP_FILES;
 
     // Reader
-//    DATA_LOADER;
+    //    DATA_LOADER;
     uint32_t BATCH_SIZE;
     uint32_t BATCH_SIZE_EVAL;
     uint32_t READ_THREADS;
-//    int COMPUTATION_THREADS;
-//    unsigned int PREFETCH_SIZE;
-    bool DO_SHUFFLE;  // sample shuffle vs file_shuffle
-//    unsigned int TRANSFER_SIZE;
+    //    int COMPUTATION_THREADS;
+    //    unsigned int PREFETCH_SIZE;
+    bool DO_SHUFFLE; // sample shuffle vs file_shuffle
+                     //    unsigned int TRANSFER_SIZE;
     float PREPROCESS_TIME;
     float PREPROCESS_TIME_STDEV;
     // Train
     uint32_t EPOCHS;
-    float COMPUTATION_TIME;
-    float COMPUTATION_TIME_STDEV;
-//    long int TOTAL_TRAINING_STEPS = -1
+    float    COMPUTATION_TIME;
+    float    COMPUTATION_TIME_STDEV;
+    //    long int TOTAL_TRAINING_STEPS = -1
     bool SEED_CHANGE_EPOCH;
-    int RANDOM_SEED;
+    int  RANDOM_SEED;
 
     // Evaluation
-    float EVAL_TIME;
-    float EVAL_TIME_STDEV;
+    float    EVAL_TIME;
+    float    EVAL_TIME_STDEV;
     uint32_t EPOCHS_BETWEEN_EVALS;
 
     // Output
@@ -76,4 +76,4 @@ void delete_directory(const char *dir_path);
 
 void parse_args(int argc, char *argv[]);
 
-#endif //SANDBOX_UTILS_H
+#endif // SANDBOX_UTILS_H
