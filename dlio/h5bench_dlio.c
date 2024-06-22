@@ -139,13 +139,14 @@ generate_data()
     hid_t   extra_records_memspace = H5Screate_simple(3, extra_records_count, NULL);
     assert(extra_records_memspace >= 0);
 
-    uint32_t from = config.SUBFILING? 0: MY_RANK;
-    uint32_t increment = config.SUBFILING? 1: NUM_RANKS;
+    uint32_t from      = config.SUBFILING ? 0 : MY_RANK;
+    uint32_t increment = config.SUBFILING ? 1 : NUM_RANKS;
 
     for (uint32_t i = from; i < config.NUM_FILES_TRAIN; i += increment) {
         srand(config.RANDOM_SEED + i);
 
-        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0)) printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
+        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+            printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_TRAIN);
@@ -156,7 +157,8 @@ generate_data()
     for (uint32_t i = from; i < config.NUM_FILES_EVAL; i += increment) {
         srand(config.RANDOM_SEED + config.NUM_FILES_TRAIN + i);
 
-        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0)) printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
+        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+            printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.VALID_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_EVAL);
@@ -599,32 +601,40 @@ init_global_variables()
     if (config.SUBFILING) {
         H5Pset_fapl_subfiling(FAPL, NULL);
         if (config.COLLECTIVE_DATA) {
-            if (MY_RANK == 0) printf("Warning: Collective mode can't be used with subfiling\n");
+            if (MY_RANK == 0)
+                printf("Warning: Collective mode can't be used with subfiling\n");
             config.COLLECTIVE_DATA = false;
         }
         if (config.DO_CHUNKING) {
-            if (MY_RANK == 0) printf("Warning: Chunking can't be used with subfiling\n");
+            if (MY_RANK == 0)
+                printf("Warning: Chunking can't be used with subfiling\n");
             config.DO_CHUNKING = false;
         }
         if (config.READ_THREADS > 0) {
-            if (MY_RANK == 0) printf("Warning: Multiprocessing can't be used with subfiling. READ_THREADS is set to 0...\n");
+            if (MY_RANK == 0)
+                printf(
+                    "Warning: Multiprocessing can't be used with subfiling. READ_THREADS is set to 0...\n");
             config.READ_THREADS = 0;
         }
-    } else if (config.DO_CHUNKING) {
+    }
+    else if (config.DO_CHUNKING) {
         hsize_t chunk_dims[3] = {1, chunk_dimension, chunk_dimension};
         H5Pset_chunk(DCPL, 3, chunk_dims);
         if (config.DO_COMPRESSION) {
             H5Pset_deflate(DCPL, config.COMPRESSION_LEVEL);
         }
         if (config.COLLECTIVE_DATA) {
-            if (MY_RANK == 0) printf("Warning: Collective mode can't be used with subfiling\n");
+            if (MY_RANK == 0)
+                printf("Warning: Collective mode can't be used with subfiling\n");
             config.COLLECTIVE_DATA = false;
         }
-    } else {
+    }
+    else {
         H5Pset_fapl_mpio(FAPL, MPI_COMM_SELF, MPI_INFO_NULL);
         if (config.COLLECTIVE_DATA) {
             H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
-        } else {
+        }
+        else {
             H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_INDEPENDENT);
         }
     }

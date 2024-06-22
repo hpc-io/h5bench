@@ -213,10 +213,10 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
     printf("operation, dlio\n");
     printf("ranks, %d\n", NUM_RANKS);
     printf("read threads, %d\n", config.READ_THREADS);
-    printf("subfiling, %s\n", config.SUBFILING? "YES": "NO");
-    printf("chunking, %s\n", config.DO_CHUNKING? "YES": "NO");
-    printf("collective meta, %s\n", config.COLLECTIVE_META? "YES": "NO");
-    printf("collective data, %s\n", config.COLLECTIVE_DATA? "YES": "NO");
+    printf("subfiling, %s\n", config.SUBFILING ? "YES" : "NO");
+    printf("chunking, %s\n", config.DO_CHUNKING ? "YES" : "NO");
+    printf("collective meta, %s\n", config.COLLECTIVE_META ? "YES" : "NO");
+    printf("collective data, %s\n", config.COLLECTIVE_DATA ? "YES" : "NO");
 
     // Train
     printf("train compute time, \"");
@@ -415,7 +415,7 @@ start_train(uint32_t epoch)
 void
 end_train(uint32_t epoch)
 {
-    uint64_t end_time           = get_time_usec();
+    uint64_t end_time                = get_time_usec();
     stats[epoch].observed_time.train = end_time - stats[epoch].start_time.train;
     stats[epoch].throughput.train =
         (double)TRAIN_MAX_STEPS * config.BATCH_SIZE * 1000000.0 / (end_time - stats[epoch].start_time.train);
@@ -430,8 +430,8 @@ start_eval(uint32_t epoch)
 void
 end_eval(uint32_t epoch)
 {
-    uint64_t end_time           = get_time_usec();
+    uint64_t end_time               = get_time_usec();
     stats[epoch].observed_time.eval = end_time - stats[epoch].start_time.eval;
-    stats[epoch].throughput.eval = (double)EVAL_MAX_STEPS * config.BATCH_SIZE_EVAL * 1000000.0 /
+    stats[epoch].throughput.eval    = (double)EVAL_MAX_STEPS * config.BATCH_SIZE_EVAL * 1000000.0 /
                                    (end_time - stats[epoch].start_time.eval);
 }

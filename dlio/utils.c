@@ -41,9 +41,9 @@ config_datatype_t config = {
     .DO_CHUNKING       = false,
     .CHUNK_SIZE        = 1024, // should be greater than 120 on CLAIX23
     .KEEP_FILES        = false,
-    .COLLECTIVE_META      = false,
-    .COLLECTIVE_DATA      = false,
-    .SUBFILING            = false,
+    .COLLECTIVE_META   = false,
+    .COLLECTIVE_DATA   = false,
+    .SUBFILING         = false,
 
     // Reader
     //    .DATA_LOADER = PYTORCH,
