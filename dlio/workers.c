@@ -1,3 +1,5 @@
+// TODO: handle errors in child processes
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>

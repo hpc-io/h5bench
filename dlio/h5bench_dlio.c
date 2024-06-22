@@ -1,7 +1,7 @@
 // TODO:
 // - Add logging
 // - Add vol-async support
-// - Add subfiling support
+// - Add subfiling settings
 // - Add more DLIO features
 // - Add more data loaders: Tensorflow & dali
 // - Add prefetcher configuration?
@@ -9,6 +9,8 @@
 // - Add file shuffle configuration
 // - Add more compression filters
 // - Add drop_last = False setting
+// - Replace fork() with MPI_Comm_spawn()
+// - Add Cache VOL connector support
 
 #include <assert.h>
 #include <hdf5.h>
@@ -26,10 +28,10 @@
 #include "utils.h"
 #include "workers.h"
 
-//#ifdef HAVE_SUBFILING
-//#include "H5FDsubfiling.h"
-//#include "H5FDioc.h"
-//#endif
+#ifdef HAVE_SUBFILING
+#include "H5FDsubfiling.h"
+#include "H5FDioc.h"
+#endif
 
 #define GENERATION_BUFFER_SIZE 2 * 1073741824lu
 
@@ -137,10 +139,13 @@ generate_data()
     hid_t   extra_records_memspace = H5Screate_simple(3, extra_records_count, NULL);
     assert(extra_records_memspace >= 0);
 
-    for (uint32_t i = MY_RANK; i < config.NUM_FILES_TRAIN; i += NUM_RANKS) {
+    uint32_t from = config.SUBFILING? 0: MY_RANK;
+    uint32_t increment = config.SUBFILING? 1: NUM_RANKS;
+
+    for (uint32_t i = from; i < config.NUM_FILES_TRAIN; i += increment) {
         srand(config.RANDOM_SEED + i);
 
-        printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
+        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0)) printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_TRAIN);
@@ -148,10 +153,10 @@ generate_data()
                       extra_records_memspace);
     }
 
-    for (uint32_t i = MY_RANK; i < config.NUM_FILES_EVAL; i += NUM_RANKS) {
+    for (uint32_t i = from; i < config.NUM_FILES_EVAL; i += increment) {
         srand(config.RANDOM_SEED + config.NUM_FILES_TRAIN + i);
 
-        printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
+        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0)) printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.VALID_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_EVAL);
@@ -174,7 +179,7 @@ read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time_out,
 
     uint64_t t1         = get_time_usec();
     hid_t    file_id    = H5Fopen(file_path, H5F_ACC_RDONLY, FAPL);
-    hid_t    dataset_id = H5Dopen(file_id, config.RECORDS_DATASET_NAME, DXPL);
+    hid_t    dataset_id = H5Dopen(file_id, config.RECORDS_DATASET_NAME, DAPL);
     hid_t    filespace  = H5Dget_space(dataset_id);
     hid_t    memspace   = H5Screate_simple(3, count, NULL);
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
@@ -582,28 +587,55 @@ init_global_variables()
 
     // check if read_threads < batch size and print warning
 
+#ifndef HAVE_SUBFILING
+    config.SUBFILING = false;
+#endif
+
+    FAPL = H5Pcreate(H5P_FILE_ACCESS);
     DCPL = H5Pcreate(H5P_DATASET_CREATE);
-    if (config.DO_CHUNKING) {
+    DAPL = H5Pcreate(H5P_DATASET_ACCESS);
+    DXPL = H5Pcreate(H5P_DATASET_XFER);
+
+    if (config.SUBFILING) {
+        H5Pset_fapl_subfiling(FAPL, NULL);
+        if (config.COLLECTIVE_DATA) {
+            if (MY_RANK == 0) printf("Warning: Collective mode can't be used with subfiling\n");
+            config.COLLECTIVE_DATA = false;
+        }
+        if (config.DO_CHUNKING) {
+            if (MY_RANK == 0) printf("Warning: Chunking can't be used with subfiling\n");
+            config.DO_CHUNKING = false;
+        }
+        if (config.READ_THREADS > 0) {
+            if (MY_RANK == 0) printf("Warning: Multiprocessing can't be used with subfiling. READ_THREADS is set to 0...\n");
+            config.READ_THREADS = 0;
+        }
+    } else if (config.DO_CHUNKING) {
         hsize_t chunk_dims[3] = {1, chunk_dimension, chunk_dimension};
         H5Pset_chunk(DCPL, 3, chunk_dims);
         if (config.DO_COMPRESSION) {
             H5Pset_deflate(DCPL, config.COMPRESSION_LEVEL);
         }
+        if (config.COLLECTIVE_DATA) {
+            if (MY_RANK == 0) printf("Warning: Collective mode can't be used with subfiling\n");
+            config.COLLECTIVE_DATA = false;
+        }
+    } else {
+        H5Pset_fapl_mpio(FAPL, MPI_COMM_SELF, MPI_INFO_NULL);
+        if (config.COLLECTIVE_DATA) {
+            H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
+        } else {
+            H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_INDEPENDENT);
+        }
     }
 
-    FAPL = H5Pcreate(H5P_FILE_ACCESS);
-//    H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
 #if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(FAPL, true);
-    H5Pset_coll_metadata_write(FAPL, true);
+    if (config.COLLECTIVE_META) {
+        H5Pset_all_coll_metadata_ops(FAPL, true);
+        H5Pset_coll_metadata_write(FAPL, true);
+        H5Pset_all_coll_metadata_ops(DAPL, true);
+    }
 #endif
-
-    hid_t DAPL = H5Pcreate(H5P_DATASET_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
-    H5Pset_all_coll_metadata_ops(DAPL, true);
-#endif
-
-    hid_t DXPL = H5Pcreate(H5P_DATASET_XFER);
 }
 
 int
@@ -634,6 +666,7 @@ main(int argc, char *argv[])
         printf("OK\n");
     }
     init_global_variables();
+    MPI_Barrier(MPI_COMM_WORLD);
 
     if (config.DO_DATA_GENERATION) {
         generate_data();
@@ -678,6 +711,7 @@ main(int argc, char *argv[])
     H5Pclose(DXPL);
     H5Pclose(DAPL);
     H5Pclose(FAPL);
+    H5close();
     MPI_Finalize();
     return 0;
 }

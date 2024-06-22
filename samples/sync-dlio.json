@@ -15,7 +15,7 @@
       "benchmark": "dlio",
       "configuration": {
         "generate-data": "true",
-        "chunking": "true",
+        "chunking": "false",
         "keep-files": "true",
         "compression": "true",
         "record-length": "67108864",
@@ -24,7 +24,6 @@
         "num-samples-per-file": "4",
         "data-folder": "data",
         "file-prefix": "img",
-        "chunk-size": "1024",
         "compression-level": "4",
         "random-seed": "42",
         "train-data-folder": "train",
@@ -62,7 +61,10 @@
         "train-data-folder": "train",
         "valid-data-folder": "valid",
         "records-dataset-name": "records",
-        "labels-dataset-name": "labels"
+        "labels-dataset-name": "labels",
+        "collective-meta": "true",
+        "collective-data": "true",
+        "subfiling": "false"
       }
     }
   ]

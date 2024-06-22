@@ -978,6 +978,9 @@ class H5bench:
                 'compression',
                 'shuffle',
                 'seed-change-epoch',
+                'collective-meta',
+                'collective-data',
+                'subfiling',
             ]
 
             # Create the configuration parameter list

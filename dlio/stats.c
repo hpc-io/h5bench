@@ -20,13 +20,9 @@ uint32_t *last_proc_eval;
 uint32_t *last_compute_train;
 uint32_t *last_compute_eval;
 
-double AU;
-
 void
 stats_initialize()
 {
-    AU = 0.90;
-
     uint32_t train_steps_count =
         config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
     uint32_t train_steps_count_remainder =
@@ -67,8 +63,6 @@ stats_initialize()
         }
         stats[i].throughput.train = 0.0;
         stats[i].throughput.eval  = 0.0;
-        stats[i].au.train         = 0.0;
-        stats[i].au.eval          = 0.0;
         stats[i].compute.train    = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
         if (stats[i].compute.train == NULL) {
             exit(1);
@@ -179,8 +173,6 @@ prepare_data()
                    MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(stats[i].proc.eval, global_stats[i].proc.eval, EVAL_MAX_STEPS, MPI_UNSIGNED_LONG_LONG,
                    MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&stats[i].au.train, &global_stats[i].au.train, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(&stats[i].au.eval, &global_stats[i].au.eval, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].throughput.train, &global_stats[i].throughput.train, 1, MPI_DOUBLE, MPI_SUM, 0,
                    MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].throughput.eval, &global_stats[i].throughput.eval, 1, MPI_DOUBLE, MPI_SUM, 0,
@@ -206,8 +198,6 @@ prepare_data()
             global_stats[i].compute.eval[j] /= NUM_RANKS;
         }
 
-        global_stats[i].au.train /= NUM_RANKS;
-        global_stats[i].au.eval /= NUM_RANKS;
         global_stats[i].throughput.train /= NUM_RANKS;
         global_stats[i].throughput.eval /= NUM_RANKS;
         global_stats[i].observed_time.train /= NUM_RANKS;
@@ -219,12 +209,15 @@ void
 print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *eval_metadata_time,
            uint64_t *eval_read_time)
 {
-
     printf("metric, value\n");
     printf("operation, dlio\n");
     printf("ranks, %d\n", NUM_RANKS);
-    //    printf("collective meta");
-    //    printf("collective data");
+    printf("read threads, %d\n", config.READ_THREADS);
+    printf("subfiling, %s\n", config.SUBFILING? "YES": "NO");
+    printf("chunking, %s\n", config.DO_CHUNKING? "YES": "NO");
+    printf("collective meta, %s\n", config.COLLECTIVE_META? "YES": "NO");
+    printf("collective data, %s\n", config.COLLECTIVE_DATA? "YES": "NO");
+
     // Train
     printf("train compute time, \"");
     uint64_t train_total_compute_time = 0;
@@ -274,26 +267,6 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
             printf(", ");
     }
     printf("\"\n");
-
-    printf("train au percentage, \"");
-    double train_au_mean_percentage = 0.0;
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        train_au_mean_percentage += global_stats[i].au.train;
-        printf("%lf", global_stats[i].au.train);
-        if (i != config.EPOCHS - 1)
-            printf(", ");
-    }
-    train_au_mean_percentage = train_au_mean_percentage / (double)config.EPOCHS;
-    printf("\"\ntrain au mean percentage, %lf\n", train_au_mean_percentage);
-    printf("train au meet expectation, %s\n", train_au_mean_percentage >= 100 * AU ? "success" : "fail");
-
-    double train_au_stdev_percentage = 0.0;
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        train_au_stdev_percentage += (global_stats[i].au.train - train_au_mean_percentage) *
-                                     (global_stats[i].au.train - train_au_mean_percentage);
-    }
-    train_au_stdev_percentage = sqrt(train_au_stdev_percentage / (double)config.EPOCHS);
-    printf("train au stdev percentage, %lf\n", train_au_stdev_percentage);
 
     printf("train throughput samples per second, \"");
     double train_throughput_mean_samples_per_second = 0.0;
@@ -374,26 +347,6 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
     }
     printf("\"\n");
 
-    printf("eval au percentage, \"");
-    double eval_au_mean_percentage = 0.0;
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        eval_au_mean_percentage += global_stats[i].au.eval;
-        printf("%lf", global_stats[i].au.eval);
-        if (i != config.EPOCHS - 1)
-            printf(", ");
-    }
-    eval_au_mean_percentage = eval_au_mean_percentage / (double)config.EPOCHS;
-    printf("\"\neval au mean percentage, %lf\n", eval_au_mean_percentage);
-    printf("eval au meet expectation, %s\n", eval_au_mean_percentage >= 100 * AU ? "success" : "fail");
-
-    double eval_au_stdev_percentage = 0.0;
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        eval_au_stdev_percentage += (global_stats[i].au.eval - eval_au_mean_percentage) *
-                                    (global_stats[i].au.eval - eval_au_mean_percentage);
-    }
-    eval_au_stdev_percentage = sqrt(eval_au_stdev_percentage / (double)config.EPOCHS);
-    printf("eval au stdev percentage, %lf\n", eval_au_stdev_percentage);
-
     printf("eval throughput samples per second, \"");
     double eval_throughput_mean_samples_per_second = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
@@ -422,6 +375,9 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
     double eval_io_stdev_MB_per_second =
         eval_throughput_stdev_samples_per_second * config.RECORD_LENGTH / 1024 / 1024;
     printf("eval io stdev MB per second, %lf\n", eval_io_stdev_MB_per_second);
+
+    // TODO: EVALUATION_TIME & PREPROCESS_TIME
+    printf("total compute time, %lf", (train_total_compute_time + eval_total_compute_time) / 1000000.0);
 }
 
 void
@@ -460,18 +416,7 @@ void
 end_train(uint32_t epoch)
 {
     uint64_t end_time           = get_time_usec();
-    uint64_t total_compute_time = 0;
-    double   au                 = 0.0;
-
-    for (int i = 0; i < TRAIN_MAX_STEPS; i++) {
-        total_compute_time += stats[epoch].compute.train[i];
-    }
-    if (total_compute_time > 0) {
-        stats[epoch].observed_time.train = end_time - stats[epoch].start_time.train;
-        au                               = (double)total_compute_time / stats[epoch].observed_time.train;
-    }
-
-    stats[epoch].au.train = au * 100;
+    stats[epoch].observed_time.train = end_time - stats[epoch].start_time.train;
     stats[epoch].throughput.train =
         (double)TRAIN_MAX_STEPS * config.BATCH_SIZE * 1000000.0 / (end_time - stats[epoch].start_time.train);
 }
@@ -486,17 +431,7 @@ void
 end_eval(uint32_t epoch)
 {
     uint64_t end_time           = get_time_usec();
-    uint64_t total_compute_time = 0;
-    double   au                 = 0.0;
-
-    for (int i = 0; i < EVAL_MAX_STEPS; i++) {
-        total_compute_time += stats[epoch].compute.eval[i];
-    }
-    if (total_compute_time > 0) {
-        stats[epoch].observed_time.eval = end_time - stats[epoch].start_time.eval;
-        au                              = (double)total_compute_time / stats[epoch].observed_time.eval;
-    }
-    stats[epoch].au.eval         = au * 100;
+    stats[epoch].observed_time.eval = end_time - stats[epoch].start_time.eval;
     stats[epoch].throughput.eval = (double)EVAL_MAX_STEPS * config.BATCH_SIZE_EVAL * 1000000.0 /
                                    (end_time - stats[epoch].start_time.eval);
 }

@@ -32,6 +32,9 @@ typedef struct config_datatype {
     bool     DO_CHUNKING;
     uint32_t CHUNK_SIZE; // should be a square number
     bool     KEEP_FILES;
+    bool COLLECTIVE_META;
+    bool COLLECTIVE_DATA;
+    bool SUBFILING;
 
     // Reader
     //    DATA_LOADER;

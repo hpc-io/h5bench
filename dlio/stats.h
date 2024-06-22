@@ -16,11 +16,6 @@ struct throughput_data {
     double eval;
 };
 
-struct au_data {
-    double train;
-    double eval;
-};
-
 struct compute_data {
     uint64_t *train;
     uint64_t *eval;
@@ -41,7 +36,6 @@ typedef struct epoch_data {
     struct load_data          load;
     struct proc_data          proc;
     struct throughput_data    throughput;
-    struct au_data            au;
     struct compute_data       compute;
     struct observed_time_data observed_time;
 } epoch_data_t;

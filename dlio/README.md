@@ -38,6 +38,9 @@ The benchmark is designed to measure the performance of training and evaluation 
 - ``--labels-dataset-name <x>``: Name of the dataset with labels [default: *labels*]
 - ``--seed-change-epoch``: Enable seed changes every epoch [default: *false*]
 - ``--read-threads``: The number of workers used to read the data [default: *4*]
+- ``--collective-meta``: Enable collective HDF5 metadata operations [default: *false*]
+- ``--collective-data``: Enable collective HDF5 data operations [default: *false*]
+- ``--subfiling``: Enable HDF5 Subfiling Virtual File Driver [default: *false*]
 
 ### Exerciser Basics
 

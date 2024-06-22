@@ -41,6 +41,9 @@ config_datatype_t config = {
     .DO_CHUNKING       = false,
     .CHUNK_SIZE        = 1024, // should be greater than 120 on CLAIX23
     .KEEP_FILES        = false,
+    .COLLECTIVE_META      = false,
+    .COLLECTIVE_DATA      = false,
+    .SUBFILING            = false,
 
     // Reader
     //    .DATA_LOADER = PYTORCH,
@@ -53,6 +56,7 @@ config_datatype_t config = {
                          //    .TRANSFER_SIZE = 262144,
     .PREPROCESS_TIME       = 0.0f,
     .PREPROCESS_TIME_STDEV = 0.000f,
+
     // Train
     .EPOCHS                 = 5,
     .COMPUTATION_TIME       = 0.323f,
@@ -269,6 +273,15 @@ parse_args(int argc, char *argv[])
         else if (strcmp(argv[i], "--read-threads") == 0) {
             i++;
             config.READ_THREADS = atoi(argv[i]);
+        }
+        else if (strcmp(argv[i], "--collective-meta") == 0) {
+            config.COLLECTIVE_META = true;
+        }
+        else if (strcmp(argv[i], "--collective-data") == 0) {
+            config.COLLECTIVE_DATA = true;
+        }
+        else if (strcmp(argv[i], "--subfiling") == 0) {
+            config.SUBFILING = true;
         }
         else {
             printf("WARNING: %s not found\n", argv[i]);
