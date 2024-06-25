@@ -7,7 +7,7 @@ on:
 
 jobs:
   h5bench:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -102,7 +102,7 @@ jobs:
 
           cmake .. \
             -DH5BENCH_ALL=ON
-          make -j 2
+          make
           sudo make install
           sudo ldconfig
 
@@ -121,7 +121,7 @@ jobs:
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
-          make -j 2
+          make
           sudo make install
           sudo ldconfig
 
