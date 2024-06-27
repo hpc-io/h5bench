@@ -47,6 +47,8 @@ typedef struct config_datatype {
                      //    unsigned int TRANSFER_SIZE;
     float PREPROCESS_TIME;
     float PREPROCESS_TIME_STDEV;
+    bool DROP_LAST;
+
     // Train
     uint32_t EPOCHS;
     float    COMPUTATION_TIME;
@@ -65,6 +67,12 @@ typedef struct config_datatype {
     char *VALID_DATA_FOLDER;
     char *RECORDS_DATASET_NAME;
     char *LABELS_DATASET_NAME;
+
+    // Internal
+    uint32_t NUM_TRAIN_BATCHES_PER_RANK;
+    uint32_t NUM_EVAL_BATCHES_PER_RANK;
+    uint32_t NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN;
+    uint32_t NUM_OF_ACTUALLY_USED_PROCESSES_EVAL;
 } config_datatype_t;
 
 extern config_datatype_t config;

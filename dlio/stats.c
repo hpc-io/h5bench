@@ -8,8 +8,6 @@
 #include "stats.h"
 #include "utils.h"
 
-uint32_t      TRAIN_MAX_STEPS;
-uint32_t      EVAL_MAX_STEPS;
 epoch_data_t *stats;
 epoch_data_t *global_stats;
 
@@ -23,56 +21,45 @@ uint32_t *last_compute_eval;
 void
 stats_initialize()
 {
-    uint32_t train_steps_count =
-        config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
-    uint32_t train_steps_count_remainder =
-        config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE * NUM_RANKS);
-    uint32_t eval_steps_count =
-        config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS;
-    uint32_t eval_steps_count_remainder =
-        config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE % (config.BATCH_SIZE_EVAL * NUM_RANKS);
-
-    TRAIN_MAX_STEPS = train_steps_count;
-    EVAL_MAX_STEPS  = eval_steps_count;
-
     //    TODO: drop_last = False
-    //    TRAIN_MAX_STEPS = train_steps_count + (train_steps_count_remainder > 0);
-    //    EVAL_MAX_STEPS = eval_steps_count + (eval_steps_count_remainder > 0);
-
     stats = (struct epoch_data *)malloc(config.EPOCHS * sizeof(struct epoch_data));
     if (stats == NULL) {
         exit(1);
     }
 
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        stats[i].load.train = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        stats[i].load.train = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].load.train == NULL) {
             exit(1);
         }
-        stats[i].load.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        stats[i].load.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].load.eval == NULL) {
             exit(1);
         }
-        stats[i].proc.train = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        stats[i].proc.train = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].proc.train == NULL) {
             exit(1);
         }
-        stats[i].proc.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        stats[i].proc.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].proc.eval == NULL) {
             exit(1);
         }
         stats[i].throughput.train = 0.0;
         stats[i].throughput.eval  = 0.0;
-        stats[i].compute.train    = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        stats[i].compute.train    = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].compute.train == NULL) {
             exit(1);
         }
-        stats[i].compute.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        stats[i].compute.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (stats[i].compute.eval == NULL) {
             exit(1);
         }
         stats[i].observed_time.train = 0;
         stats[i].observed_time.eval  = 0;
+        stats[i].metadata_time.train = 0;
+        stats[i].metadata_time.eval  = 0;
+        stats[i].raw_read_time.train = 0;
+        stats[i].raw_read_time.eval  = 0;
     }
 
     last_load_train = calloc(config.EPOCHS, sizeof(uint32_t));
@@ -140,59 +127,67 @@ prepare_data()
     }
 
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        global_stats[i].load.train = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].load.train = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].load.train == NULL) {
             exit(1);
         }
-        global_stats[i].load.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].load.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].load.eval == NULL) {
             exit(1);
         }
-        global_stats[i].proc.train = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].proc.train = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].proc.train == NULL) {
             exit(1);
         }
-        global_stats[i].proc.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].proc.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].proc.eval == NULL) {
             exit(1);
         }
-        global_stats[i].compute.train = (uint64_t *)calloc(TRAIN_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].compute.train = (uint64_t *)calloc(config.NUM_TRAIN_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].compute.train == NULL) {
             exit(1);
         }
-        global_stats[i].compute.eval = (uint64_t *)calloc(EVAL_MAX_STEPS, sizeof(uint64_t));
+        global_stats[i].compute.eval = (uint64_t *)calloc(config.NUM_EVAL_BATCHES_PER_RANK, sizeof(uint64_t));
         if (global_stats[i].compute.eval == NULL) {
             exit(1);
         }
 
-        MPI_Reduce(stats[i].load.train, global_stats[i].load.train, TRAIN_MAX_STEPS, MPI_UNSIGNED_LONG_LONG,
+        MPI_Reduce(stats[i].load.train, global_stats[i].load.train, config.NUM_TRAIN_BATCHES_PER_RANK, MPI_UNSIGNED_LONG_LONG,
                    MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(stats[i].load.eval, global_stats[i].load.eval, EVAL_MAX_STEPS, MPI_UNSIGNED_LONG_LONG,
+        MPI_Reduce(stats[i].load.eval, global_stats[i].load.eval, config.NUM_EVAL_BATCHES_PER_RANK, MPI_UNSIGNED_LONG_LONG,
                    MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(stats[i].proc.train, global_stats[i].proc.train, TRAIN_MAX_STEPS, MPI_UNSIGNED_LONG_LONG,
+        MPI_Reduce(stats[i].proc.train, global_stats[i].proc.train, config.NUM_TRAIN_BATCHES_PER_RANK, MPI_UNSIGNED_LONG_LONG,
                    MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(stats[i].proc.eval, global_stats[i].proc.eval, EVAL_MAX_STEPS, MPI_UNSIGNED_LONG_LONG,
+        MPI_Reduce(stats[i].proc.eval, global_stats[i].proc.eval, config.NUM_EVAL_BATCHES_PER_RANK, MPI_UNSIGNED_LONG_LONG,
                    MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].throughput.train, &global_stats[i].throughput.train, 1, MPI_DOUBLE, MPI_SUM, 0,
                    MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].throughput.eval, &global_stats[i].throughput.eval, 1, MPI_DOUBLE, MPI_SUM, 0,
                    MPI_COMM_WORLD);
-        MPI_Reduce(stats[i].compute.train, global_stats[i].compute.train, TRAIN_MAX_STEPS,
+        MPI_Reduce(stats[i].compute.train, global_stats[i].compute.train, config.NUM_TRAIN_BATCHES_PER_RANK,
                    MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(stats[i].compute.eval, global_stats[i].compute.eval, EVAL_MAX_STEPS,
+        MPI_Reduce(stats[i].compute.eval, global_stats[i].compute.eval, config.NUM_EVAL_BATCHES_PER_RANK,
                    MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].observed_time.train, &global_stats[i].observed_time.train, 1,
                    MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&stats[i].observed_time.eval, &global_stats[i].observed_time.eval, 1,
                    MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&stats[i].metadata_time.train, &global_stats[i].metadata_time.train, 1,
+                   MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&stats[i].metadata_time.eval, &global_stats[i].metadata_time.eval, 1,
+                   MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&stats[i].raw_read_time.train, &global_stats[i].raw_read_time.train, 1,
+                   MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&stats[i].raw_read_time.eval, &global_stats[i].raw_read_time.eval, 1,
+                   MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
-        for (int j = 0; j < TRAIN_MAX_STEPS; j++) {
+        for (int j = 0; j < config.NUM_TRAIN_BATCHES_PER_RANK; j++) {
             global_stats[i].load.train[j] /= NUM_RANKS;
             global_stats[i].proc.train[j] /= NUM_RANKS;
             global_stats[i].compute.train[j] /= NUM_RANKS;
         }
 
-        for (int j = 0; j < EVAL_MAX_STEPS; j++) {
+        for (int j = 0; j < config.NUM_EVAL_BATCHES_PER_RANK; j++) {
             global_stats[i].load.eval[j] /= NUM_RANKS;
             global_stats[i].proc.eval[j] /= NUM_RANKS;
             global_stats[i].compute.eval[j] /= NUM_RANKS;
@@ -202,12 +197,24 @@ prepare_data()
         global_stats[i].throughput.eval /= NUM_RANKS;
         global_stats[i].observed_time.train /= NUM_RANKS;
         global_stats[i].observed_time.eval /= NUM_RANKS;
+        global_stats[i].metadata_time.train /= NUM_RANKS;
+        global_stats[i].metadata_time.eval /= NUM_RANKS;
+        global_stats[i].raw_read_time.train /= NUM_RANKS;
+        global_stats[i].raw_read_time.eval /= NUM_RANKS;
+
+//        if (config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN > 0) {
+//            global_stats[i].metadata_time.train /= config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN;
+//            global_stats[i].raw_read_time.train /= config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN;
+//        }
+//        if (config.NUM_OF_ACTUALLY_USED_PROCESSES_EVAL > 0) {
+//            global_stats[i].metadata_time.eval /= config.NUM_OF_ACTUALLY_USED_PROCESSES_EVAL;
+//            global_stats[i].raw_read_time.eval /= config.NUM_OF_ACTUALLY_USED_PROCESSES_EVAL;
+//        }
     }
 }
 
 void
-print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *eval_metadata_time,
-           uint64_t *eval_read_time)
+print_data()
 {
     printf("metric, value\n");
     printf("operation, dlio\n");
@@ -219,11 +226,17 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
     printf("collective data, %s\n", config.COLLECTIVE_DATA ? "YES" : "NO");
 
     // Train
-    printf("train compute time, \"");
+    // TODO: drop_last = false
+    uint64_t train_total_size_bytes = (uint64_t)config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS * config.BATCH_SIZE * config.RECORD_LENGTH;
+    printf("train total size, %" PRId64 "\n", train_total_size_bytes);
+    uint64_t train_size_bytes_per_rank = (uint64_t)config.NUM_TRAIN_BATCHES_PER_RANK * config.BATCH_SIZE * config.RECORD_LENGTH;
+    printf("train size per rank, %" PRId64 "\n", train_size_bytes_per_rank);
+
+    printf("train emulated compute time per epoch, \"");
     uint64_t train_total_compute_time = 0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         unsigned long int compute_time = 0;
-        for (uint32_t j = 0; j < TRAIN_MAX_STEPS; j++) {
+        for (uint32_t j = 0; j < config.NUM_TRAIN_BATCHES_PER_RANK; j++) {
             compute_time += global_stats[i].compute.train[j];
         }
         train_total_compute_time += compute_time;
@@ -231,20 +244,43 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\ntrain total compute time, %lf\n", train_total_compute_time / 1000000.0);
+    printf("\"\ntrain emulated compute time, %lf\n", train_total_compute_time / 1000000.0);
 
-    // TODO: drop_last = False
-    uint64_t train_total_batches = (uint64_t)config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE /
-                                   config.BATCH_SIZE / NUM_RANKS * NUM_RANKS;
-    uint64_t train_total_size_bytes =
-        train_total_batches * config.BATCH_SIZE_EVAL * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
-    printf("train total size, %lu\n", train_total_size_bytes);
+    printf("train metadata time per epoch, \"");
+    double train_total_metadata_time = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double metadata_time = stats[i].metadata_time.train / 1000000.0;
+        train_total_metadata_time += metadata_time;
+        printf("%lf", metadata_time);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
 
-    printf("train total metadata time, %lf\n", *train_metadata_time / 1000000.0);
-    printf("train total raw read time, %lf\n", *train_read_time / 1000000.0);
-    printf("train total raw read rate, %lf\n", (double)train_total_size_bytes / *train_read_time * 1000000.0);
+    printf("\"\ntrain metadata time, %lf\n", train_total_metadata_time);
 
-    printf("train observed time, \"");
+    printf("train raw read time per epoch, \"");
+    double train_total_read_time = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double read_time = stats[i].raw_read_time.train / 1000000.0;
+        train_total_read_time += read_time;
+        printf("%lf", read_time);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
+    printf("\"\ntrain total raw read time, %lf\n", train_total_read_time);
+
+    printf("train raw read rate per epoch, \"");
+    double train_total_avg_read_rate = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double read_rate = (double)train_size_bytes_per_rank / stats[i].raw_read_time.train * 1000000.0;
+        train_total_avg_read_rate += read_rate;
+        printf("%lf", read_rate);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
+    printf("\"\ntrain avg raw read rate, %lf\n", train_total_avg_read_rate / config.EPOCHS);
+
+    printf("train observed time per epoch, \"");
     double train_total_observed_time = 0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         double observed_time = global_stats[i].observed_time.train / 1000000.0;
@@ -253,22 +289,25 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\ntrain total observed time, %lf\n", train_total_observed_time);
+    printf("\"\ntrain observed time, %lf\n", train_total_observed_time);
 
-    printf("train observed rate, \"");
+    printf("train observed rate per epoch, \"");
+    double train_total_avg_observed_rate = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         unsigned long int compute_time = 0;
-        for (uint32_t j = 0; j < TRAIN_MAX_STEPS; j++) {
+        for (uint32_t j = 0; j < config.NUM_TRAIN_BATCHES_PER_RANK; j++) {
             compute_time += global_stats[i].compute.train[j];
         }
-        printf("%lf", (double)train_total_size_bytes / (global_stats[i].observed_time.train - compute_time) *
-                          1000000.0);
+        double observed_rate = (double)train_size_bytes_per_rank / (global_stats[i].observed_time.train - compute_time) *
+                               1000000.0;
+        train_total_avg_observed_rate += observed_rate;
+        printf("%lf", observed_rate);
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\n");
+    printf("\"\ntrain avg observed rate, %lf\n", train_total_avg_observed_rate / config.EPOCHS);
 
-    printf("train throughput samples per second, \"");
+    printf("train throughput samples per second per epoch, \"");
     double train_throughput_mean_samples_per_second = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         train_throughput_mean_samples_per_second += global_stats[i].throughput.train;
@@ -278,7 +317,7 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
     }
     train_throughput_mean_samples_per_second =
         train_throughput_mean_samples_per_second / (double)config.EPOCHS;
-    printf("\"\ntrain throughput mean samples per second, %lf\n", train_throughput_mean_samples_per_second);
+    printf("\"\ntrain throughput avg samples per second, %lf\n", train_throughput_mean_samples_per_second);
 
     double train_throughput_stdev_samples_per_second = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
@@ -292,18 +331,24 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
 
     double train_io_mean_MB_per_second =
         train_throughput_mean_samples_per_second * config.RECORD_LENGTH / 1024 / 1024;
-    printf("train io mean MB per second, %lf\n", train_io_mean_MB_per_second);
+    printf("train io avg MB per second, %lf\n", train_io_mean_MB_per_second);
 
     double train_io_stdev_MB_per_second =
         train_throughput_stdev_samples_per_second * config.RECORD_LENGTH / 1024 / 1024;
     printf("train io stdev MB per second, %lf\n", train_io_stdev_MB_per_second);
 
     // Evaluation
-    printf("eval compute time, \"");
+    // TODO: drop_last = False
+    uint64_t eval_total_size_bytes = (uint64_t)config.NUM_EVAL_BATCHES_PER_RANK * NUM_RANKS * config.BATCH_SIZE_EVAL * config.RECORD_LENGTH;
+    printf("eval total size, %" PRId64 "\n", eval_total_size_bytes);
+    uint64_t eval_size_bytes_per_rank = (uint64_t)config.NUM_EVAL_BATCHES_PER_RANK * config.BATCH_SIZE_EVAL * config.RECORD_LENGTH;
+    printf("eval size per rank, %" PRId64 "\n", eval_size_bytes_per_rank);
+
+    printf("eval emulated compute time per epoch, \"");
     uint64_t eval_total_compute_time = 0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         unsigned long int compute_time = 0;
-        for (uint32_t j = 0; j < EVAL_MAX_STEPS; j++) {
+        for (uint32_t j = 0; j < config.NUM_EVAL_BATCHES_PER_RANK; j++) {
             compute_time += global_stats[i].compute.eval[j];
         }
         eval_total_compute_time += compute_time;
@@ -311,19 +356,43 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\neval total compute time, %lf\n", eval_total_compute_time / 1000000.0);
-    // TODO: drop_last = False
-    uint64_t eval_total_batches = (uint64_t)config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE /
-                                  config.BATCH_SIZE_EVAL / NUM_RANKS * NUM_RANKS;
-    uint64_t eval_total_size_bytes =
-        eval_total_batches * config.BATCH_SIZE_EVAL * config.NUM_SAMPLES_PER_FILE * config.RECORD_LENGTH;
-    printf("eval total size, %lu\n", eval_total_size_bytes);
+    printf("\"\neval emulated compute time, %lf\n", eval_total_compute_time / 1000000.0);
 
-    printf("eval metadata time, %lf\n", *eval_metadata_time / 1000000.0);
-    printf("eval raw read time, %lf\n", *eval_read_time / 1000000.0);
-    printf("eval raw read rate, %lf\n", (double)eval_total_size_bytes / *eval_read_time * 1000000.0);
+    printf("eval metadata time per epoch, \"");
+    double eval_total_metadata_time = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double metadata_time = stats[i].metadata_time.eval / 1000000.0;
+        eval_total_metadata_time += metadata_time;
+        printf("%lf", metadata_time);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
 
-    printf("eval observed time, \"");
+    printf("\"\neval metadata time, %lf\n", eval_total_metadata_time);
+
+    printf("eval raw read time per epoch, \"");
+    double eval_total_read_time = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double read_time = stats[i].raw_read_time.eval / 1000000.0;
+        eval_total_read_time += read_time;
+        printf("%lf", read_time);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
+    printf("\"\neval total raw read time, %lf\n", eval_total_read_time);
+
+    printf("eval raw read rate per epoch, \"");
+    double eval_total_avg_read_rate = 0;
+    for (uint32_t i = 0; i < config.EPOCHS; i++) {
+        double read_rate = (double)eval_size_bytes_per_rank / stats[i].raw_read_time.eval * 1000000.0;
+        eval_total_avg_read_rate += read_rate;
+        printf("%lf", read_rate);
+        if (i != config.EPOCHS - 1)
+            printf(", ");
+    }
+    printf("\"\neval avg raw read rate, %lf\n", eval_total_avg_read_rate / config.EPOCHS);
+
+    printf("eval observed time per epoch, \"");
     double eval_total_observed_time = 0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         double observed_time = global_stats[i].observed_time.eval / 1000000.0;
@@ -332,22 +401,25 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\neval total observed time, %lf\n", eval_total_observed_time);
+    printf("\"\neval observed time, %lf\n", eval_total_observed_time);
 
-    printf("eval observed rate, \"");
+    printf("eval observed rate per epoch, \"");
+    double eval_total_avg_observed_rate = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         unsigned long compute_time = 0;
-        for (uint32_t j = 0; j < EVAL_MAX_STEPS; j++) {
+        for (uint32_t j = 0; j < config.NUM_EVAL_BATCHES_PER_RANK; j++) {
             compute_time += global_stats[i].compute.eval[j];
         }
-        printf("%lf", (double)eval_total_size_bytes / (global_stats[i].observed_time.eval - compute_time) *
-                          1000000.0);
+        double observed_rate = (double)eval_size_bytes_per_rank / (global_stats[i].observed_time.eval - compute_time) *
+                               1000000.0;
+        eval_total_avg_observed_rate += observed_rate;
+        printf("%lf", observed_rate);
         if (i != config.EPOCHS - 1)
             printf(", ");
     }
-    printf("\"\n");
+    printf("\"\neval avg observed rate, %lf\n", eval_total_avg_observed_rate / config.EPOCHS);
 
-    printf("eval throughput samples per second, \"");
+    printf("eval throughput samples per second per epoch, \"");
     double eval_throughput_mean_samples_per_second = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
         eval_throughput_mean_samples_per_second += global_stats[i].throughput.eval;
@@ -356,7 +428,7 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
             printf(", ");
     }
     eval_throughput_mean_samples_per_second = eval_throughput_mean_samples_per_second / (double)config.EPOCHS;
-    printf("\"\neval throughput mean samples per second, %lf\n", eval_throughput_mean_samples_per_second);
+    printf("\"\neval throughput avg samples per second, %lf\n", eval_throughput_mean_samples_per_second);
 
     double eval_throughput_stdev_samples_per_second = 0.0;
     for (uint32_t i = 0; i < config.EPOCHS; i++) {
@@ -370,14 +442,11 @@ print_data(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *e
 
     double eval_io_mean_MB_per_second =
         eval_throughput_mean_samples_per_second * config.RECORD_LENGTH / 1024 / 1024;
-    printf("eval io mean MB per second, %lf\n", eval_io_mean_MB_per_second);
+    printf("eval io avg MB per second, %lf\n", eval_io_mean_MB_per_second);
 
     double eval_io_stdev_MB_per_second =
         eval_throughput_stdev_samples_per_second * config.RECORD_LENGTH / 1024 / 1024;
     printf("eval io stdev MB per second, %lf\n", eval_io_stdev_MB_per_second);
-
-    // TODO: EVALUATION_TIME & PREPROCESS_TIME
-    printf("total compute time, %lf", (train_total_compute_time + eval_total_compute_time) / 1000000.0);
 }
 
 void
@@ -413,12 +482,14 @@ start_train(uint32_t epoch)
 }
 
 void
-end_train(uint32_t epoch)
+end_train(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
 {
     uint64_t end_time                = get_time_usec();
     stats[epoch].observed_time.train = end_time - stats[epoch].start_time.train;
     stats[epoch].throughput.train =
-        (double)TRAIN_MAX_STEPS * config.BATCH_SIZE * 1000000.0 / (end_time - stats[epoch].start_time.train);
+        (double)config.NUM_TRAIN_BATCHES_PER_RANK * config.BATCH_SIZE * 1000000.0 / (end_time - stats[epoch].start_time.train);
+    stats[epoch].metadata_time.train = metadata_time;
+    stats[epoch].raw_read_time.train = read_time;
 }
 
 void
@@ -428,10 +499,12 @@ start_eval(uint32_t epoch)
 }
 
 void
-end_eval(uint32_t epoch)
+end_eval(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
 {
     uint64_t end_time               = get_time_usec();
     stats[epoch].observed_time.eval = end_time - stats[epoch].start_time.eval;
-    stats[epoch].throughput.eval    = (double)EVAL_MAX_STEPS * config.BATCH_SIZE_EVAL * 1000000.0 /
+    stats[epoch].throughput.eval    = (double)config.NUM_EVAL_BATCHES_PER_RANK * config.BATCH_SIZE_EVAL * 1000000.0 /
                                    (end_time - stats[epoch].start_time.eval);
+    stats[epoch].metadata_time.eval = metadata_time;
+    stats[epoch].raw_read_time.eval = read_time;
 }

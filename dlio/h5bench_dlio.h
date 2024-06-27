@@ -24,19 +24,16 @@ void eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_met
 
 void eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out);
 
-void eval(uint32_t epoch, uint32_t *indices, uint64_t *local_eval_metadata_time,
-          uint64_t *local_eval_read_time, bool enable_multiprocessing);
+void eval(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing);
 
 void train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out,
                            uint64_t *local_read_time_out);
 
 void train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out);
 
-void train(uint32_t epoch, uint32_t *indices, uint64_t *local_train_metadata_time,
-           uint64_t *local_train_read_time, bool enable_multiprocessing);
+void train(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing);
 
-void run(uint64_t *train_metadata_time, uint64_t *train_read_time, uint64_t *eval_metadata_time,
-         uint64_t *eval_read_time);
+void run();
 
 void init_global_variables();
 

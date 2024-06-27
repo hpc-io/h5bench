@@ -56,6 +56,7 @@ config_datatype_t config = {
                          //    .TRANSFER_SIZE = 262144,
     .PREPROCESS_TIME       = 0.0f,
     .PREPROCESS_TIME_STDEV = 0.000f,
+    .DROP_LAST             = true,
 
     // Train
     .EPOCHS                 = 5,
@@ -75,6 +76,12 @@ config_datatype_t config = {
     .VALID_DATA_FOLDER    = "valid",
     .RECORDS_DATASET_NAME = "records",
     .LABELS_DATASET_NAME  = "labels",
+
+    // Internal
+    .NUM_TRAIN_BATCHES_PER_RANK = 0,
+    .NUM_EVAL_BATCHES_PER_RANK = 0,
+    .NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = 0,
+    .NUM_OF_ACTUALLY_USED_PROCESSES_EVAL = 0,
 };
 
 void
@@ -282,6 +289,9 @@ parse_args(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "--subfiling") == 0) {
             config.SUBFILING = true;
+        }
+        else if (strcmp(argv[i], "--drop-last") == 0) {
+            config.DROP_LAST = true;
         }
         else {
             printf("WARNING: %s not found\n", argv[i]);
