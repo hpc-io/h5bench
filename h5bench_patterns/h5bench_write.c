@@ -53,9 +53,12 @@
 #include "H5FDioc.h"
 #endif
 #define DIM_MAX 3
+
 #define H5Z_FILTER_ZFP 32013
 #define H5Z_FILTER_SZ 32017
 #define H5Z_FILTER_SZ3 32024
+
+#define ABS 0
 
 herr_t ierr;
 
@@ -890,6 +893,10 @@ set_globals(const bench_params *params)
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         assert(COMPRESS_INFO.dcpl_id > 0);
 
+		// Set shuffle filter prior to any compression filters
+		ret = H5Pset_shuffle(COMPRESS_INFO.dcpl_id);
+		assert(ret >= 0);
+
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
         assert(ret >= 0);
@@ -914,6 +921,8 @@ set_globals(const bench_params *params)
 			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ, H5Z_FLAG_MANDATORY, 0, NULL);
 		}
 		else if (params->compress_filter == SZ3) {
+			// unsigned int cd_values[3];
+			// cd_values[0] = ABS;
 			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_MANDATORY, 0, NULL);	
 		}
 		else if (params->compress_filter == ZFP) {
@@ -1192,11 +1201,6 @@ main(int argc, char *argv[])
         printf("H5Fcreate() time: %.3f s\n", fcreate_time_s);
 
         float flush_time_s = (float)(tflush_end - tflush_start) / (1000.0 * 1000.0);
-        printf("H5Fflush() time: %.3f s\n", flush_time_s);
-
-        float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000.0 * 1000.0);
-        printf("H5Fclose() time: %.3f s\n", fclose_time_s);
-
         float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
         printf("Observed completion time: %.3f s\n", oct_s);
 
