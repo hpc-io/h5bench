@@ -1201,6 +1201,11 @@ main(int argc, char *argv[])
         printf("H5Fcreate() time: %.3f s\n", fcreate_time_s);
 
         float flush_time_s = (float)(tflush_end - tflush_start) / (1000.0 * 1000.0);
+		printf("H5Fflush() time: %.3f s\n", flush_time_s);
+
+        float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000.0 * 1000.0);
+        printf("H5Fclose() time: %.3f s\n", fclose_time_s);
+
         float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
         printf("Observed completion time: %.3f s\n", oct_s);
 
