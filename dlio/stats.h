@@ -39,7 +39,6 @@ struct metadata_time_data {
     uint64_t eval;
 };
 
-
 struct raw_read_time_data {
     uint64_t train;
     uint64_t eval;
