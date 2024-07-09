@@ -44,7 +44,6 @@ config_datatype_t config = {
     .COLLECTIVE_META   = false,
     .COLLECTIVE_DATA   = false,
     .SUBFILING         = false,
-    //    .ASYNC_MODE        = false,
 
     // Reader
     //    .DATA_LOADER = PYTORCH,
@@ -295,9 +294,6 @@ parse_args(int argc, char *argv[])
         else if (strcmp(argv[i], "--drop-last") == 0) {
             config.DROP_LAST = true;
         }
-        //        else if (strcmp(argv[i], "--async-mode") == 0) {
-        //            config.ASYNC_MODE = true;
-        //        }
         else if (strcmp(argv[i], "--csv-file") == 0) {
             i++;
             config.CSV_FILE = argv[i];

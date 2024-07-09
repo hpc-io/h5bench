@@ -32,7 +32,6 @@ typedef struct config_datatype {
     bool     COLLECTIVE_META;
     bool     COLLECTIVE_DATA;
     bool     SUBFILING;
-    //    bool     ASYNC_MODE;
 
     // Reader
     //    DATA_LOADER;
