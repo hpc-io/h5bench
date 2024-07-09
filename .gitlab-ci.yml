@@ -80,6 +80,9 @@ test-perlmutter:
         - echo "Test h5bench SYNC openpmd"
         - python3 ../../samples/update-perlmutter.py ../../samples/sync-openpmd.json
         - ./h5bench --debug --abort-on-failure ../../samples/sync-openpmd.json
+        - echo "Test h5bench SYNC dlio"
+        - python3 ../../samples/update-perlmutter.py ../../samples/sync-dlio.json
+        - ./h5bench --debug --abort-on-failure ../../samples/sync-dlio.json
 
 build-perlmutter-metrics:
     stage: build

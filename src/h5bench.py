@@ -1039,6 +1039,7 @@ class H5bench:
 
             sys.exit(os.EX_SOFTWARE)
 
+
 def main():
     PARSER = argparse.ArgumentParser(
         description='H5bench: a Parallel I/O Benchmark Suite for HDF5: '

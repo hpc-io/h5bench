@@ -52,4 +52,12 @@ if(Python3_Interpreter_FOUND)
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		)
 	endif()
+
+	if(H5BENCH_DLIO)
+		add_test(
+				NAME "h5bench-sync-dlio"
+				COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_sync_dlio.py
+				WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		)
+	endif()
 endif()
