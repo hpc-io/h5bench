@@ -256,7 +256,7 @@ jobs:
         run: |
           export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
           
-          cd build-sync
+          cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-dlio.json
 
       - name: Setup tmate session
