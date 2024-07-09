@@ -79,10 +79,10 @@ config_datatype_t config = {
     .CSV_FILE             = "output.csv",
 
     // Internal
-    .NUM_TRAIN_BATCHES_PER_RANK = 0,
-    .NUM_EVAL_BATCHES_PER_RANK = 0,
+    .NUM_TRAIN_BATCHES_PER_RANK           = 0,
+    .NUM_EVAL_BATCHES_PER_RANK            = 0,
     .NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = 0,
-    .NUM_OF_ACTUALLY_USED_PROCESSES_EVAL = 0,
+    .NUM_OF_ACTUALLY_USED_PROCESSES_EVAL  = 0,
 };
 
 void
@@ -294,9 +294,9 @@ parse_args(int argc, char *argv[])
         else if (strcmp(argv[i], "--drop-last") == 0) {
             config.DROP_LAST = true;
         }
-//        else if (strcmp(argv[i], "--async-mode") == 0) {
-//            config.ASYNC_MODE = true;
-//        }
+        //        else if (strcmp(argv[i], "--async-mode") == 0) {
+        //            config.ASYNC_MODE = true;
+        //        }
         else if (strcmp(argv[i], "--output") == 0) {
             i++;
             config.CSV_FILE = argv[i];

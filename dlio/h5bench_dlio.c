@@ -137,8 +137,8 @@ generate_data()
     for (uint32_t i = from; i < config.NUM_FILES_TRAIN; i += increment) {
         srand(config.RANDOM_SEED + i);
 
-//        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
-//            printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
+        //        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+        //            printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_TRAIN);
@@ -149,8 +149,8 @@ generate_data()
     for (uint32_t i = from; i < config.NUM_FILES_EVAL; i += increment) {
         srand(config.RANDOM_SEED + config.NUM_FILES_TRAIN + i);
 
-//        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
-//            printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
+        //        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+        //            printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.VALID_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_EVAL);
@@ -300,7 +300,9 @@ eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *
     uint32_t offset = MY_RANK * config.NUM_EVAL_BATCHES_PER_RANK;
 
     for (uint32_t i = 0;
-         i < (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK : config.READ_THREADS); i++) {
+         i < (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK
+                                                                     : config.READ_THREADS);
+         i++) {
         int32_t batch = offset + i;
         write(get_eval_write_fd(), &batch, sizeof(batch));
     }
@@ -324,7 +326,9 @@ eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *
     }
 
     for (uint32_t i = 0;
-         i < (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK : config.READ_THREADS); i++) {
+         i < (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK
+                                                                     : config.READ_THREADS);
+         i++) {
         execution_time_t data_from_child_process;
         uint64_t         t0 = get_time_usec_return_uint64();
         read(get_eval_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
@@ -515,8 +519,8 @@ run()
         indices_eval[i] = i;
     }
 
-    uint32_t next_eval_epoch    = config.EPOCHS_BETWEEN_EVALS;
-    bool enable_multiprocessing = config.READ_THREADS > 0;
+    uint32_t next_eval_epoch        = config.EPOCHS_BETWEEN_EVALS;
+    bool     enable_multiprocessing = config.READ_THREADS > 0;
     if (enable_multiprocessing) {
         init_workers(indices_train, indices_eval);
     }
@@ -524,13 +528,15 @@ run()
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (uint32_t epoch = 0; epoch < config.EPOCHS; epoch++) {
-        if (MY_RANK == 0) printf("Starting epoch %u...\n", epoch + 1);
+        if (MY_RANK == 0)
+            printf("Starting epoch %u...\n", epoch + 1);
 
         train(epoch, indices_train, enable_multiprocessing);
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (config.DO_EVALUATION && (epoch + 1 >= next_eval_epoch)) {
-            if (MY_RANK == 0) printf("Starting evaluation...\n");
+            if (MY_RANK == 0)
+                printf("Starting evaluation...\n");
             eval(epoch, indices_eval, enable_multiprocessing);
             next_eval_epoch += config.EPOCHS_BETWEEN_EVALS;
             MPI_Barrier(MPI_COMM_WORLD);
@@ -574,11 +580,17 @@ init_global_variables()
     uint32_t data_length = config.RECORD_LENGTH * config.NUM_SAMPLES_PER_FILE;
     GENERATION_SIZE      = data_length > GENERATION_BUFFER_SIZE ? GENERATION_BUFFER_SIZE : data_length;
 
-    config.NUM_TRAIN_BATCHES_PER_RANK = config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE;
-    config.NUM_EVAL_BATCHES_PER_RANK = config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE_EVAL;
+    config.NUM_TRAIN_BATCHES_PER_RANK =
+        config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE;
+    config.NUM_EVAL_BATCHES_PER_RANK =
+        config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE_EVAL;
 
-    config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK ? config.NUM_TRAIN_BATCHES_PER_RANK : config.READ_THREADS;
-    config.NUM_OF_ACTUALLY_USED_PROCESSES_EVAL = config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK : config.READ_THREADS;
+    config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK
+                                                      ? config.NUM_TRAIN_BATCHES_PER_RANK
+                                                      : config.READ_THREADS;
+    config.NUM_OF_ACTUALLY_USED_PROCESSES_EVAL = config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK
+                                                     ? config.NUM_EVAL_BATCHES_PER_RANK
+                                                     : config.READ_THREADS;
 
     srand(config.RANDOM_SEED);
 
@@ -659,11 +671,15 @@ init_global_variables()
     if (MY_RANK == 0) {
         printf("The number of training batches per rank: %u\n", config.NUM_TRAIN_BATCHES_PER_RANK);
         if (config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK) {
-            printf("Warning: The number of requested read threads (%u) is greater than the number of training batches per rank (%u)!\n", config.READ_THREADS, config.NUM_TRAIN_BATCHES_PER_RANK);
+            printf("Warning: The number of requested read threads (%u) is greater than the number of "
+                   "training batches per rank (%u)!\n",
+                   config.READ_THREADS, config.NUM_TRAIN_BATCHES_PER_RANK);
         }
         printf("The number of evaluation batches per rank: %u\n", config.NUM_EVAL_BATCHES_PER_RANK);
         if (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK) {
-            printf("Warning: The number of requested read threads (%u) is greater than the number of evaluation batches per rank (%u)!\n", config.READ_THREADS, config.NUM_EVAL_BATCHES_PER_RANK);
+            printf("Warning: The number of requested read threads (%u) is greater than the number of "
+                   "evaluation batches per rank (%u)!\n",
+                   config.READ_THREADS, config.NUM_EVAL_BATCHES_PER_RANK);
         }
     }
 }

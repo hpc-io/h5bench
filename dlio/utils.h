@@ -32,7 +32,7 @@ typedef struct config_datatype {
     bool     COLLECTIVE_META;
     bool     COLLECTIVE_DATA;
     bool     SUBFILING;
-//    bool     ASYNC_MODE;
+    //    bool     ASYNC_MODE;
 
     // Reader
     //    DATA_LOADER;
@@ -45,7 +45,7 @@ typedef struct config_datatype {
                      //    unsigned int TRANSFER_SIZE;
     float PREPROCESS_TIME;
     float PREPROCESS_TIME_STDEV;
-    bool DROP_LAST;
+    bool  DROP_LAST;
 
     // Train
     uint32_t EPOCHS;
