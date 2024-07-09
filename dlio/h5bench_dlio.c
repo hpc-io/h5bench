@@ -608,7 +608,9 @@ init_global_variables()
     if (config.SUBFILING) {
         if (MY_RANK == 0)
             printf("Using Subfiling VFD\n");
+#ifdef HAVE_SUBFILING
         H5Pset_fapl_subfiling(FAPL, NULL);
+#endif
         if (config.COLLECTIVE_DATA) {
             if (MY_RANK == 0)
                 printf("Warning: Collective mode can't be used with subfiling\n");
