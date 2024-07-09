@@ -12,7 +12,7 @@
 #include "utils.h"
 
 uint64_t
-get_time_usec()
+get_time_usec_return_uint64()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -76,6 +76,7 @@ config_datatype_t config = {
     .VALID_DATA_FOLDER    = "valid",
     .RECORDS_DATASET_NAME = "records",
     .LABELS_DATASET_NAME  = "labels",
+    .CSV_FILE             = "output.csv",
 
     // Internal
     .NUM_TRAIN_BATCHES_PER_RANK = 0,
@@ -292,6 +293,13 @@ parse_args(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "--drop-last") == 0) {
             config.DROP_LAST = true;
+        }
+//        else if (strcmp(argv[i], "--async-mode") == 0) {
+//            config.ASYNC_MODE = true;
+//        }
+        else if (strcmp(argv[i], "--output") == 0) {
+            i++;
+            config.CSV_FILE = argv[i];
         }
         else {
             printf("WARNING: %s not found\n", argv[i]);

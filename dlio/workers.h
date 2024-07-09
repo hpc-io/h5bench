@@ -2,6 +2,7 @@
 #define H5BENCH_WORKERS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct execution_time {
     uint64_t metadata_time;

@@ -7,6 +7,7 @@
 
 #ifndef COMMONS_H5BENCH_UTIL_H_
 #define COMMONS_H5BENCH_UTIL_H_
+#include <hdf5.h>
 
 #define DEBUG_PRINT                                                                                          \
     printf("%s:%d\n", __func__, __LINE__);                                                                   \

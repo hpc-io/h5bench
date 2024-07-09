@@ -1,17 +1,3 @@
-// TODO:
-// - Add logging
-// - Add vol-async support
-// - Add subfiling settings
-// - Add more DLIO features
-// - Add more data loaders: Tensorflow & dali
-// - Add prefetcher configuration?
-// - Add computation_threads only for Tensorflow
-// - Add file shuffle configuration
-// - Add more compression filters
-// - Add drop_last = False setting
-// - Replace fork() with MPI_Comm_spawn()
-// - Add Cache VOL connector support
-
 #include <assert.h>
 #include <hdf5.h>
 #include <math.h>
@@ -122,6 +108,12 @@ generate_file(const char *file_name, hid_t labels_filespace, hid_t labels_memspa
 void
 generate_data()
 {
+    if (MY_RANK == 0) {
+        printf("Starting data generation\n");
+        printf("Number of files for training dataset: %u\n", config.NUM_FILES_TRAIN);
+        printf("Number of files for evaluation dataset: %u\n", config.NUM_FILES_EVAL);
+    }
+
     hsize_t labels_dims[1]   = {config.NUM_SAMPLES_PER_FILE};
     hid_t   labels_filespace = H5Screate_simple(1, labels_dims, NULL);
     assert(labels_filespace >= 0);
@@ -145,8 +137,8 @@ generate_data()
     for (uint32_t i = from; i < config.NUM_FILES_TRAIN; i += increment) {
         srand(config.RANDOM_SEED + i);
 
-        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
-            printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
+//        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+//            printf("Generate train file %u / %u\n", i + 1, config.NUM_FILES_TRAIN);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_TRAIN);
@@ -157,8 +149,8 @@ generate_data()
     for (uint32_t i = from; i < config.NUM_FILES_EVAL; i += increment) {
         srand(config.RANDOM_SEED + config.NUM_FILES_TRAIN + i);
 
-        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
-            printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
+//        if (!config.SUBFILING || config.SUBFILING && (MY_RANK == 0))
+//            printf("Generate valid file %u / %u\n", i + 1, config.NUM_FILES_EVAL);
         char file_name[256];
         snprintf(file_name, sizeof(file_name), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
                  config.VALID_DATA_FOLDER, config.FILE_PREFIX, i + 1, config.NUM_FILES_EVAL);
@@ -171,6 +163,10 @@ generate_data()
     H5Sclose(records_memspace);
     H5Sclose(extra_records_memspace);
     H5Sclose(records_filespace);
+
+    if (MY_RANK == 0) {
+        printf("Generation done\n");
+    }
 }
 
 void
@@ -179,13 +175,13 @@ read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time_out,
     hsize_t offset[3] = {sample, 0, 0};
     hsize_t count[3]  = {1, DIM, DIM};
 
-    uint64_t t1         = get_time_usec();
+    uint64_t t1         = get_time_usec_return_uint64();
     hid_t    file_id    = H5Fopen(file_path, H5F_ACC_RDONLY, FAPL);
     hid_t    dataset_id = H5Dopen(file_id, config.RECORDS_DATASET_NAME, DAPL);
     hid_t    filespace  = H5Dget_space(dataset_id);
     hid_t    memspace   = H5Screate_simple(3, count, NULL);
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    uint64_t t2 = get_time_usec();
+    uint64_t t2 = get_time_usec_return_uint64();
     assert(file_id >= 0);
     assert(dataset_id >= 0);
     assert(filespace >= 0);
@@ -196,19 +192,19 @@ read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time_out,
         exit(1);
     }
 
-    uint64_t t3     = get_time_usec();
+    uint64_t t3     = get_time_usec_return_uint64();
     herr_t   status = H5Dread(dataset_id, H5T_STD_U8LE, memspace, filespace, DXPL, data);
-    uint64_t t4     = get_time_usec();
+    uint64_t t4     = get_time_usec_return_uint64();
     assert(status >= 0);
 
     free(data); // TODO: free memory only after compute() call?
 
-    uint64_t t5 = get_time_usec();
+    uint64_t t5 = get_time_usec_return_uint64();
     H5Sclose(memspace);
     H5Sclose(filespace);
     H5Dclose(dataset_id);
     H5Fclose(file_id);
-    uint64_t t6 = get_time_usec();
+    uint64_t t6 = get_time_usec_return_uint64();
 
     *metadata_time_out = (t2 - t1) + (t6 - t5);
     *read_time_out     = t4 - t3;
@@ -233,7 +229,7 @@ eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata
 {
     uint32_t offset = MY_RANK * config.NUM_EVAL_BATCHES_PER_RANK;
 
-    uint64_t t0 = get_time_usec();
+    uint64_t t0 = get_time_usec_return_uint64();
     for (uint32_t i = 0; i < config.NUM_EVAL_BATCHES_PER_RANK; i++) {
         for (uint32_t j = 0; j < config.BATCH_SIZE_EVAL; j++) {
             uint32_t file_num =
@@ -257,7 +253,7 @@ eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata
         batch_processed_eval(epoch, t, t0);
         MPI_Barrier(MPI_COMM_WORLD);
 
-        t0 = get_time_usec();
+        t0 = get_time_usec_return_uint64();
     }
 
     //    TODO: drop_data = False
@@ -284,7 +280,7 @@ eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata
     //            batch_processed_eval(epoch, t, t0);
     //            read_counter = 0;
     //
-    //            t0 = get_time_usec();
+    //            t0 = get_time_usec_return_uint64();
     //        }
     //    }
     //
@@ -311,7 +307,7 @@ eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *
 
     for (uint32_t i = config.READ_THREADS; i < config.NUM_EVAL_BATCHES_PER_RANK; i++) {
         execution_time_t data_from_child_process;
-        uint64_t         t0 = get_time_usec();
+        uint64_t         t0 = get_time_usec_return_uint64();
         read(get_eval_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
 
         batch_loaded_eval(epoch, t0);
@@ -330,7 +326,7 @@ eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *
     for (uint32_t i = 0;
          i < (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK ? config.NUM_EVAL_BATCHES_PER_RANK : config.READ_THREADS); i++) {
         execution_time_t data_from_child_process;
-        uint64_t         t0 = get_time_usec();
+        uint64_t         t0 = get_time_usec_return_uint64();
         read(get_eval_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
 
         batch_loaded_eval(epoch, t0);
@@ -371,7 +367,7 @@ train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadat
 {
     uint32_t offset = MY_RANK * config.NUM_TRAIN_BATCHES_PER_RANK;
 
-    uint64_t t0 = get_time_usec();
+    uint64_t t0 = get_time_usec_return_uint64();
     for (uint32_t i = 0; i < config.NUM_TRAIN_BATCHES_PER_RANK; i++) {
         for (uint32_t j = 0; j < config.BATCH_SIZE; j++) {
             uint32_t file_num = indices[offset + i * config.BATCH_SIZE + j] / config.NUM_SAMPLES_PER_FILE + 1;
@@ -393,7 +389,7 @@ train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadat
         batch_processed_train(epoch, t, t0);
         MPI_Barrier(MPI_COMM_WORLD);
 
-        t0 = get_time_usec();
+        t0 = get_time_usec_return_uint64();
     }
 
     //    TODO: drop_data = True
@@ -420,7 +416,7 @@ train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadat
     //            batch_processed_train(epoch, t, t0);
     //
     //            read_counter = 0;
-    //            t0 = get_time_usec();
+    //            t0 = get_time_usec_return_uint64();
     //        }
     //    }
     //
@@ -445,7 +441,7 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
 
     for (uint32_t i = config.READ_THREADS; i < config.NUM_TRAIN_BATCHES_PER_RANK; i++) {
         execution_time_t data_from_child_process;
-        uint64_t         t0 = get_time_usec();
+        uint64_t         t0 = get_time_usec_return_uint64();
         read(get_train_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
 
         batch_loaded_train(epoch, t0);
@@ -463,7 +459,7 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
 
     for (uint32_t i = 0; i < config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN; i++) {
         execution_time_t data_from_child_process;
-        uint64_t         t0 = get_time_usec();
+        uint64_t         t0 = get_time_usec_return_uint64();
         read(get_train_read_fd(), &data_from_child_process, sizeof(data_from_child_process));
 
         batch_loaded_train(epoch, t0);
@@ -528,12 +524,13 @@ run()
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (uint32_t epoch = 0; epoch < config.EPOCHS; epoch++) {
-        if (MY_RANK == 0) printf("New Epoch %u\n", epoch + 1);
+        if (MY_RANK == 0) printf("Starting epoch %u...\n", epoch + 1);
 
         train(epoch, indices_train, enable_multiprocessing);
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (config.DO_EVALUATION && (epoch + 1 >= next_eval_epoch)) {
+            if (MY_RANK == 0) printf("Starting evaluation...\n");
             eval(epoch, indices_eval, enable_multiprocessing);
             next_eval_epoch += config.EPOCHS_BETWEEN_EVALS;
             MPI_Barrier(MPI_COMM_WORLD);
@@ -552,6 +549,21 @@ run()
 void
 init_global_variables()
 {
+    if (MY_RANK == 0) {
+        if (config.EPOCHS == 0) {
+            printf("The value of parameter \"epochs\" must be greater than 0\n");
+        }
+        if (config.NUM_SAMPLES_PER_FILE == 0) {
+            printf("The value of parameter \"num-samples-per-file\" must be greater than 0\n");
+        }
+        if (config.BATCH_SIZE == 0) {
+            printf("The value of parameter \"batch-size\" must be greater than 0\n");
+        }
+        if (config.BATCH_SIZE_EVAL == 0) {
+            printf("The value of parameter \"batch-size-eval\" must be greater than 0\n");
+        }
+    }
+
     DIM                  = (uint32_t)sqrt(config.RECORD_LENGTH);
     config.RECORD_LENGTH = DIM * DIM;
 
@@ -570,7 +582,6 @@ init_global_variables()
 
     srand(config.RANDOM_SEED);
 
-    // check if read_threads < batch size and print warning
     // drop last warning
 
 #ifndef HAVE_SUBFILING
@@ -583,6 +594,8 @@ init_global_variables()
     DXPL = H5Pcreate(H5P_DATASET_XFER);
 
     if (config.SUBFILING) {
+        if (MY_RANK == 0)
+            printf("Using Subfiling VFD\n");
         H5Pset_fapl_subfiling(FAPL, NULL);
         if (config.COLLECTIVE_DATA) {
             if (MY_RANK == 0)
@@ -602,11 +615,17 @@ init_global_variables()
         }
     }
     else if (config.DO_CHUNKING) {
+        if (MY_RANK == 0)
+            printf("Using chunking with the chunk shape (1, %u, %u)", chunk_dimension, chunk_dimension);
         hsize_t chunk_dims[3] = {1, chunk_dimension, chunk_dimension};
         H5Pset_chunk(DCPL, 3, chunk_dims);
         if (config.DO_COMPRESSION) {
+            if (MY_RANK == 0)
+                printf(" and compression (level %u)", config.COMPRESSION_LEVEL);
             H5Pset_deflate(DCPL, config.COMPRESSION_LEVEL);
         }
+        if (MY_RANK == 0)
+            printf("\n");
         if (config.COLLECTIVE_DATA) {
             if (MY_RANK == 0)
                 printf("Warning: Collective mode can't be used with subfiling\n");
@@ -616,20 +635,37 @@ init_global_variables()
     else {
         H5Pset_fapl_mpio(FAPL, MPI_COMM_SELF, MPI_INFO_NULL);
         if (config.COLLECTIVE_DATA) {
+            if (MY_RANK == 0)
+                printf("Using collective I/O mode\n");
             H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
         }
         else {
+            if (MY_RANK == 0)
+                printf("Using independent I/O mode\n");
             H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_INDEPENDENT);
         }
     }
 
 #if H5_VERSION_GE(1, 10, 0)
     if (config.COLLECTIVE_META) {
+        if (MY_RANK == 0)
+            printf("Using collective meta-data I/O mode\n");
         H5Pset_all_coll_metadata_ops(FAPL, true);
         H5Pset_coll_metadata_write(FAPL, true);
         H5Pset_all_coll_metadata_ops(DAPL, true);
     }
 #endif
+
+    if (MY_RANK == 0) {
+        printf("The number of training batches per rank: %u\n", config.NUM_TRAIN_BATCHES_PER_RANK);
+        if (config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK) {
+            printf("Warning: The number of requested read threads (%u) is greater than the number of training batches per rank (%u)!\n", config.READ_THREADS, config.NUM_TRAIN_BATCHES_PER_RANK);
+        }
+        printf("The number of evaluation batches per rank: %u\n", config.NUM_EVAL_BATCHES_PER_RANK);
+        if (config.READ_THREADS > config.NUM_EVAL_BATCHES_PER_RANK) {
+            printf("Warning: The number of requested read threads (%u) is greater than the number of evaluation batches per rank (%u)!\n", config.READ_THREADS, config.NUM_EVAL_BATCHES_PER_RANK);
+        }
+    }
 }
 
 int

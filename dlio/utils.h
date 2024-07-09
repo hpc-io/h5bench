@@ -3,12 +3,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-// ------------------------------ H5bench utils ------------------------------
-
-uint64_t get_time_usec();
-
-// ---------------------------------------------------------------------------
+uint64_t get_time_usec_return_uint64();
 
 typedef struct config_datatype {
     // Workflow
@@ -35,6 +32,7 @@ typedef struct config_datatype {
     bool     COLLECTIVE_META;
     bool     COLLECTIVE_DATA;
     bool     SUBFILING;
+//    bool     ASYNC_MODE;
 
     // Reader
     //    DATA_LOADER;
@@ -67,6 +65,7 @@ typedef struct config_datatype {
     char *VALID_DATA_FOLDER;
     char *RECORDS_DATASET_NAME;
     char *LABELS_DATASET_NAME;
+    char *CSV_FILE;
 
     // Internal
     uint32_t NUM_TRAIN_BATCHES_PER_RANK;

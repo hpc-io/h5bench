@@ -1,6 +1,9 @@
 #ifndef SANDBOX_STATS_H
 #define SANDBOX_STATS_H
 
+#include <stdint.h>
+#include <stdio.h>
+
 struct load_data {
     uint64_t *train;
     uint64_t *eval;
