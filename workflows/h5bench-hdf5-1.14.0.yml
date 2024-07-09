@@ -243,6 +243,11 @@ jobs:
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
+      - name: Test h5bench SYNC dlio
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure ../samples/sync-dlio.json
+          
       - name: Test h5bench ASYNC write/read
         run: |
           current="$PWD"
@@ -541,8 +546,3 @@ jobs:
           name: test
           path: build*/storage/**/std*
           retention-days: 1
-
-      - name: Test h5bench SYNC dlio
-        run: |
-          cd build-sync
-          ./h5bench --debug --abort-on-failure ../samples/sync-dlio.json

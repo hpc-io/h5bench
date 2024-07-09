@@ -670,7 +670,7 @@ init_global_variables()
     }
 #endif
 
-    if (MY_RANK == 0) {
+    if ((MY_RANK == 0) && config.DO_TRAIN) {
         printf("The number of training batches per rank: %u\n", config.NUM_TRAIN_BATCHES_PER_RANK);
         if (config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK) {
             printf("Warning: The number of requested read threads (%u) is greater than the number of "

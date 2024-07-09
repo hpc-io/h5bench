@@ -989,9 +989,11 @@ class H5bench:
                     if configuration[key].lower() == 'true':
                         parameters.append('--{} '.format(key))
 
-                # Make sure the CSV file is generated in the temporary path
+                # Make sure the CSV file and datasets are generated in the temporary path
                 elif key == 'csv-file':
                     parameters.append('--{} {} '.format(key, '{}/{}/{}'.format(self.directory, id, configuration[key])))
+                elif key == 'data-folder':
+                    parameters.append('--{} {} '.format(key, '{}/{}'.format(self.directory, configuration[key])))
                 else:
                     parameters.append('--{} {} '.format(key, configuration[key]))
 
