@@ -581,9 +581,9 @@ init_global_variables()
     GENERATION_SIZE      = data_length > GENERATION_BUFFER_SIZE ? GENERATION_BUFFER_SIZE : data_length;
 
     config.NUM_TRAIN_BATCHES_PER_RANK =
-        config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE;
+        config.NUM_FILES_TRAIN * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE / NUM_RANKS;
     config.NUM_EVAL_BATCHES_PER_RANK =
-        config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / NUM_RANKS / config.BATCH_SIZE_EVAL;
+        config.NUM_FILES_EVAL * config.NUM_SAMPLES_PER_FILE / config.BATCH_SIZE_EVAL / NUM_RANKS;
 
     config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = config.READ_THREADS > config.NUM_TRAIN_BATCHES_PER_RANK
                                                       ? config.NUM_TRAIN_BATCHES_PER_RANK
