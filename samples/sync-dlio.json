@@ -2,7 +2,7 @@
   "mpi": {
     "command": "mpirun",
     "ranks": "4",
-    "configuration": "--allow-run-as-root --oversubscribe -np 24"
+    "configuration": "--allow-run-as-root --oversubscribe -np 4"
   },
   "vol": {
 
@@ -20,8 +20,8 @@
         "keep-files": "true",
         "compression": "true",
         "record-length": "67108864",
-        "num-files-train": "32",
-        "num-files-eval": "8",
+        "num-files-train": "8",
+        "num-files-eval": "2",
         "num-samples-per-file": "4",
         "data-folder": "data",
         "file-prefix": "img",
@@ -42,8 +42,8 @@
         "shuffle": "true",
         "seed-change-epoch": "true",
         "record-length": "67108864",
-        "num-files-train": "64",
-        "num-files-eval": "16",
+        "num-files-train": "8",
+        "num-files-eval": "2",
         "num-samples-per-file": "4",
         "data-folder": "./data",
         "file-prefix": "img",
