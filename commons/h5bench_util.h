@@ -103,7 +103,6 @@ typedef enum read_option {
 typedef enum compress_filter {		// new
     COMPRESS_FILTER_INVALID,
     N_BIT,
-    SCALE_OFFSET,
     SZIP,
     GZIP,
 	SZ,

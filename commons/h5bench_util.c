@@ -31,6 +31,18 @@ int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
 int has_vol_async;
 
+const char* compress_filter_names[] = {
+	"INVALID",
+	"N_BIT",
+	"SZIP",
+	"GZIP",
+	"SZ",
+	"SZ3",
+	"ZFP"
+};
+
+const int compress_filter_ids[] = { -1, 5, 4, 1, 32017, 32024, 32013 };
+
 unsigned long
 get_time_usec()
 {
@@ -181,8 +193,10 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     unsigned long t1, t2;
     unsigned long meta_time = 0;
 
-    if (!has_vol_async)
+    if (!has_vol_async) {
+    	printf("DEBUG - ts_delayed_close() does not work, has_vol_async == 0\n");
         return 0;
+	}
 
     for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
@@ -200,7 +214,8 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
         }
     }
     *metadata_time_total = meta_time;
-    return 0;
+    printf("DEBUG - ts_delayed_close() works\n");
+	return 0;
 }
 
 int
@@ -855,9 +870,6 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		if (strcmp(val_in, "N_BIT") == 0) {
 			(*params_in_out).compress_filter = N_BIT;
 		}	
-		else if (strcmp(val_in, "SCALE_OFFSET") == 0) {
-			(*params_in_out).compress_filter = SCALE_OFFSET;
-		}	
 		else if (strcmp(val_in, "SZIP") == 0) {
 			(*params_in_out).compress_filter = SZIP;
 		}
@@ -1298,6 +1310,8 @@ print_params(const bench_params *p)
 
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
+		printf("	Compression_filter_name: %s\n", compress_filter_names[p->compress_filter]);		// New
+		printf("	Compression_filter_id: %d\n", compress_filter_ids[p->compress_filter]);			// New
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
         if (p->num_dims >= 2) {
             printf("    chunk_dim2: %lu\n", p->chunk_dim_2);
