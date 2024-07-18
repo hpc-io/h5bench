@@ -492,8 +492,8 @@ print_average_data()
             fprintf(csv_file, "NaN");
         }
         else {
-            value = format_human_readable((double)train_size_bytes_per_rank / global_stats[i].raw_read_time.train *
-                                          1000000.0);
+            value    = format_human_readable((double)train_size_bytes_per_rank /
+                                          global_stats[i].raw_read_time.train * 1000000.0);
             units[i] = value.unit;
             fprintf(csv_file, "%.3lf", value.value);
         }
@@ -609,7 +609,8 @@ print_average_data()
             fprintf(csv_file, "NaN");
         }
         else {
-            value = format_human_readable(eval_size_bytes_per_rank / global_stats[i].raw_read_time.eval * 1000000.0);
+            value    = format_human_readable(eval_size_bytes_per_rank / global_stats[i].raw_read_time.eval *
+                                          1000000.0);
             units[i] = value.unit;
             fprintf(csv_file, "%.3lf", value.value);
         }
@@ -739,9 +740,8 @@ print_rank_data()
             train_avg_observed_rate_per_epoch[i] = NAN;
             continue;
         }
-        train_avg_observed_rate_per_epoch[i] = (double)train_size_bytes_per_rank /
-                                               (stats[i].observed_time.train - compute_time) *
-                                               1000000.0;
+        train_avg_observed_rate_per_epoch[i] =
+            (double)train_size_bytes_per_rank / (stats[i].observed_time.train - compute_time) * 1000000.0;
         train_total_avg_observed_rate += train_avg_observed_rate_per_epoch[i];
     }
     train_total_avg_observed_rate /= config.EPOCHS;
@@ -820,8 +820,8 @@ print_rank_data()
             eval_avg_observed_rate_per_epoch[i] = NAN;
             continue;
         }
-        eval_avg_observed_rate_per_epoch[i] = (double)eval_size_bytes_per_rank /
-                                              (stats[i].observed_time.eval - compute_time) * 1000000.0;
+        eval_avg_observed_rate_per_epoch[i] =
+            (double)eval_size_bytes_per_rank / (stats[i].observed_time.eval - compute_time) * 1000000.0;
         eval_total_avg_observed_rate += eval_avg_observed_rate_per_epoch[i];
     }
     eval_total_avg_observed_rate /= config.EPOCHS;
@@ -848,7 +848,8 @@ print_rank_data()
     human_readable value;
 
     char filename[256];
-    snprintf(filename, sizeof(filename), "%s/%d_%s.csv", config.OUTPUT_DATA_FOLDER, MY_RANK, config.OUTPUT_CSV_NAME);
+    snprintf(filename, sizeof(filename), "%s/%d_%s.csv", config.OUTPUT_DATA_FOLDER, MY_RANK,
+             config.OUTPUT_CSV_NAME);
     FILE *csv_file = fopen(filename, "w+");
 
     char *units = (char *)malloc(config.EPOCHS * sizeof(char));
@@ -913,7 +914,7 @@ print_rank_data()
         }
         else {
             value = format_human_readable((double)train_size_bytes_per_rank / stats[i].raw_read_time.train *
-                                             1000000.0);
+                                          1000000.0);
             units[i] = value.unit;
             fprintf(csv_file, "%.3lf", value.value);
         }
