@@ -9,44 +9,45 @@ frameworks, while gathering valuable information about system performance.
 As in the case with other extensions, the following parameters should be specified in the configuration section of the 
 json file to configure the benchmark:
 
-| Parameter              | Description                                                         | Type   | Default    |
-|------------------------|---------------------------------------------------------------------|--------|------------|
-| generate-data          | Enable generation of benchmarking data                              | bool   | false      |
-| train                  | Enable model training simulation                                    | bool   | false      |
-| evaluation             | Enable model evaluation simulation                                  | bool   | false      |
-| record-length          | Record size of a single sample in bytes                             | int    | 67108864   |
-| num-files-train        | The number of files used to train the model                         | int    | 64         |
-| num-files-eval         | The number of files used to evaluate the model                      | int    | 8          |
-| num-samples-per-file   | The number of samples in each file                                  | int    | 4          |
-| data-folder            | Name of the directory storing the benchmark data                    | string | ./data     |
-| file-prefix            | Prefix in the name of files containing training and evaluation data | string | img        |
-| chunking               | Enable chunking                                                     | bool   | false      |
-| chunk-size             | Chunk size                                                          | int    | 1024       |
-| keep-files             | Does not delete data after the benchmark is finished                | bool   | false      |
-| compression            | Enable compression                                                  | bool   | false      |
-| compression-level      | Compression level from 1 to 9                                       | int    | 4          |
-| batch-size             | Training batch size                                                 | int    | 7          |
-| batch-size-eval        | Evaluation batch size                                               | int    | 2          |
-| shuffle                | Enable samples shuffle                                              | bool   | false      |
-| preprocess-time        | Preprocessing time after reading each sample in seconds             | float  | 0.0        |
-| preprocess-time-stdev  | Standard deviation in preprocessing time in seconds                 | float  | 0.0        |
-| epochs                 | The number of epochs                                                | int    | 5          |
-| computation-time       | Computation time after reading each batch in seconds                | float  | 0.323      |
-| computation-time-stdev | Standard deviation in computation time in seconds                   | float  | 0.0        |
-| random-seed            | Random seed to be used                                              | int    | 42         |
-| eval-time              | Evaluation time after reading each batch in seconds                 | float  | 0.323      |
-| eval-time-stdev        | Standard deviation in evaluation time in seconds                    | float  | 0.0        |
-| epochs-between-evals   | The number of epochs between evaluations                            | int    | 1          |
-| train-data-folder      | Name of the directory containing the training data                  | string | train      |
-| valid-data-folder      | Name of the directory containing the validation data                | string | valid      |
-| records-dataset-name   | Name of the dataset with records                                    | string | records    |
-| labels-dataset-name    | Name of the dataset with labels                                     | string | labels     |
-| seed-change-epoch      | Enable seed changes every epoch                                     | bool   | false      |
-| read-threads           | The number of workers used to read the data                         | int    | 4          |
-| collective-meta        | Enable collective HDF5 metadata operations                          | bool   | false      |
-| collective-data        | Enable collective HDF5 data operations                              | bool   | false      |
-| subfiling              | Enable HDF5 Subfiling Virtual File Driver                           | bool   | false      |
-| csv-file               | Name of the output csv file                                         | string | output.csv |
+| Parameter              | Description                                                         | Type   | Default  |
+|------------------------|---------------------------------------------------------------------|--------|----------|
+| generate-data          | Enable generation of benchmarking data                              | bool   | false    |
+| train                  | Enable model training simulation                                    | bool   | false    |
+| evaluation             | Enable model evaluation simulation                                  | bool   | false    |
+| record-length          | Record size of a single sample in bytes                             | int    | 67108864 |
+| num-files-train        | The number of files used to train the model                         | int    | 32       |
+| num-files-eval         | The number of files used to evaluate the model                      | int    | 8        |
+| num-samples-per-file   | The number of samples in each file                                  | int    | 4        |
+| data-folder            | Name of the directory storing the benchmark data                    | string | ./data   |
+| file-prefix            | Prefix in the name of files containing training and evaluation data | string | img      |
+| chunking               | Enable chunking                                                     | bool   | false    |
+| chunk-size             | Chunk size                                                          | int    | 1024     |
+| keep-files             | Does not delete data after the benchmark is finished                | bool   | false    |
+| compression            | Enable compression                                                  | bool   | false    |
+| compression-level      | Compression level from 1 to 9                                       | int    | 4        |
+| batch-size             | Training batch size                                                 | int    | 7        |
+| batch-size-eval        | Evaluation batch size                                               | int    | 2        |
+| shuffle                | Enable samples shuffle                                              | bool   | false    |
+| preprocess-time        | Preprocessing time after reading each sample in seconds             | float  | 0.0      |
+| preprocess-time-stdev  | Standard deviation in preprocessing time in seconds                 | float  | 0.0      |
+| epochs                 | The number of epochs                                                | int    | 5        |
+| computation-time       | Computation time after reading each batch in seconds                | float  | 0.323    |
+| computation-time-stdev | Standard deviation in computation time in seconds                   | float  | 0.0      |
+| random-seed            | Random seed to be used                                              | int    | 42       |
+| eval-time              | Evaluation time after reading each batch in seconds                 | float  | 0.323    |
+| eval-time-stdev        | Standard deviation in evaluation time in seconds                    | float  | 0.0      |
+| epochs-between-evals   | The number of epochs between evaluations                            | int    | 1        |
+| train-data-folder      | Name of the directory containing the training data                  | string | train    |
+| valid-data-folder      | Name of the directory containing the validation data                | string | valid    |
+| records-dataset-name   | Name of the dataset with records                                    | string | records  |
+| labels-dataset-name    | Name of the dataset with labels                                     | string | labels   |
+| seed-change-epoch      | Enable seed changes every epoch                                     | bool   | false    |
+| read-threads           | The number of workers used to read the data                         | int    | 4        |
+| collective-meta        | Enable collective HDF5 metadata operations                          | bool   | false    |
+| collective-data        | Enable collective HDF5 data operations                              | bool   | false    |
+| subfiling              | Enable HDF5 Subfiling Virtual File Driver                           | bool   | false    |
+| output-csv-name        | Name of the output csv file                                         | string | output   |
+| output-ranks-data      | Enable statistics output for each rank                              | bool   | false    |
 
 It should be noted that for each parameter there is a default value that applies if the parameter has not been specified 
 in the configuration file. Thus, by default the benchmark will not run because the generate-data, train and evaluation 
@@ -113,3 +114,4 @@ without changing the order of the files for training.
 - Add support for drop_last customization. Currently, by default, all batches left after MPI ranks distribution are not processed.
 - Replace the use of `fork()` with `MPI_Comm_spawn()` when creating new processes, as using `fork()` with MPI may be unsafe
 - Test support for the Cache VOL connector.
+- Add support for checkpointing by saving the model to a hdf5 file.

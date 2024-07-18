@@ -30,7 +30,9 @@
         "train-data-folder": "train",
         "valid-data-folder": "valid",
         "records-dataset-name": "records",
-        "labels-dataset-name": "labels"
+        "labels-dataset-name": "labels",
+        "output-csv-name": "output",
+        "output-ranks-data": "true"
       }
     },
     {
@@ -57,7 +59,7 @@
         "computation-time-stdev": "0.0",
         "random-seed": "42",
         "eval-time": "0.323",
-        "eval-time-stdev": "0.323",
+        "eval-time-stdev": "0.0",
         "epochs-between-evals": "1",
         "train-data-folder": "train",
         "valid-data-folder": "valid",
@@ -65,7 +67,9 @@
         "labels-dataset-name": "labels",
         "collective-meta": "true",
         "collective-data": "true",
-        "subfiling": "false"
+        "subfiling": "false",
+        "output-csv-name": "output",
+        "output-ranks-data": "true"
       }
     }
   ]

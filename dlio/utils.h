@@ -64,7 +64,9 @@ typedef struct config_datatype {
     char *VALID_DATA_FOLDER;
     char *RECORDS_DATASET_NAME;
     char *LABELS_DATASET_NAME;
-    char *CSV_FILE;
+    char *OUTPUT_DATA_FOLDER;
+    char *OUTPUT_CSV_NAME;
+    bool OUTPUT_RANKS_DATA;
 
     // Internal
     uint32_t NUM_TRAIN_BATCHES_PER_RANK;

@@ -29,7 +29,7 @@ config_datatype_t config = {
     .RECORD_LENGTH = 67108864, // should be a square number
                                //   .RECORD_LENGTH_STDEV = 0.0f,
                                //   .RECORD_LENGTH_RESIZE = 0.0f,
-    .NUM_FILES_TRAIN      = 64,
+    .NUM_FILES_TRAIN      = 32,
     .NUM_FILES_EVAL       = 8,
     .NUM_SAMPLES_PER_FILE = 4,
     .DATA_FOLDER          = "./data",
@@ -76,7 +76,9 @@ config_datatype_t config = {
     .VALID_DATA_FOLDER    = "valid",
     .RECORDS_DATASET_NAME = "records",
     .LABELS_DATASET_NAME  = "labels",
-    .CSV_FILE             = "output.csv",
+    .OUTPUT_DATA_FOLDER   = "results",
+    .OUTPUT_CSV_NAME      = "output",
+    .OUTPUT_RANKS_DATA    = false,
 
     // Internal
     .NUM_TRAIN_BATCHES_PER_RANK           = 0,
@@ -294,9 +296,16 @@ parse_args(int argc, char *argv[])
         else if (strcmp(argv[i], "--drop-last") == 0) {
             config.DROP_LAST = true;
         }
-        else if (strcmp(argv[i], "--csv-file") == 0) {
+        else if (strcmp(argv[i], "--output-data-folder") == 0) {
             i++;
-            config.CSV_FILE = argv[i];
+            config.OUTPUT_DATA_FOLDER = argv[i];
+        }
+        else if (strcmp(argv[i], "--output-csv-name") == 0) {
+            i++;
+            config.OUTPUT_CSV_NAME = argv[i];
+        }
+        else if (strcmp(argv[i], "--output-ranks-data") == 0) {
+            config.OUTPUT_RANKS_DATA = true;
         }
         else {
             printf("WARNING: %s not found\n", argv[i]);

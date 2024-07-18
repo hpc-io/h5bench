@@ -61,7 +61,9 @@ void stats_finalize();
 
 void prepare_data();
 
-void print_data();
+void print_average_data();
+
+void print_rank_data();
 
 void batch_loaded_train(uint32_t epoch, uint64_t start_time);
 

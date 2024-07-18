@@ -712,6 +712,11 @@ main(int argc, char *argv[])
         snprintf(dir_name, sizeof(dir_name), "%s/%s", config.DATA_FOLDER, config.VALID_DATA_FOLDER);
         create_directory(dir_name);
         printf("OK\n");
+
+        printf("Create directory \"%s\"... ", config.OUTPUT_DATA_FOLDER);
+        snprintf(dir_name, sizeof(dir_name), "%s", config.OUTPUT_DATA_FOLDER);
+        create_directory(dir_name);
+        printf("OK\n");
     }
     init_global_variables();
     MPI_Barrier(MPI_COMM_WORLD);
@@ -728,8 +733,12 @@ main(int argc, char *argv[])
         prepare_data();
         MPI_Barrier(MPI_COMM_WORLD);
 
+        if (config.OUTPUT_RANKS_DATA) {
+            print_rank_data();
+        }
+
         if (MY_RANK == 0) {
-            print_data();
+            print_average_data();
         }
 
         stats_finalize();

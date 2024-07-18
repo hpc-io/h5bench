@@ -981,6 +981,7 @@ class H5bench:
                 'collective-meta',
                 'collective-data',
                 'subfiling',
+                'output-ranks-data',
             ]
 
             # Create the configuration parameter list
@@ -989,13 +990,13 @@ class H5bench:
                     if configuration[key].lower() == 'true':
                         parameters.append('--{} '.format(key))
 
-                # Make sure the CSV file and datasets are generated in the temporary path
-                elif key == 'csv-file':
-                    parameters.append('--{} {} '.format(key, '{}/{}/{}'.format(self.directory, id, configuration[key])))
+                # Make sure datasets are generated in the temporary path
                 elif key == 'data-folder':
                     parameters.append('--{} {} '.format(key, '{}/{}'.format(self.directory, configuration[key])))
                 else:
                     parameters.append('--{} {} '.format(key, configuration[key]))
+
+            parameters.append('--output-data-folder {} '.format('{}/{}'.format(self.directory, id)))
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + self.H5BENCH_DLIO
