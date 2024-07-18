@@ -18,7 +18,7 @@ As in the case with other extensions, the following parameters should be specifi
 ``train``                  Enable model training simulation                                      bool     false
 ``evaluation``             Enable model evaluation simulation                                    bool     false
 ``record-length``          Record size of a single sample in bytes                               int      67108864
-``num-files-train``        The number of files used to train the model                           int      64
+``num-files-train``        The number of files used to train the model                           int      32
 ``num-files-eval``         The number of files used to evaluate the model                        int      8
 ``num-samples-per-file``   The number of samples in each file                                    int      4
 ``data-folder``            Name of the directory storing the benchmark data                      string   ./data
@@ -49,7 +49,8 @@ As in the case with other extensions, the following parameters should be specifi
 ``collective-meta``        Enable collective HDF5 metadata operations                            bool     false
 ``collective-data``        Enable collective HDF5 data operations                                bool     false
 ``subfiling``              Enable HDF5 Subfiling Virtual File Driver                             bool     false
-``csv-file``               Name of the output csv file                                           string   output.csv
+``output-csv-name``        Name of the output csv file                                           string   output
+``output-ranks-data ``     Enable statistics output for each rank                                bool     false
 ========================== ===================================================================== ======== ==============
 
 It should be noted that for each parameter there is a default value that applies if the parameter has not been specified
@@ -122,3 +123,4 @@ without changing the order of the files for training.
 * Add support for drop_last customization. Currently, by default, all batches left after MPI ranks distribution are not processed.
 * Replace the use of ``fork()`` with ``MPI_Comm_spawn()`` when creating new processes, as using ``fork()`` with MPI may be unsafe
 * Test support for the Cache VOL connector.
+* Add support for checkpointing by saving the model to a hdf5 file.
