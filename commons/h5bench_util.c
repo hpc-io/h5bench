@@ -891,7 +891,8 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 	}
 	else if (strcmp(key, "HDF5_PLUGIN_PATH") == 0) {	// New
 		// parse whatever the value is first
-		strcpy((*params_in_out).plugin_path, val_in); 
+		char *plugin_path = strdup(val_in);
+		(*params_in_out).plugin_path = plugin_path; 
 	}
     else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
@@ -1283,9 +1284,8 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
 		if (params_out->plugin_path != NULL) {
 			// overwrite the env
 			setenv("HDF5_PLUGIN_PATH", params_out->plugin_path, 1);
-			printf("DEBUG: HDF5_PLUGIN_PATH=%s\n", getenv("HDF5_PLUGIN_PATH"));
 		} else {
-			printf("Compress filter requires HDF5_PLUGIN_PATH environment variable set to be the path containing the shared library of the compression algorithm you chose.\n")
+			printf("Compress filter requires HDF5_PLUGIN_PATH environment variable set to be the path containing the shared library of the compression algorithm you chose.\n");
 			return -1;
 		}
 	}
