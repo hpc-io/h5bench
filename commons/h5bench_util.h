@@ -100,7 +100,7 @@ typedef enum read_option {
     CS
 } read_option;
 
-typedef enum compress_filter {		// new
+typedef enum compress_filter {		// New
     COMPRESS_FILTER_INVALID,
     N_BIT,
     SZIP,
@@ -126,6 +126,7 @@ typedef struct bench_params {
     } access_pattern;
 
     // write_pattern bench_pattern;
+    char *			   plugin_path; 	// New
     char *             data_file_path;
     char *             pattern_name;
     int                meta_coll; // for write only, metadata collective

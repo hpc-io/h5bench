@@ -906,9 +906,11 @@ set_globals(const bench_params *params)
 		ret = H5Premove_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ALL);
 		assert(ret >= 0);
 
+		/*
 		// Set shuffle filter prior to any compression filters
 		ret = H5Pset_shuffle(COMPRESS_INFO.dcpl_id);
 		assert(ret >= 0);
+		*/
 
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
@@ -1207,9 +1209,9 @@ main(int argc, char *argv[])
         value                   = format_human_readable(total_size_bytes);
         printf("Total write size: %.3lf %cB\n", value.value, value.unit);
 
+		float compression_ratio = total_size_bytes / COMPRESS_INFO.total_compressed_size;
 		// Report compression ratio
 		if (COMPRESS_INFO.USE_COMPRESS) {
-			float compression_ratio = total_size_bytes / COMPRESS_INFO.total_compressed_size;
 			value = format_human_readable(COMPRESS_INFO.total_compressed_size); 
 			printf("Total compressed size: %.3lf %cB\n", value.value, value.unit);
 			printf("Compression ratio: %.3f\n", compression_ratio);
@@ -1263,6 +1265,13 @@ main(int argc, char *argv[])
                     "seconds");
             value = format_human_readable(total_size_bytes);
             fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
+        	
+			if (COMPRESS_INFO.USE_COMPRESS) {
+				value = format_human_readable(COMPRESS_INFO.total_compressed_size);
+		    	fprintf(params.csv_fs, "total compressed size, %.3lf, %cB\n", value.value, value.unit);
+            	fprintf(params.csv_fs, "compression ratio, %.3lf, %s\n", compression_ratio, "");
+			}
+
             fprintf(params.csv_fs, "raw time, %.3f, %s\n", rwt_s, "seconds");
             value = format_human_readable(raw_rate);
             fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
