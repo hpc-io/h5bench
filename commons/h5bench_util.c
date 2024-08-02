@@ -889,11 +889,6 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		else
 			(*params_in_out).compress_filter = COMPRESS_FILTER_INVALID;	
 	}
-	else if (strcmp(key, "HDF5_PLUGIN_PATH") == 0) {	// New
-		// parse whatever the value is first
-		char *plugin_path = strdup(val_in);
-		(*params_in_out).plugin_path = plugin_path; 
-	}
     else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
         if (num > 0)
@@ -1142,8 +1137,6 @@ bench_params_init(bench_params *params_out)
     (*params_out).align           = 0;
     (*params_out).align_threshold = 0;
     (*params_out).align_len       = 0;
-
-    (*params_out).plugin_path     = NULL;	// New
 }
 
 int
@@ -1278,17 +1271,6 @@ read_config(const char *file_path, bench_params *params_out, int do_write)
         printf("Subfiling does not support collective data buffering for data.\n");
         return -1;
     }
-
-	// New, check if HDF5_PLUGIN_PATH inputted correctly and set up the env
-	if (params_out->useCompress) {
-		if (params_out->plugin_path != NULL) {
-			// overwrite the env
-			setenv("HDF5_PLUGIN_PATH", params_out->plugin_path, 1);
-		} else {
-			printf("Compress filter requires HDF5_PLUGIN_PATH environment variable set to be the path containing the shared library of the compression algorithm you chose.\n");
-			return -1;
-		}
-	}
 
     return 0;
 }

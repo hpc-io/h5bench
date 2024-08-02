@@ -399,6 +399,8 @@ class H5bench:
             if operation == 'read':
                 benchmark_path = self.H5BENCH_PATTERNS_READ
 
+			# add check
+
             if self.prefix:
                 benchmark_path = self.prefix + '/' + benchmark_path
             else:

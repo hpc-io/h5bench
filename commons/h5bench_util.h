@@ -126,7 +126,6 @@ typedef struct bench_params {
     } access_pattern;
 
     // write_pattern bench_pattern;
-    char *			   plugin_path; 	// New
     char *             data_file_path;
     char *             pattern_name;
     int                meta_coll; // for write only, metadata collective
