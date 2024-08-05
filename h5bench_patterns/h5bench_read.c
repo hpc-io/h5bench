@@ -96,7 +96,7 @@ set_dspace_plist(hid_t *plist_id_out, int data_collective)
         H5Pset_dxpl_mpio(*plist_id_out, H5FD_MPIO_INDEPENDENT);
 }
 
-// Allocate memory for filter_info once
+// Allocate memory for filter_info
 void
 filter_info_init()						// new
 {
@@ -104,6 +104,15 @@ filter_info_init()						// new
 	FILTER_INFO.cd_values = (unsigned int *)malloc(10 * sizeof(unsigned int));
 	FILTER_INFO.name = (char *)malloc(10 * sizeof(char));
 	FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
+}
+
+// Free memory for filter_info
+void
+filter_info_free()
+{
+	free(FILTER_INFO.cd_values);
+	free(FILTER_INFO.name);
+	free(FILTER_INFO.filter_config);
 }
 
 // Retrieve information about a filter on a dataset
@@ -121,16 +130,18 @@ get_filter_info(hid_t dset_id)			// new
 	FILTER_INFO.filter_id = H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 10, FILTER_INFO.name, FILTER_INFO.filter_config);
 
 	if (FILTER_INFO.filter_id < 0) {
-		printf("Invalid filter identifier.");
 		return 1;
 	}
 	
 	FILTER_INFO.USE_COMPRESS = 1;
-	printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
-	printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
-	printf("  Number of auxiliary elements: %d\n", FILTER_INFO.cd_nelmts);
-	for (int i = 0; i < FILTER_INFO.cd_nelmts; ++i) {
-		printf("  Auxiliary data %d: %d\n", i, FILTER_INFO.cd_values[i]);
+
+	if (MY_RANK == 0) {
+		printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
+		printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
+		printf("  Number of auxiliary data: %d\n", FILTER_INFO.cd_nelmts);
+		for (int i = 0; i < FILTER_INFO.cd_nelmts; ++i) {
+			printf("  Auxiliary data %d: %d\n", i, FILTER_INFO.cd_values[i]);
+		}
 	}
 
 	return 0;
@@ -627,7 +638,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         *raw_read_time_out += (read_time_exp + read_time_imp);
         *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
     }
-
+	filter_info_free();		// new	
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
     *raw_read_time_out += read_time_imp;
     *inner_metadata_time += metadata_time_imp;
@@ -872,10 +883,10 @@ main(int argc, char *argv[])
 		
 			if (FILTER_INFO.USE_COMPRESS) {			// new
 				fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
-				fprintf(params.csv_fs, "filter ID: %d\n", FILTER_INFO.filter_id);
-				fprintf(params.csv_fs, "number of auxiliary elements: %d\n", FILTER_INFO.cd_nelmts);
+				fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
+				fprintf(params.csv_fs, "number of auxiliary data, %d\n", FILTER_INFO.cd_nelmts);
 				for (int i = 0; i < FILTER_INFO.cd_nelmts; ++i) {
-					fprintf(params.csv_fs, "auxiliary data %d: %d\n", i, FILTER_INFO.cd_values[i]);
+					fprintf(params.csv_fs, "auxiliary data %d, %d\n", i, FILTER_INFO.cd_values[i]);
 				}
 			}
 
