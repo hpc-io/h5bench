@@ -384,22 +384,24 @@ class H5bench:
             if operation == 'write':
                 benchmark_path = self.H5BENCH_PATTERNS_WRITE
 
-            if operation == 'write-unlimited':
+            else if operation == 'write-unlimited':
                 benchmark_path = self.H5BENCH_PATTERNS_WRITE_UNLIMITED
 
-            if operation == 'write_var_normal_dist':
+            else if operation == 'write_var_normal_dist':
                 benchmark_path = self.H5BENCH_PATTERNS_WRITE_VAR_NORMAL_DIST
 
-            if operation == 'overwrite':
+            else if operation == 'overwrite':
                 benchmark_path = self.H5BENCH_PATTERNS_OVERWRITE
 
-            if operation == 'append':
+            else if operation == 'append':
                 benchmark_path = self.H5BENCH_PATTERNS_APPEND
 
-            if operation == 'read':
+            else if operation == 'read':
                 benchmark_path = self.H5BENCH_PATTERNS_READ
 
-			# add check
+			else:
+				self.logger.error('Invalid operation name provided. Check documentation for correct write/read benchmarks input.')
+				sys.exit(os.EX_SOFTWARE)	
 
             if self.prefix:
                 benchmark_path = self.prefix + '/' + benchmark_path
