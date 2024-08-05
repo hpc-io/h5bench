@@ -173,10 +173,12 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
  
 	int err = get_filter_info(dset_ids[0]);			// new
-	if (err) {
-		printf("  No compression filter on the dataset\n"); 
-	} else {
-		printf("  Read filter info successfully\n");
+	if (MY_RANK = 0) {
+		if (err) {
+			printf("  No compression filter on the dataset\n"); 
+		} else {
+			printf("  Read filter info successfully\n");
+		}
 	}
 
     t2 = get_time_usec();
