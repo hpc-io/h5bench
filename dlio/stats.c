@@ -221,7 +221,10 @@ print_average_data()
     // Train
     // TODO: drop_last = false
     uint64_t train_total_size_bytes =
-        (uint64_t)config.BATCH_SIZE * (config.TOTAL_TRAINING_STEPS == -1? config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS: config.TOTAL_TRAINING_STEPS) * config.RECORD_LENGTH;
+        (uint64_t)config.BATCH_SIZE *
+        (config.TOTAL_TRAINING_STEPS == -1 ? config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS
+                                           : config.TOTAL_TRAINING_STEPS) *
+        config.RECORD_LENGTH;
     uint64_t train_size_bytes_per_rank = train_total_size_bytes / NUM_RANKS;
 
     uint64_t  train_total_compute_time     = 0;
@@ -416,7 +419,8 @@ print_average_data()
         printf("Observed evaluation completion time: %.3lf s\n", eval_total_observed_time / 1000000.0);
         value = format_human_readable(eval_total_avg_observed_rate);
         printf("Observed average evaluation rate: %.3lf %cB/s\n", value.value, value.unit);
-        printf("Evaluation average throughput avg: %.3lf samples/s\n", eval_throughput_mean_samples_per_second);
+        printf("Evaluation average throughput avg: %.3lf samples/s\n",
+               eval_throughput_mean_samples_per_second);
         printf("Evaluation throughput standard deviation: %.3lf samples/s\n",
                eval_throughput_stdev_samples_per_second);
         value = format_human_readable(eval_io_mean);
@@ -1147,8 +1151,11 @@ end_train(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
         stats[epoch].throughput.train = NAN;
     }
     else {
-        stats[epoch].throughput.train = (double)config.BATCH_SIZE * (config.TOTAL_TRAINING_STEPS_PER_RANK == -1? config.NUM_TRAIN_BATCHES_PER_RANK: config.TOTAL_TRAINING_STEPS_PER_RANK) *
-                                        1000000.0 / (end_time - stats[epoch].start_time.train);
+        stats[epoch].throughput.train =
+            (double)config.BATCH_SIZE *
+            (config.TOTAL_TRAINING_STEPS_PER_RANK == -1 ? config.NUM_TRAIN_BATCHES_PER_RANK
+                                                        : config.TOTAL_TRAINING_STEPS_PER_RANK) *
+            1000000.0 / (end_time - stats[epoch].start_time.train);
     }
     stats[epoch].metadata_time.train = metadata_time;
     stats[epoch].raw_read_time.train = read_time;

@@ -57,13 +57,13 @@ config_datatype_t config = {
     .DROP_LAST             = true,
 
     // Train
-    .EPOCHS                 = 5,
-    .COMPUTATION_TIME       = 0.323f,
-    .COMPUTATION_TIME_STDEV = 0.000f,
-    .TOTAL_TRAINING_STEPS = -1,
+    .EPOCHS                        = 5,
+    .COMPUTATION_TIME              = 0.323f,
+    .COMPUTATION_TIME_STDEV        = 0.000f,
+    .TOTAL_TRAINING_STEPS          = -1,
     .TOTAL_TRAINING_STEPS_PER_RANK = -1,
-    .SEED_CHANGE_EPOCH = false,
-    .RANDOM_SEED       = 42,
+    .SEED_CHANGE_EPOCH             = false,
+    .RANDOM_SEED                   = 42,
 
     // Evaluation
     .EVAL_TIME            = 0.323f,

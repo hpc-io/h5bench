@@ -395,9 +395,11 @@ train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadat
 
         uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
         batch_processed_train(epoch, t, t0);
-        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) && (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
+        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) &&
+            (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
             MPI_Barrier(rest_training_steps_comm);
-        } else {
+        }
+        else {
             MPI_Barrier(MPI_COMM_WORLD);
         }
 
@@ -451,7 +453,8 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
         write(get_train_write_fd(), &batch, sizeof(batch));
     }
 
-    for (uint32_t i = config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN; i < config.NUM_TRAIN_BATCHES_PER_RANK; i++) {
+    for (uint32_t i = config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN; i < config.NUM_TRAIN_BATCHES_PER_RANK;
+         i++) {
         if (i == config.TOTAL_TRAINING_STEPS_PER_RANK) {
             break;
         }
@@ -470,9 +473,11 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
         uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
         batch_processed_train(epoch, t, t0);
 
-        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) && (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
+        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) &&
+            (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
             MPI_Barrier(rest_training_steps_comm);
-        } else {
+        }
+        else {
             MPI_Barrier(MPI_COMM_WORLD);
         }
     }
@@ -489,9 +494,11 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
 
         uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
         batch_processed_train(epoch, t, t0);
-        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) && (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
+        if ((MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) &&
+            (i + 1 == config.TOTAL_TRAINING_STEPS_PER_RANK)) {
             MPI_Barrier(rest_training_steps_comm);
-        } else {
+        }
+        else {
             MPI_Barrier(MPI_COMM_WORLD);
         }
     }
@@ -612,19 +619,23 @@ init_global_variables()
                                                      ? config.NUM_EVAL_BATCHES_PER_RANK
                                                      : config.READ_THREADS;
 
-    if (config.TOTAL_TRAINING_STEPS != -1 && config.TOTAL_TRAINING_STEPS < config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS) {
+    if (config.TOTAL_TRAINING_STEPS != -1 &&
+        config.TOTAL_TRAINING_STEPS < config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS) {
         config.TOTAL_TRAINING_STEPS_PER_RANK = config.TOTAL_TRAINING_STEPS / NUM_RANKS;
         if (MY_RANK < config.TOTAL_TRAINING_STEPS % NUM_RANKS) {
             config.TOTAL_TRAINING_STEPS_PER_RANK++;
             MPI_Comm_split(MPI_COMM_WORLD, 0, MY_RANK, &rest_training_steps_comm);
-        } else {
+        }
+        else {
             MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, MY_RANK, &rest_training_steps_comm);
         }
 
-        config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN = config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN > config.TOTAL_TRAINING_STEPS_PER_RANK
-                                                          ? config.TOTAL_TRAINING_STEPS_PER_RANK
-                                                          : config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN;
-    } else {
+        config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN =
+            config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN > config.TOTAL_TRAINING_STEPS_PER_RANK
+                ? config.TOTAL_TRAINING_STEPS_PER_RANK
+                : config.NUM_OF_ACTUALLY_USED_PROCESSES_TRAIN;
+    }
+    else {
         config.TOTAL_TRAINING_STEPS = -1;
     }
 
