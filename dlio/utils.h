@@ -50,7 +50,8 @@ typedef struct config_datatype {
     uint32_t EPOCHS;
     float    COMPUTATION_TIME;
     float    COMPUTATION_TIME_STDEV;
-    //    long int TOTAL_TRAINING_STEPS = -1
+    uint32_t TOTAL_TRAINING_STEPS;
+    uint32_t TOTAL_TRAINING_STEPS_PER_RANK;
     bool SEED_CHANGE_EPOCH;
     int  RANDOM_SEED;
 

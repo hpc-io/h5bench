@@ -46,11 +46,9 @@ config_datatype_t config = {
     .SUBFILING         = false,
 
     // Reader
-    //    .DATA_LOADER = PYTORCH,
     .BATCH_SIZE      = 7,
     .BATCH_SIZE_EVAL = 2,
     .READ_THREADS    = 4,
-    //    .COMPUTATION_THREADS = 1,
     //    .PREFETCH_SIZE = 0,
     .DO_SHUFFLE = false, // sample shuffle vs file_shuffle
                          //    .TRANSFER_SIZE = 262144,
@@ -62,7 +60,8 @@ config_datatype_t config = {
     .EPOCHS                 = 5,
     .COMPUTATION_TIME       = 0.323f,
     .COMPUTATION_TIME_STDEV = 0.000f,
-    //    .TOTAL_TRAINING_STEPS = -1
+    .TOTAL_TRAINING_STEPS = -1,
+    .TOTAL_TRAINING_STEPS_PER_RANK = -1,
     .SEED_CHANGE_EPOCH = false,
     .RANDOM_SEED       = 42,
 
@@ -306,6 +305,10 @@ parse_args(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "--output-ranks-data") == 0) {
             config.OUTPUT_RANKS_DATA = true;
+        }
+        else if (strcmp(argv[i], "--total-training-steps") == 0) {
+            i++;
+            config.TOTAL_TRAINING_STEPS = atoi(argv[i]);
         }
         else {
             printf("WARNING: %s not found\n", argv[i]);

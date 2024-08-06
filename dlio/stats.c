@@ -221,9 +221,8 @@ print_average_data()
     // Train
     // TODO: drop_last = false
     uint64_t train_total_size_bytes =
-        (uint64_t)config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS * config.BATCH_SIZE * config.RECORD_LENGTH;
-    uint64_t train_size_bytes_per_rank =
-        (uint64_t)config.NUM_TRAIN_BATCHES_PER_RANK * config.BATCH_SIZE * config.RECORD_LENGTH;
+        (uint64_t)config.BATCH_SIZE * (config.TOTAL_TRAINING_STEPS == -1? config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS: config.TOTAL_TRAINING_STEPS) * config.RECORD_LENGTH;
+    uint64_t train_size_bytes_per_rank = train_total_size_bytes / NUM_RANKS;
 
     uint64_t  train_total_compute_time     = 0;
     uint64_t *train_compute_time_per_epoch = (uint64_t *)malloc(config.EPOCHS * sizeof(uint64_t));
@@ -404,25 +403,27 @@ print_average_data()
     value = format_human_readable(train_io_stdev);
     printf("Training IO standard deviation: %.3f %cB/s\n", value.value, value.unit);
 
-    value = format_human_readable(eval_total_size_bytes);
-    printf("Total evaluation set size: %.3lf %cB\n", value.value, value.unit);
-    value = format_human_readable(eval_size_bytes_per_rank);
-    printf("Evaluation set size per rank: %.3lf %cB\n", value.value, value.unit);
-    printf("Total evaluation emulated compute time: %.3lf s\n", eval_total_compute_time / 1000000.0);
-    printf("Evaluation metadata time: %.3lf s\n", eval_total_metadata_time / 1000000.0);
-    printf("Evaluation raw read time: %.3lf s\n", eval_total_read_time / 1000000.0);
-    value = format_human_readable(eval_total_avg_read_rate);
-    printf("Evaluation average raw read rate: %.3lf %cB/s\n", value.value, value.unit);
-    printf("Observed evaluation completion time: %.3lf s\n", eval_total_observed_time / 1000000.0);
-    value = format_human_readable(eval_total_avg_observed_rate);
-    printf("Observed average evaluation rate: %.3lf %cB/s\n", value.value, value.unit);
-    printf("Evaluation average throughput avg: %.3lf samples/s\n", eval_throughput_mean_samples_per_second);
-    printf("Evaluation throughput standard deviation: %.3lf samples/s\n",
-           eval_throughput_stdev_samples_per_second);
-    value = format_human_readable(eval_io_mean);
-    printf("Evaluation average IO: %.3lf %cB/s\n", value.value, value.unit);
-    value = format_human_readable(eval_io_stdev);
-    printf("Evaluation IO standard deviation: %.3lf %cB/s\n", value.value, value.unit);
+    if (config.DO_EVALUATION) {
+        value = format_human_readable(eval_total_size_bytes);
+        printf("Total evaluation set size: %.3lf %cB\n", value.value, value.unit);
+        value = format_human_readable(eval_size_bytes_per_rank);
+        printf("Evaluation set size per rank: %.3lf %cB\n", value.value, value.unit);
+        printf("Total evaluation emulated compute time: %.3lf s\n", eval_total_compute_time / 1000000.0);
+        printf("Evaluation metadata time: %.3lf s\n", eval_total_metadata_time / 1000000.0);
+        printf("Evaluation raw read time: %.3lf s\n", eval_total_read_time / 1000000.0);
+        value = format_human_readable(eval_total_avg_read_rate);
+        printf("Evaluation average raw read rate: %.3lf %cB/s\n", value.value, value.unit);
+        printf("Observed evaluation completion time: %.3lf s\n", eval_total_observed_time / 1000000.0);
+        value = format_human_readable(eval_total_avg_observed_rate);
+        printf("Observed average evaluation rate: %.3lf %cB/s\n", value.value, value.unit);
+        printf("Evaluation average throughput avg: %.3lf samples/s\n", eval_throughput_mean_samples_per_second);
+        printf("Evaluation throughput standard deviation: %.3lf samples/s\n",
+               eval_throughput_stdev_samples_per_second);
+        value = format_human_readable(eval_io_mean);
+        printf("Evaluation average IO: %.3lf %cB/s\n", value.value, value.unit);
+        value = format_human_readable(eval_io_stdev);
+        printf("Evaluation IO standard deviation: %.3lf %cB/s\n", value.value, value.unit);
+    }
 
     printf("===========================================================\n");
 
@@ -558,122 +559,124 @@ print_average_data()
     value = format_human_readable(train_io_stdev);
     fprintf(csv_file, "train io stdev, %.3lf, %cB/s\n", value.value, value.unit);
 
-    value = format_human_readable(eval_total_size_bytes);
-    fprintf(csv_file, "eval total size, %.3lf, %cB\n", value.value, value.unit);
-    value = format_human_readable(eval_size_bytes_per_rank);
-    fprintf(csv_file, "eval size per rank, %.3lf, %cB\n", value.value, value.unit);
-    fprintf(csv_file, "eval emulated compute time per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%.3lf", eval_compute_time_per_epoch[i] / 1000000.0);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "s");
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\"\neval emulated compute time, %.3lf, s\n", eval_total_compute_time / 1000000.0);
-    fprintf(csv_file, "eval metadata time per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%.3lf", global_stats[i].metadata_time.eval / 1000000.0);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "s");
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\"\neval metadata time, %.3lf, s\n", eval_total_metadata_time / 1000000.0);
-    fprintf(csv_file, "eval raw read time per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%.3lf", global_stats[i].raw_read_time.eval / 1000000.0);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "s");
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-
-    fprintf(csv_file, "\"\neval total raw read time, %.3lf, s\n", eval_total_read_time / 1000000.0);
-    fprintf(csv_file, "eval raw read rate per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        if (global_stats[i].raw_read_time.eval == 0) {
-            units[i] = ' ';
-            fprintf(csv_file, "NaN");
+    if (config.DO_EVALUATION) {
+        value = format_human_readable(eval_total_size_bytes);
+        fprintf(csv_file, "eval total size, %.3lf, %cB\n", value.value, value.unit);
+        value = format_human_readable(eval_size_bytes_per_rank);
+        fprintf(csv_file, "eval size per rank, %.3lf, %cB\n", value.value, value.unit);
+        fprintf(csv_file, "eval emulated compute time per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%.3lf", eval_compute_time_per_epoch[i] / 1000000.0);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
         }
-        else {
-            value    = format_human_readable(eval_size_bytes_per_rank / global_stats[i].raw_read_time.eval *
-                                          1000000.0);
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "s");
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\"\neval emulated compute time, %.3lf, s\n", eval_total_compute_time / 1000000.0);
+        fprintf(csv_file, "eval metadata time per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%.3lf", global_stats[i].metadata_time.eval / 1000000.0);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "s");
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\"\neval metadata time, %.3lf, s\n", eval_total_metadata_time / 1000000.0);
+        fprintf(csv_file, "eval raw read time per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%.3lf", global_stats[i].raw_read_time.eval / 1000000.0);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "s");
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+
+        fprintf(csv_file, "\"\neval total raw read time, %.3lf, s\n", eval_total_read_time / 1000000.0);
+        fprintf(csv_file, "eval raw read rate per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            if (global_stats[i].raw_read_time.eval == 0) {
+                units[i] = ' ';
+                fprintf(csv_file, "NaN");
+            }
+            else {
+                value = format_human_readable(eval_size_bytes_per_rank / global_stats[i].raw_read_time.eval *
+                                              1000000.0);
+                units[i] = value.unit;
+                fprintf(csv_file, "%.3lf", value.value);
+            }
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%cB/s", units[i]);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        value = format_human_readable(eval_total_avg_read_rate);
+        fprintf(csv_file, "\"\neval avg raw read rate, %.3lf, %cB/s\n", value.value, value.unit);
+        fprintf(csv_file, "eval observed time per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%.3lf", global_stats[i].observed_time.eval / 1000000.0);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "s");
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\"\neval observed time, %.3lf, s\n", eval_total_observed_time / 1000000.0);
+        fprintf(csv_file, "eval observed rate per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            value    = format_human_readable(eval_avg_observed_rate_per_epoch[i]);
             units[i] = value.unit;
             fprintf(csv_file, "%.3lf", value.value);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
         }
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%cB/s", units[i]);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        value = format_human_readable(eval_total_avg_observed_rate);
+        fprintf(csv_file, "\"\neval avg observed rate, %.3lf, %cB/s\n", value.value, value.unit);
+        fprintf(csv_file, "eval throughput samples per second per epoch, \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "%.3lf", global_stats[i].throughput.eval);
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\", \"");
+        for (uint32_t i = 0; i < config.EPOCHS; i++) {
+            fprintf(csv_file, "samples/s");
+            if (i != config.EPOCHS - 1)
+                fprintf(csv_file, ", ");
+        }
+        fprintf(csv_file, "\"\neval throughput avg samples per second, %.3lf, samples/s\n",
+                eval_throughput_mean_samples_per_second);
+        fprintf(csv_file, "eval throughput stdev samples per second, %.3lf, samples/s\n",
+                eval_throughput_stdev_samples_per_second);
+        value = format_human_readable(eval_io_mean);
+        fprintf(csv_file, "eval io avg, %.3lf, %cB/s\n", value.value, value.unit);
+        value = format_human_readable(eval_io_stdev);
+        fprintf(csv_file, "eval io stdev, %.3lf, %cB/s\n", value.value, value.unit);
     }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%cB/s", units[i]);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    value = format_human_readable(eval_total_avg_read_rate);
-    fprintf(csv_file, "\"\neval avg raw read rate, %.3lf, %cB/s\n", value.value, value.unit);
-    fprintf(csv_file, "eval observed time per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%.3lf", global_stats[i].observed_time.eval / 1000000.0);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "s");
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\"\neval observed time, %.3lf, s\n", eval_total_observed_time / 1000000.0);
-    fprintf(csv_file, "eval observed rate per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        value    = format_human_readable(eval_avg_observed_rate_per_epoch[i]);
-        units[i] = value.unit;
-        fprintf(csv_file, "%.3lf", value.value);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%cB/s", units[i]);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    value = format_human_readable(eval_total_avg_observed_rate);
-    fprintf(csv_file, "\"\neval avg observed rate, %.3lf, %cB/s\n", value.value, value.unit);
-    fprintf(csv_file, "eval throughput samples per second per epoch, \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "%.3lf", global_stats[i].throughput.eval);
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\", \"");
-    for (uint32_t i = 0; i < config.EPOCHS; i++) {
-        fprintf(csv_file, "samples/s");
-        if (i != config.EPOCHS - 1)
-            fprintf(csv_file, ", ");
-    }
-    fprintf(csv_file, "\"\neval throughput avg samples per second, %.3lf, samples/s\n",
-            eval_throughput_mean_samples_per_second);
-    fprintf(csv_file, "eval throughput stdev samples per second, %.3lf, samples/s\n",
-            eval_throughput_stdev_samples_per_second);
-    value = format_human_readable(eval_io_mean);
-    fprintf(csv_file, "eval io avg, %.3lf, %cB/s\n", value.value, value.unit);
-    value = format_human_readable(eval_io_stdev);
-    fprintf(csv_file, "eval io stdev, %.3lf, %cB/s\n", value.value, value.unit);
 
     fclose(csv_file);
     free(units);
@@ -1144,7 +1147,7 @@ end_train(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
         stats[epoch].throughput.train = NAN;
     }
     else {
-        stats[epoch].throughput.train = (double)config.NUM_TRAIN_BATCHES_PER_RANK * config.BATCH_SIZE *
+        stats[epoch].throughput.train = (double)config.BATCH_SIZE * (config.TOTAL_TRAINING_STEPS_PER_RANK == -1? config.NUM_TRAIN_BATCHES_PER_RANK: config.TOTAL_TRAINING_STEPS_PER_RANK) *
                                         1000000.0 / (end_time - stats[epoch].start_time.train);
     }
     stats[epoch].metadata_time.train = metadata_time;
