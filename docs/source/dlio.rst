@@ -34,6 +34,7 @@ As in the case with other extensions, the following parameters should be specifi
 ``preprocess-time``        Preprocessing time after reading each sample in seconds               float    0.0
 ``preprocess-time-stdev``  Standard deviation in preprocessing time in seconds                   float    0.0
 ``epochs``                 The number of epochs                                                  int      5
+``total-training-steps``   Maximum number of steps per training per epoch                        int      -1
 ``computation-time``       Computation time after reading each batch in seconds                  float    0.323
 ``computation-time-stdev`` Standard deviation in computation time in seconds                     float    0.0
 ``random-seed``            Random seed to be used                                                int      42

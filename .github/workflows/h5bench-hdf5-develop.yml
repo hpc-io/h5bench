@@ -419,10 +419,8 @@ jobs:
       - name: Test h5bench SYNC dlio
         run: |
           export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
 
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
           
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-dlio.json

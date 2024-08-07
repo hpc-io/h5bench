@@ -11,6 +11,7 @@
 
 #include "utils.h"
 
+// Returns the current time in microseconds
 uint64_t
 get_time_usec_return_uint64()
 {
@@ -86,6 +87,7 @@ config_datatype_t config = {
     .NUM_OF_ACTUALLY_USED_PROCESSES_EVAL  = 0,
 };
 
+// Creating a directory with a specified name
 void
 create_directory(const char *folder)
 {
@@ -98,6 +100,7 @@ create_directory(const char *folder)
     }
 }
 
+// Deleting a directory with a specified name
 void
 delete_directory(const char *dir_path)
 {
@@ -137,6 +140,7 @@ delete_directory(const char *dir_path)
     }
 }
 
+// Shuffle the values in the specified array
 void
 shuffle(uint32_t *array, size_t n)
 {
@@ -150,6 +154,7 @@ shuffle(uint32_t *array, size_t n)
     }
 }
 
+// Generation of normally distributed random number
 double
 generate_normal_random(float mean, float stdev)
 {
@@ -159,6 +164,7 @@ generate_normal_random(float mean, float stdev)
     return z0 * stdev + mean;
 }
 
+// Parsing of arguments that the program receives as input
 void
 parse_args(int argc, char *argv[])
 {

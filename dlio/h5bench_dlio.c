@@ -19,6 +19,8 @@
 #include "H5FDioc.h"
 #endif
 
+// Maximum size of randomly generated data per file. If the file size is larger than the specified value,
+// randomly generated data will be written to the file several times in a row. Default value is 2 GB
 #define GENERATION_BUFFER_SIZE 2 * 1073741824lu
 
 // Global variables
@@ -28,6 +30,7 @@ uint32_t DIM;
 hid_t    DCPL, FAPL, DAPL, DXPL;
 MPI_Comm rest_training_steps_comm = MPI_COMM_WORLD;
 
+// Generating a dataset containing training data labels
 void
 generate_labels_dataset(hid_t file_id, hid_t filespace, hid_t memspace)
 {
@@ -53,6 +56,7 @@ generate_labels_dataset(hid_t file_id, hid_t filespace, hid_t memspace)
     H5Dclose(dataset_id);
 }
 
+// Generating a dataset containing random training data
 void
 generate_records_dataset(hid_t file_id, hid_t filespace, hid_t memspace, hid_t extra_memspace)
 {
@@ -93,6 +97,7 @@ generate_records_dataset(hid_t file_id, hid_t filespace, hid_t memspace, hid_t e
     H5Dclose(dataset_id);
 }
 
+// Generating a hdf5 file containing a dataset with random training data and a dataset with labels
 void
 generate_file(const char *file_name, hid_t labels_filespace, hid_t labels_memspace, hid_t records_filespace,
               hid_t records_memspace, hid_t extra_records_memspace)
@@ -106,6 +111,7 @@ generate_file(const char *file_name, hid_t labels_filespace, hid_t labels_memspa
     H5Fclose(file_id);
 }
 
+// Distribution of file generation work among MPI ranks
 void
 generate_data()
 {
@@ -170,6 +176,7 @@ generate_data()
     }
 }
 
+// Read a given sample from a given hdf5 file
 void
 read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time_out, uint64_t *read_time_out)
 {
@@ -213,6 +220,7 @@ read_sample(const char *file_path, uint32_t sample, uint64_t *metadata_time_out,
     compute(config.PREPROCESS_TIME, config.PREPROCESS_TIME_STDEV);
 }
 
+// Simulation of computations by means of sleep() function
 uint64_t
 compute(float time, float time_stdev)
 {
@@ -224,6 +232,7 @@ compute(float time, float time_stdev)
     return 0;
 }
 
+// Evaluation process simulation without the use of multiprocessing and workers
 void
 eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out,
                      uint64_t *local_read_time_out)
@@ -256,43 +265,9 @@ eval_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata
 
         t0 = get_time_usec_return_uint64();
     }
-
-    //    TODO: drop_data = False
-    //    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank;
-    //    iteration += NUM_RANKS) {
-    //        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
-    //        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-    //        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-    //        char file_path[256];
-    //        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
-    //        config.VALID_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_EVAL);
-    //
-    //        uint64_t metadata_time = 0, read_time = 0;
-    //        read_sample(file_path, sample_num, &metadata_time, &read_time);
-    //        read_counter++;
-    //
-    //        *local_metadata_time_out += metadata_time;
-    //        *local_read_time_out += read_time;
-    //
-    //        if (read_counter % config.BATCH_SIZE_EVAL == 0){
-    //            batch_loaded_eval(epoch, t0);
-    //
-    //            uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
-    //            batch_processed_eval(epoch, t, t0);
-    //            read_counter = 0;
-    //
-    //            t0 = get_time_usec_return_uint64();
-    //        }
-    //    }
-    //
-    //    if (read_counter != 0) {
-    //        batch_loaded_eval(epoch, t0);
-    //
-    //        uint64_t t = compute(config.EVAL_TIME, config.EVAL_TIME_STDEV);
-    //        batch_processed_eval(epoch, t, t0);
-    //    }
 }
 
+// Evaluation process simulation using multiprocessing and workers
 void
 eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out)
 {
@@ -345,6 +320,7 @@ eval_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *
     }
 }
 
+// Preparing and selecting a way to simulate the evaluation process
 void
 eval(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing)
 {
@@ -366,6 +342,7 @@ eval(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing)
     end_eval(epoch, eval_metadata_time, eval_read_time);
 }
 
+// Training process simulation without the use of multiprocessing and workers
 void
 train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadata_time_out,
                       uint64_t *local_read_time_out)
@@ -405,43 +382,9 @@ train_without_workers(uint32_t epoch, uint32_t *indices, uint64_t *local_metadat
 
         t0 = get_time_usec_return_uint64();
     }
-
-    //    TODO: drop_data = True
-    //    for (uint32_t iteration = MY_RANK; iteration < total_samples - NUM_RANKS * samples_per_rank;
-    //    iteration += NUM_RANKS) {
-    //        uint32_t i = NUM_RANKS * samples_per_rank + iteration;
-    //        uint32_t file_num = indices[i] / config.NUM_SAMPLES_PER_FILE + 1;
-    //        uint32_t sample_num = indices[i] % config.NUM_SAMPLES_PER_FILE;
-    //        char file_path[256];
-    //        snprintf(file_path, sizeof(file_path), "%s/%s/%s_%u_of_%u.h5", config.DATA_FOLDER,
-    //        config.TRAIN_DATA_FOLDER, config.FILE_PREFIX, file_num, config.NUM_FILES_TRAIN);
-    //
-    //        uint64_t metadata_time = 0, read_time = 0;
-    //        read_sample(file_path, sample_num, &metadata_time, &read_time);
-    //        read_counter++;
-    //
-    //        *local_metadata_time_out += metadata_time;
-    //        *local_read_time_out += read_time;
-    //
-    //        if (read_counter % config.BATCH_SIZE == 0){
-    //            batch_loaded_train(epoch, t0);
-    //
-    //            uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
-    //            batch_processed_train(epoch, t, t0);
-    //
-    //            read_counter = 0;
-    //            t0 = get_time_usec_return_uint64();
-    //        }
-    //    }
-    //
-    //    if (read_counter != 0) {
-    //        batch_loaded_train(epoch, t0);
-    //
-    //        uint64_t t = compute(config.COMPUTATION_TIME, config.COMPUTATION_TIME_STDEV);
-    //        batch_processed_train(epoch, t, t0);
-    //    }
 }
 
+// Training process simulation using multiprocessing and workers
 void
 train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t *local_read_time_out)
 {
@@ -504,6 +447,7 @@ train_using_workers(uint32_t epoch, uint64_t *local_metadata_time_out, uint64_t 
     }
 }
 
+// Preparing and selecting a way to simulate the training process
 void
 train(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing)
 {
@@ -525,6 +469,7 @@ train(uint32_t epoch, uint32_t *indices, bool enable_multiprocessing)
     end_train(epoch, train_metadata_time, train_read_time);
 }
 
+// Starting the benchmark and simulation process of training and evaluation
 void
 run()
 {
@@ -579,6 +524,7 @@ run()
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
+// Initialization of some global variables and settings for benchmark operation
 void
 init_global_variables()
 {

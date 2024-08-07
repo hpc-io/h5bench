@@ -19,10 +19,10 @@ uint32_t *last_proc_eval;
 uint32_t *last_compute_train;
 uint32_t *last_compute_eval;
 
+// Initialization of variables for storing statistics information
 void
 stats_initialize()
 {
-    //    TODO: drop_last = False
     stats = (struct epoch_data *)malloc(config.EPOCHS * sizeof(struct epoch_data));
     if (stats == NULL) {
         exit(1);
@@ -89,6 +89,7 @@ stats_initialize()
     }
 }
 
+// Release of resources initialized for storing statistics information
 void
 stats_finalize()
 {
@@ -119,6 +120,7 @@ stats_finalize()
     free(global_stats);
 }
 
+//
 void
 prepare_data()
 {
@@ -215,11 +217,11 @@ prepare_data()
     }
 }
 
+// Preparing data obtained during benchmark execution for output
 void
 print_average_data()
 {
     // Train
-    // TODO: drop_last = false
     uint64_t train_total_size_bytes =
         (uint64_t)config.BATCH_SIZE *
         (config.TOTAL_TRAINING_STEPS == -1 ? config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS
@@ -302,7 +304,6 @@ print_average_data()
     double train_io_stdev = train_throughput_stdev_samples_per_second * config.RECORD_LENGTH;
 
     // Evaluation
-    // TODO: drop_last = False
     uint64_t eval_total_size_bytes = (uint64_t)config.NUM_EVAL_BATCHES_PER_RANK * NUM_RANKS *
                                      config.BATCH_SIZE_EVAL * config.RECORD_LENGTH;
     uint64_t eval_size_bytes_per_rank =
@@ -690,11 +691,11 @@ print_average_data()
     free(eval_avg_observed_rate_per_epoch);
 }
 
+// Output collected statistics on the current MPI rank
 void
 print_rank_data()
 {
     // Train
-    // TODO: drop_last = false
     uint64_t train_total_size_bytes =
         (uint64_t)config.NUM_TRAIN_BATCHES_PER_RANK * NUM_RANKS * config.BATCH_SIZE * config.RECORD_LENGTH;
     uint64_t train_size_bytes_per_rank =
@@ -774,7 +775,6 @@ print_rank_data()
     double train_io_stdev = train_throughput_stdev_samples_per_second * config.RECORD_LENGTH;
 
     // Evaluation
-    // TODO: drop_last = False
     uint64_t eval_total_size_bytes = (uint64_t)config.NUM_EVAL_BATCHES_PER_RANK * NUM_RANKS *
                                      config.BATCH_SIZE_EVAL * config.RECORD_LENGTH;
     uint64_t eval_size_bytes_per_rank =
@@ -1110,12 +1110,14 @@ print_rank_data()
     free(eval_avg_observed_rate_per_epoch);
 }
 
+// Saving the time spent on loading a batch during the training process
 void
 batch_loaded_train(uint32_t epoch, uint64_t t0)
 {
     stats[epoch].load.train[last_load_train[epoch]++] = (get_time_usec_return_uint64() - t0);
 }
 
+// Saving the time spent on processing a batch during the trining process
 void
 batch_processed_train(uint32_t epoch, uint64_t computation_time, uint64_t t0)
 {
@@ -1123,12 +1125,14 @@ batch_processed_train(uint32_t epoch, uint64_t computation_time, uint64_t t0)
     stats[epoch].compute.train[last_compute_train[epoch]++] = computation_time;
 }
 
+// Saving the time spent on loading a batch during the evaluation process
 void
 batch_loaded_eval(uint32_t epoch, uint64_t t0)
 {
     stats[epoch].load.eval[last_load_eval[epoch]++] = (get_time_usec_return_uint64() - t0);
 }
 
+// Saving the time spent on processing a batch during the evaluation process
 void
 batch_processed_eval(uint32_t epoch, uint64_t computation_time, uint64_t t0)
 {
@@ -1136,12 +1140,14 @@ batch_processed_eval(uint32_t epoch, uint64_t computation_time, uint64_t t0)
     stats[epoch].compute.eval[last_compute_eval[epoch]++] = computation_time;
 }
 
+// Saving the start time of the training process
 void
 start_train(uint32_t epoch)
 {
     stats[epoch].start_time.train = get_time_usec_return_uint64();
 }
 
+// Saving data on the training process
 void
 end_train(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
 {
@@ -1161,12 +1167,14 @@ end_train(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
     stats[epoch].raw_read_time.train = read_time;
 }
 
+// Saving the start time of the evaluation process
 void
 start_eval(uint32_t epoch)
 {
     stats[epoch].start_time.eval = get_time_usec_return_uint64();
 }
 
+// Saving data on the evaluation process
 void
 end_eval(uint32_t epoch, uint64_t metadata_time, uint64_t read_time)
 {

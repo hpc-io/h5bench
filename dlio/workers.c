@@ -13,6 +13,7 @@
 int pipe_train_task_fd[2], pipe_train_result_fd[2], pipe_eval_task_fd[2], pipe_eval_result_fd[2];
 int pipe_train_system_fd[2], pipe_eval_system_fd[2];
 
+// Initialization of processes that will be used later on in the simulation of data processing
 void
 init_workers(uint32_t *indices_train, uint32_t *indices_eval)
 {
@@ -79,42 +80,49 @@ init_workers(uint32_t *indices_train, uint32_t *indices_eval)
     close(pipe_train_system_fd[0]);
 }
 
+// Returns the file descriptor opened for reading and used to communicate with training workers
 int
 get_train_read_fd()
 {
     return pipe_train_result_fd[0];
 }
 
+// Returns the file descriptor opened for reading and used to communicate with evaluation workers
 int
 get_eval_read_fd()
 {
     return pipe_eval_result_fd[0];
 }
 
+// Returns the file descriptor opened for writing and used to communicate with training workers
 int
 get_train_write_fd()
 {
     return pipe_train_task_fd[1];
 }
 
+// Returns the file descriptor opened for writing and used to communicate with evaluation workers
 int
 get_eval_write_fd()
 {
     return pipe_eval_task_fd[1];
 }
 
+// Returns the file descriptor opened for writing and used to manage the training workers
 int
 get_train_system_fd()
 {
     return pipe_train_system_fd[1];
 }
 
+// Returns the file descriptor opened for writing and used to manage the evaluation workers
 int
 get_eval_system_fd()
 {
     return pipe_eval_system_fd[1];
 }
 
+// Release all resources used by processes and the processes themselves
 void
 fin_workers()
 {
@@ -139,6 +147,7 @@ fin_workers()
     }
 }
 
+// Command all workers to shuffle data files
 void
 force_workers_to_shuffle(int read_fd, int write_fd, int system_fd)
 {
@@ -156,6 +165,7 @@ force_workers_to_shuffle(int read_fd, int write_fd, int system_fd)
     }
 }
 
+// Starting a worker waiting for commands to read data batches
 void
 run_worker(uint32_t *indices, int pipe_task_fd[2], int pipe_result_fd[2], int pipe_system_fd[2],
            bool is_train_worker)
