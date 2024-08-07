@@ -31,7 +31,7 @@ int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
 int has_vol_async;
 
-const char* compress_filter_names[] = {
+char* compress_filter_names[] = {
 	"INVALID",
 	"N_BIT",
 	"SZIP",
@@ -40,7 +40,8 @@ const char* compress_filter_names[] = {
 	"ZFP"
 };
 
-const int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013 };
+int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013 };
+unsigned int *cd_values;
 
 unsigned long
 get_time_usec()
@@ -1331,8 +1332,19 @@ print_params(const bench_params *p)
 
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
-		printf("	Compression_filter_name: %s\n", compress_filter_names[p->compress_filter]);		// New
-		printf("	Compression_filter_id: %d\n", compress_filter_ids[p->compress_filter]);			// New
+		printf("    Compression_filter_name: %s\n", compress_filter_names[p->compress_filter]);		// New
+		printf("    Compression_filter_id: %d\n", compress_filter_ids[p->compress_filter]);			// New
+		printf("    Number of auxiliary data: %d\n", p->cd_nelmts);					// new
+		cd_values = (unsigned int)malloc(5 * sizeof(unsigned int));					// new
+		cd_values[0] = p->cd_value_1;												// new
+		cd_values[1] = p->cd_value_2;
+		cd_values[2] = p->cd_value_3;
+		cd_values[3] = p->cd_value_4;
+		cd_values[4] = p->cd_value_5;
+		for (int i = 0; i < p->cd_nelmts; ++i) {									// new
+			printf("    Auxiliary data %d: %d\n", i + 1, cd_values[i]);
+		}
+		free(cd_values);															// new
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
         if (p->num_dims >= 2) {
             printf("    chunk_dim2: %lu\n", p->chunk_dim_2);

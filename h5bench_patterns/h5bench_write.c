@@ -1249,17 +1249,6 @@ main(int argc, char *argv[])
         value       = format_human_readable(or_bs);
         printf("%s Observed write rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
 
-		// Applied compression filters:
-		// Status: Success, Optional, Failed
-		// Name
-		// Filter_id
-		// Compression_ratio (runtime)
-		// Speed
-		// Complexity
-		// Space (memory)
-		// Latency
-		// Interoperability
-
         printf("===========================================================\n");
 
         if (params.useCSV) {
