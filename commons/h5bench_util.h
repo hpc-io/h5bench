@@ -100,7 +100,7 @@ typedef enum read_option {
     CS
 } read_option;
 
-typedef enum compress_filter {		// New
+typedef enum compress_filter {		// new
     COMPRESS_FILTER_INVALID,
     N_BIT,
     SZIP,
@@ -159,6 +159,12 @@ typedef struct bench_params {
     unsigned long align_threshold;
     unsigned long align_len;
     unsigned long stdev_dim_1;
+	size_t        cd_nelmts;		// new
+	unsigned int  cd_value_1;		// new
+	unsigned int  cd_value_2;		// new
+	unsigned int  cd_value_3;		// new
+	unsigned int  cd_value_4;		// new
+	unsigned int  cd_value_5;		// new
 } bench_params;
 
 typedef struct data_md {

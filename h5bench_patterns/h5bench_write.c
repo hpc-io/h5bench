@@ -71,6 +71,8 @@ typedef struct compress_info {
 	hsize_t total_compressed_size;
 } compress_info;
 
+unsigned int *cd_values;
+
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;
 compress_info COMPRESS_INFO; // Using parallel compressing: need to set chunk dimensions for dcpl.
@@ -898,6 +900,14 @@ set_globals(const bench_params *params)
     if (COMPRESS_INFO.USE_COMPRESS) { // set DCPL
         herr_t ret;
 
+		// Construct auxiliary data for the filter
+		cd_values = (unsigned int)malloc(5 * sizeof(unsigned int));
+		cd_values[0] = params->cd_value_1;
+		cd_values[1] = params->cd_value_2;
+		cd_values[2] = params->cd_value_3;
+		cd_values[3] = params->cd_value_4;
+		cd_values[4] = params->cd_value_5;
+		
 		// Create a new property list instance
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         assert(COMPRESS_INFO.dcpl_id > 0);
@@ -929,20 +939,16 @@ set_globals(const bench_params *params)
 		else if (params->compress_filter == GZIP) {
         	ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
 		}
-		else if (params->compress_filter == SZ){
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ, H5Z_FLAG_MANDATORY, 0, NULL);
-		}
 		else if (params->compress_filter == SZ3) {
-			// unsigned int cd_values[3];
-			// cd_values[0] = ABS;
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_MANDATORY, 0, NULL);	
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_MANDATORY, params->cd_nelmts, cd_values);	
 		}
 		else if (params->compress_filter == ZFP) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_MANDATORY, 0, NULL);
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_MANDATORY, params->cd_nelmts, cd_values);
 		}
 		else {
 			ret = -1;
 		}
+		free(cd_values);
         assert(ret >= 0);
 	}
 

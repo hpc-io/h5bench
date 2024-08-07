@@ -36,12 +36,11 @@ const char* compress_filter_names[] = {
 	"N_BIT",
 	"SZIP",
 	"GZIP",
-	"SZ",
 	"SZ3",
 	"ZFP"
 };
 
-const int compress_filter_ids[] = { -1, 5, 4, 1, 32017, 32024, 32013 };
+const int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013 };
 
 unsigned long
 get_time_usec()
@@ -876,9 +875,6 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		else if (strcmp(val_in, "GZIP") == 0) {
 			(*params_in_out).compress_filter = GZIP;
 		}
-		else if (strcmp(val_in, "SZ") == 0) {
-			(*params_in_out).compress_filter = SZ;
-		}
 		else if (strcmp(val_in, "SZ3") == 0) {
 			(*params_in_out).compress_filter = SZ3;
 		}
@@ -888,6 +884,24 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		
 		else
 			(*params_in_out).compress_filter = COMPRESS_FILTER_INVALID;	
+	}
+	else if (strcmp(key, "NUM_AUXILIARY_DATA") == 0) {
+		(*params_in_out).cd_nelmts = atoi(val);
+	}
+	else if (strcmp(key, "AUXILIARY_DATA_1") == 0) {
+		(*params_in_out).cd_value_1 = atoi(val);
+	}
+	else if (strcmp(key, "AUXILIARY_DATA_2") == 0) {
+		(*params_in_out).cd_value_2 = atoi(val);
+	}
+	else if (strcmp(key, "AUXILIARY_DATA_3") == 0) {
+		(*params_in_out).cd_value_3 = atoi(val);
+	}
+	else if (strcmp(key, "AUXILIARY_DATA_4") == 0) {
+		(*params_in_out).cd_value_4 = atoi(val);
+	}
+	else if (strcmp(key, "AUXILIARY_DATA_5") == 0) {
+		(*params_in_out).cd_value_5 = atoi(val);
 	}
     else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
@@ -1137,6 +1151,13 @@ bench_params_init(bench_params *params_out)
     (*params_out).align           = 0;
     (*params_out).align_threshold = 0;
     (*params_out).align_len       = 0;
+
+	(*params_out).cd_nelmts       = 0;		// new
+    (*params_out).cd_value_1      = 0;		// new
+    (*params_out).cd_value_2      = 0;		// new
+    (*params_out).cd_value_3      = 0;		// new
+    (*params_out).cd_value_4      = 0;		// new
+    (*params_out).cd_value_5      = 0;		// new
 }
 
 int
