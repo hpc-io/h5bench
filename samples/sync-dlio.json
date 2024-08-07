@@ -15,6 +15,28 @@
     {
       "benchmark": "dlio",
       "configuration": {
+        "generate-data": "true",
+        "chunking": "false",
+        "keep-files": "true",
+        "compression": "false",
+        "record-length": "1048576",
+        "num-files-train": "8",
+        "num-files-eval": "2",
+        "num-samples-per-file": "4",
+        "data-folder": "data",
+        "file-prefix": "img",
+        "random-seed": "42",
+        "train-data-folder": "train",
+        "valid-data-folder": "valid",
+        "records-dataset-name": "records",
+        "labels-dataset-name": "labels",
+        "output-csv-name": "output",
+        "output-ranks-data": "true"
+      }
+    },
+    {
+      "benchmark": "dlio",
+      "configuration": {
         "train": "true",
         "evaluation": "true",
         "keep-files": "true",
@@ -24,7 +46,7 @@
         "num-files-train": "8",
         "num-files-eval": "2",
         "num-samples-per-file": "4",
-        "data-folder": "./data",
+        "data-folder": "data",
         "file-prefix": "img",
         "batch-size": "2",
         "batch-size-eval": "1",
