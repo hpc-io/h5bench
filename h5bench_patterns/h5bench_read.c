@@ -67,7 +67,7 @@ mem_monitor *   MEM_MONITOR;
 
 typedef struct filter_info {	// new
 	int USE_COMPRESS;
-	size_t cd_nelmts;
+	size_t *cd_nelmts;
 	unsigned int *cd_values;
 	char *name;
 	unsigned int *filter_config;
@@ -101,15 +101,18 @@ void
 filter_info_init()						// new
 {
 	FILTER_INFO.USE_COMPRESS = 0;
+	FILTER_INFO.cd_nelmts = (size_t *)malloc(sizeof(size_t));
 	FILTER_INFO.cd_values = (unsigned int *)malloc(10 * sizeof(unsigned int));
 	FILTER_INFO.name = (char *)malloc(10 * sizeof(char));
 	FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
 }
 
+
 // Free memory for filter_info
 void
 filter_info_free()
 {
+	free(FILTER_INFO.cd_nelmts);
 	free(FILTER_INFO.cd_values);
 	free(FILTER_INFO.name);
 	free(FILTER_INFO.filter_config);
@@ -139,7 +142,7 @@ get_filter_info(hid_t dset_id)			// new
 		printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
 		printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
 		printf("  Number of auxiliary data: %d\n", FILTER_INFO.cd_nelmts);
-		for (int i = 0; i < FILTER_INFO.cd_nelmts; ++i) {
+		for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
 			printf("  Auxiliary data %d: %d\n", i, FILTER_INFO.cd_values[i]);
 		}
 	}

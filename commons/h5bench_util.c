@@ -38,7 +38,7 @@ char* compress_filter_names[] = {
 	"GZIP",
 	"SZ3",
 	"ZFP",
-	"SNAPPY-CUDA"
+	"SNAPPY_CUDA"
 };
 
 int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013, 32003 };
@@ -883,8 +883,8 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		else if (strcmp(val_in, "ZFP") == 0) {
 			(*params_in_out).compress_filter = ZFP;
 		}
-		else if (strcmp(val_in, "SNAPPY-CUDA") == 0) {
-			(*params_in_out).compress_filter = SNAPPY-CUDA;
+		else if (strcmp(val_in, "SNAPPY_CUDA") == 0) {
+			(*params_in_out).compress_filter = SNAPPY_CUDA;
 		}
 		
 		else
@@ -1339,7 +1339,7 @@ print_params(const bench_params *p)
 		printf("    Compression_filter_name: %s\n", compress_filter_names[p->compress_filter]);		// New
 		printf("    Compression_filter_id: %d\n", compress_filter_ids[p->compress_filter]);			// New
 		printf("    Number of auxiliary data: %d\n", p->cd_nelmts);					// new
-		cd_values = (unsigned int)malloc(5 * sizeof(unsigned int));					// new
+		cd_values = (unsigned int *)malloc(5 * sizeof(unsigned int));					// new
 		cd_values[0] = p->cd_value_1;												// new
 		cd_values[1] = p->cd_value_2;
 		cd_values[2] = p->cd_value_3;

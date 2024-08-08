@@ -58,7 +58,7 @@
 #define DIM_MAX 3
 #define H5Z_FILTER_ZFP 32013
 #define H5Z_FILTER_SZ3 32024
-#define H5Z_FILTER_SNAPPY-CUDA 32003
+#define H5Z_FILTER_SNAPPY_CUDA 32003
 
 herr_t ierr;
 
@@ -899,7 +899,7 @@ set_globals(const bench_params *params)
         herr_t ret;
 
 		// Construct auxiliary data for the filter
-		cd_values = (unsigned int)malloc(5 * sizeof(unsigned int));
+		cd_values = (unsigned int *)malloc(5 * sizeof(unsigned int));
 		cd_values[0] = params->cd_value_1;
 		cd_values[1] = params->cd_value_2;
 		cd_values[2] = params->cd_value_3;
@@ -943,8 +943,8 @@ set_globals(const bench_params *params)
 		else if (params->compress_filter == ZFP) {
 			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_MANDATORY, params->cd_nelmts, cd_values);
 		}
-		else if (params->compress_filter == SNAPPY-CUDA) {
-			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SNAPPY-CUDA, H5Z_FLAG_MANDATORY, params->cd_nelmts, cd_values);
+		else if (params->compress_filter == SNAPPY_CUDA) {
+			ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SNAPPY_CUDA, H5Z_FLAG_MANDATORY, params->cd_nelmts, cd_values);
 		}
 		else {
 			ret = -1;

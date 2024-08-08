@@ -107,7 +107,7 @@ typedef enum compress_filter {		// new
     GZIP,
 	SZ3,
 	ZFP,
-	SNAPPY-CUDA 
+	SNAPPY_CUDA
 } compress_filter;
 
 typedef struct bench_params {
