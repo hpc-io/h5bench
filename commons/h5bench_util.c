@@ -37,10 +37,11 @@ char* compress_filter_names[] = {
 	"SZIP",
 	"GZIP",
 	"SZ3",
-	"ZFP"
+	"ZFP",
+	"SNAPPY-CUDA"
 };
 
-int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013 };
+int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013, 32003 };
 unsigned int *cd_values;
 
 unsigned long
@@ -881,6 +882,9 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
 		}
 		else if (strcmp(val_in, "ZFP") == 0) {
 			(*params_in_out).compress_filter = ZFP;
+		}
+		else if (strcmp(val_in, "SNAPPY-CUDA") == 0) {
+			(*params_in_out).compress_filter = SNAPPY-CUDA;
 		}
 		
 		else
