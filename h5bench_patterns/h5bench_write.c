@@ -899,13 +899,18 @@ set_globals(const bench_params *params)
         herr_t ret;
 
 		// Construct auxiliary data for the filter
-		cd_values = (unsigned int *)malloc(5 * sizeof(unsigned int));
+		cd_values = (unsigned int *)malloc(10 * sizeof(unsigned int));
 		cd_values[0] = params->cd_value_1;
 		cd_values[1] = params->cd_value_2;
 		cd_values[2] = params->cd_value_3;
 		cd_values[3] = params->cd_value_4;
 		cd_values[4] = params->cd_value_5;
-		
+		cd_values[5] = params->cd_value_6;
+		cd_values[6] = params->cd_value_7;
+		cd_values[7] = params->cd_value_8;
+		cd_values[8] = params->cd_value_9;
+		cd_values[9] = params->cd_value_10;
+	
 		// Create a new property list instance
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         assert(COMPRESS_INFO.dcpl_id > 0);
@@ -913,12 +918,6 @@ set_globals(const bench_params *params)
 		// Clear any possible residual filter settings
 		ret = H5Premove_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ALL);
 		assert(ret >= 0);
-
-		/*
-		// Set shuffle filter prior to any compression filters
-		ret = H5Pset_shuffle(COMPRESS_INFO.dcpl_id);
-		assert(ret >= 0);
-		*/
 
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);

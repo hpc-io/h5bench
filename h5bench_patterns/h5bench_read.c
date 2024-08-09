@@ -65,7 +65,7 @@ herr_t          ierr;
 data_contig_md *BUF_STRUCT;
 mem_monitor *   MEM_MONITOR;
 
-typedef struct filter_info {	// new
+typedef struct filter_info {
 	int USE_COMPRESS;
 	size_t *cd_nelmts;
 	unsigned int *cd_values;
@@ -74,7 +74,7 @@ typedef struct filter_info {	// new
 	H5Z_filter_t filter_id;		
 } filter_info;
 
-filter_info FILTER_INFO;		// new
+filter_info FILTER_INFO;
 
 void
 print_data(int n)
@@ -98,7 +98,7 @@ set_dspace_plist(hid_t *plist_id_out, int data_collective)
 
 // Allocate memory for filter_info
 void
-filter_info_init()						// new
+filter_info_init()	
 {
 	FILTER_INFO.USE_COMPRESS = 0;
 	FILTER_INFO.cd_nelmts = (size_t *)malloc(sizeof(size_t));
@@ -120,7 +120,7 @@ filter_info_free()
 
 // Retrieve information about a filter on a dataset
 int
-get_filter_info(hid_t dset_id)			// new
+get_filter_info(hid_t dset_id)	
 {
 	hid_t dcpl;
 	dcpl = H5Dget_create_plist(dset_id);
@@ -141,9 +141,9 @@ get_filter_info(hid_t dset_id)			// new
 	if (MY_RANK == 0) {
 		printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
 		printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
-		printf("  Number of auxiliary data: %d\n", FILTER_INFO.cd_nelmts);
+		printf("  Number of compression filter parameters: %d\n", FILTER_INFO.cd_nelmts);
 		for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-			printf("  Auxiliary data %d: %d\n", i, FILTER_INFO.cd_values[i]);
+			printf("  Compression parameter %d: %d\n", i, FILTER_INFO.cd_values[i]);
 		}
 	}
 
@@ -175,7 +175,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
  
-	int err = get_filter_info(dset_ids[0]);			// new
+	int err = get_filter_info(dset_ids[0]);
 	if (MY_RANK = 0) {
 		if (err) {
 			printf("  No compression filter on the dataset\n"); 
@@ -590,7 +590,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
     int           dset_cnt = 8;
-	filter_info_init();			// new
+	filter_info_init();
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         sprintf(grp_name, "Timestep_%d", ts_index);
@@ -643,7 +643,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         *raw_read_time_out += (read_time_exp + read_time_imp);
         *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
     }
-	filter_info_free();		// new	
+
     mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
     *raw_read_time_out += read_time_imp;
     *inner_metadata_time += metadata_time_imp;
@@ -886,12 +886,12 @@ main(int argc, char *argv[])
             value = format_human_readable(total_size_bytes);
             fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
 		
-			if (FILTER_INFO.USE_COMPRESS) {			// new
+			if (FILTER_INFO.USE_COMPRESS) {
 				fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
 				fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
-				fprintf(params.csv_fs, "number of auxiliary data, %d\n", FILTER_INFO.cd_nelmts);
-				for (int i = 0; i < FILTER_INFO.cd_nelmts; ++i) {
-					fprintf(params.csv_fs, "auxiliary data %d, %d\n", i, FILTER_INFO.cd_values[i]);
+				fprintf(params.csv_fs, "number of compression filter parameters, %d\n", FILTER_INFO.cd_nelmts);
+				for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
+					fprintf(params.csv_fs, "compression parameter %d, %d\n", i, FILTER_INFO.cd_values[i]);
 				}
 			}
 
@@ -904,8 +904,9 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
+		
     }
-
+	filter_info_free();
 error:
     H5E_BEGIN_TRY
     {
