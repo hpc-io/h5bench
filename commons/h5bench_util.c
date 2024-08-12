@@ -42,7 +42,7 @@ char* compress_filter_names[] = {
 };
 
 int compress_filter_ids[] = { -1, 5, 4, 1, 32024, 32013, 32003 };
-unsigned int *cd_values;
+static unsigned int *cd_values;
 
 unsigned long
 get_time_usec()

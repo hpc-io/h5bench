@@ -69,7 +69,7 @@ typedef struct compress_info {
 	hsize_t total_compressed_size;
 } compress_info;
 
-unsigned int *cd_values;
+static unsigned int *cd_values;
 
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;

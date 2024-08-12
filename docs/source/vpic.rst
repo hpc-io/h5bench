@@ -69,13 +69,18 @@ Compression Settings
 **Parameter**                           **Description**                                         
 ======================================= ==========================================================
 ``COMPRESS``                            `YES` or `NO` (optional) enables parralel compression   
-``COMPRESS_FILTER``                     Options: ``N_BIT``, ``SZIP``, ``GZIP`, ``SZ3```, ``ZFP``, ``SNAPPY_CUDA``
-``NUM_AUXILIARY_DATA``                  Number of auxiliary data to control the behavior of the compression
-``AUXILIARY_DATA_1``                    Auxiliary data
-``AUXILIARY_DATA_2``                    Auxiliary data
-``AUXILIARY_DATA_3``                    Auxiliary data
-``AUXILIARY_DATA_4``                    Auxiliary data
-``AUXILIARY_DATA_5``                    Auxiliary data
+``COMPRESS_FILTER``                     Options: ``N_BIT``, ``SZIP``, ``GZIP``, ``SZ3``, ``ZFP``, ``SNAPPY_CUDA``
+``CD_NELMTS``                           Number of auxiliary data to control the behavior of the compression
+``CD_VALUES_1``                         Auxiliary data
+``CD_VALUES_2``                         Auxiliary data
+``CD_VALUES_3``                         Auxiliary data
+``CD_VALUES_4``                         Auxiliary data
+``CD_VALUES_5``                         Auxiliary data
+``CD_VALUES_6``                         Auxiliary data
+``CD_VALUES_7``                         Auxiliary data
+``CD_VALUES_8``                         Auxiliary data
+``CD_VALUES_9``                         Auxiliary data
+``CD_VALUES_10``                        Auxiliary data
 ``CHUNK_DIM_1``                         Chunk dimension                                         
 ``CHUNK_DIM_2``                         Chunk dimension                                         
 ``CHUNK_DIM_3``                         Chunk dimension                                         
@@ -85,7 +90,8 @@ Compression and decompression are applicable for ``h5bench_write`` and ``h5bench
 
 For built-in compressions ``N_BIT``/``SZIP``/``GZIP`` to work on datasets in ``h5bench_write`` you just need to define the value for ``COMPRESS_FILTER`` and chunk dimensions. For external compressions ``SZ3``/``ZFP``/``SNAPPY_CUDA`` to work you **must** also download and build the compression filter plugin on your system, and specify the installation path ``path`` in ``vol`` so that HDF5 can apply. See `Enable Plugins <https://h5bench.readthedocs.io/en/latest/plugin.html>`_ for details using a external compression. If ``h5bench_write`` executed successfully with a intended compression, ``h5bench_read`` will read compressed data and apply decompression automatically.
 
-The ``NUM_AUXILIARY_DATA`` and ``AUXILIARY_DATA_[1-5]`` parameters are optional and only applicable to external compressions. Their default values are ``0`` and only accpet ``unsigned int`` data type. You can provide 5 auxiliary data at maximum. For information on how to define these values, see `H5Z-ZFP Interfaces <https://h5z-zfp.readthedocs.io/en/latest/interfaces.html>`_ for an example to manipulate the ZFP compression.
+The ``CD_NELMTS`` and ``CD_VALUES_[1-10]`` parameters are optional and only applicable to external compressions. Their default values are ``0`` and only accpet ``unsigned int`` data type. You can provide 10 auxiliary data at maximum. For information on how to define these values, see `H5Z-ZFP Interfaces <https://h5z-zfp.readthedocs.io/en/latest/interfaces.html>`_ for an example to manipulate the ZFP compression, and see `SZ3 Usage Example <https://github.com/szcompressor/SZ3/blob/master/tools/H5Z-SZ3/test/print_h5repack_args.cpp>`_ to manipulate the SZ3 compression.
+
 
 .. warning::
 
