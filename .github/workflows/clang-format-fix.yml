@@ -1,4 +1,4 @@
-name: clang-format Fix
+name: clang-format Fix Format
 on: 
   workflow_dispatch:
   push:
