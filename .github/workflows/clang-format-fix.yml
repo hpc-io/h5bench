@@ -1,16 +1,18 @@
-name: clang-format Check
+name: clang-format Fix
 on: 
   workflow_dispatch:
   push:
 jobs:
   formatting-check:
-    name: Formatting Check
+    name: Commit Format Changes
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'skip-ci')"
+    permissions:
+      contents: write # In order to allow EndBug/add-and-commit to commit changes
     steps:
-    - uses: actions/checkout@v2
-    - name: Run clang-format style check for C programs.
-      uses: DoozyX/clang-format-lint-action@v0.11
+    - uses: actions/checkout@v3
+    - name: Fix C formatting issues detected by clang-format
+      uses: DoozyX/clang-format-lint-action@v0.13
       with:
         source: '.'
         extensions: 'c,h,cpp,hpp'
@@ -18,8 +20,8 @@ jobs:
         inplace: True
         style: file
         # exclude: './config '
-    - uses: EndBug/add-and-commit@v7
+    - uses: EndBug/add-and-commit@v9
       with:
           author_name: github-actions
           author_email: github-actions[bot]@users.noreply.github.com
-          message: 'Committing clang-format changes'
+          message: 'committing clang-format changes'
