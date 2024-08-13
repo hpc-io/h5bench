@@ -1,7 +1,6 @@
 name: clang-format Fix
 on: 
   workflow_dispatch:
-  pull_request:
   push:
 jobs:
   formatting-check:
