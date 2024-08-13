@@ -102,6 +102,7 @@ filter_info_init()
 {
 	FILTER_INFO.USE_COMPRESS = 0;
 	FILTER_INFO.cd_nelmts = (size_t *)malloc(sizeof(size_t));
+	*(FILTER_INFO.cd_nelmts) = 10;
 	FILTER_INFO.cd_values = (unsigned int *)malloc(10 * sizeof(unsigned int));
 	FILTER_INFO.name = (char *)malloc(10 * sizeof(char));
 	FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
@@ -126,14 +127,20 @@ get_filter_info(hid_t dset_id)
 	dcpl = H5Dget_create_plist(dset_id);
 	
 	if (dcpl < 0) {
-		printf("Invalid dataset creation property list identifier.");
-		return 1;	
+		printf("Invalid dataset creation property list identifier.\n");
+		return -1;	
 	}
-	
+
+	// Check the number of filters in the pipeline, skip calling H5Pget_filter if 0 filter is detected in the pipeline
+	int num_filters = H5Pget_nfilters(dcpl);
+	if (num_filters <= 0) {
+		return 0;
+	}
 	FILTER_INFO.filter_id = H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 10, FILTER_INFO.name, FILTER_INFO.filter_config);
 
 	if (FILTER_INFO.filter_id < 0) {
-		return 1;
+		printf("Failed to retrieve filter information.\n");
+		return -1;
 	}
 	
 	FILTER_INFO.USE_COMPRESS = 1;
@@ -175,14 +182,12 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
  
-	int err = get_filter_info(dset_ids[0]);
-	if (MY_RANK = 0) {
-		if (err) {
-			printf("  No compression filter on the dataset\n"); 
-		} else {
-			printf("  Read filter info successfully\n");
+	int ret = get_filter_info(dset_ids[0]);
+	if (ret < 0) {
+		if (MY_RANK == 0) {
+			printf("get_filter_info() failed\n");
 		}
-	}
+    }	
 
     t2 = get_time_usec();
 
@@ -793,7 +798,6 @@ main(int argc, char *argv[])
 
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-	// E.g. Rank 2: `FILE_OFFSET_2 = (NUM_PARTICLES_0 + NUM_PARTICLES_1 + NUM_PARTICLES_2) - NUM_PARTICLES_2` = NUM_PARTICLES_0 + NUM_PARTICLES_1
     FILE_OFFSET -= NUM_PARTICLES;
 	// Allocate memory for each particlee
     BUF_STRUCT = prepare_contig_memory_multi_dim(params.dim_1, params.dim_2, params.dim_3);

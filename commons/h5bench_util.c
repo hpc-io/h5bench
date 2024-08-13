@@ -195,7 +195,6 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     unsigned long meta_time = 0;
 
     if (!has_vol_async) {
-    	printf("DEBUG - ts_delayed_close() does not work, has_vol_async == 0\n");
         return 0;
 	}
 
@@ -215,7 +214,6 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
         }
     }
     *metadata_time_total = meta_time;
-    printf("DEBUG - ts_delayed_close() works\n");
 	return 0;
 }
 
