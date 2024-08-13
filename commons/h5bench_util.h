@@ -105,21 +105,21 @@ typedef enum compress_filter {
     N_BIT,
     SZIP,
     GZIP,
-	SZ3,
-	ZFP,
-	SNAPPY_CUDA
+    SZ3,
+    ZFP,
+    SNAPPY_CUDA
 } compress_filter;
 
 typedef struct bench_params {
-    io_operation io_op;
-    pattern      mem_pattern;
-    pattern      file_pattern;
-    read_option  read_option;
+    io_operation    io_op;
+    pattern         mem_pattern;
+    pattern         file_pattern;
+    read_option     read_option;
     compress_filter compress_filter;
-    int          useCompress;
-    int          useCSV;
-    async_mode   asyncMode;
-    int          subfiling;
+    int             useCompress;
+    int             useCSV;
+    async_mode      asyncMode;
+    int             subfiling;
     union access_pattern {
         read_pattern  pattern_read;
         write_pattern pattern_write;
@@ -159,17 +159,17 @@ typedef struct bench_params {
     unsigned long align_threshold;
     unsigned long align_len;
     unsigned long stdev_dim_1;
-	size_t        cd_nelmts;
-	unsigned int  cd_value_1;
-	unsigned int  cd_value_2;
-	unsigned int  cd_value_3;
-	unsigned int  cd_value_4;
-	unsigned int  cd_value_5;
-	unsigned int  cd_value_6;
-	unsigned int  cd_value_7;
-	unsigned int  cd_value_8;
-	unsigned int  cd_value_9;
-	unsigned int  cd_value_10;
+    size_t        cd_nelmts;
+    unsigned int  cd_value_1;
+    unsigned int  cd_value_2;
+    unsigned int  cd_value_3;
+    unsigned int  cd_value_4;
+    unsigned int  cd_value_5;
+    unsigned int  cd_value_6;
+    unsigned int  cd_value_7;
+    unsigned int  cd_value_8;
+    unsigned int  cd_value_9;
+    unsigned int  cd_value_10;
 } bench_params;
 
 typedef struct data_md {
