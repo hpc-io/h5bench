@@ -9,7 +9,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-20.04
     container:
-      image: hpcio/hdf5-1.14.0
+      image: hpcio/hdf5-1.14.1-compress
     timeout-minutes: 60
 
     steps:
@@ -125,6 +125,32 @@ jobs:
         run: |
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+
+      - name: Test h5bench SYNC write/read N_BIT filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-N_BIT.json
+
+      - name: Test h5bench SYNC write/read SZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZIP.json
+
+      - name: Test h5bench SYNC write/read GZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-GZIP.json
+
+      - name: Test h5bench SYNC write/read SZ3 filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZ3.json
+
+      - name: Test h5bench SYNC write/read ZFP filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/zfp/installer/lib64:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-ZFP.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |

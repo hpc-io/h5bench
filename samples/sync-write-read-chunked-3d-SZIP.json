@@ -1,0 +1,57 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "4",
+		"configuration": "--allow-run-as-root --oversubscribe"
+    },
+    "vol": {
+    },
+    "file-system": {
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s", 
+                "NUM_DIMS": "3",
+				"DIM_1": "64",
+                "DIM_2": "64",
+                "DIM_3": "64",
+                "CSV_FILE": "output.csv",
+                "MODE": "SYNC",
+            	"COMPRESS": "YES",
+				"COMPRESS_FILTER": "SZIP",
+				"CHUNK_DIM_1": "64",
+				"CHUNK_DIM_2": "64",
+				"CHUNK_DIM_3": "64"
+			}
+		},
+		{
+			"benchmark": "read",
+			"file": "test.h5"
+			"configuration": {
+				"MEM_PATTERN": "CONTIG",
+				"FILE_PATTERN": "CONTIG",
+				"TIMESTEPS": "5",
+				"DELAYED_CLOSE_TIMESTEPS": "2",
+				"COLLECTIVE_DATA": "YES",
+				"COLLECTIVE_METADATA": "YES",
+				"EMULATED_COMPUTE_TIME_PER_TIMESTEP": "5 s",
+				"NUM_DIMS": "3",
+				"DIM_1": "64",
+                "DIM_2": "64",
+                "DIM_3": "64",
+				"CSV_FILE": "output.csv",
+				"MODE": "SYNC"
+			}
+		}
+    ]
+}
