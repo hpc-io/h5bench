@@ -43,6 +43,9 @@ RUN apt-get update \
     && make -j 8 \
     && make install \
 	&& cd .. \
+	&& export PATH=/opt/hdf5/bin:$PATH \
+	&& export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH \
+	&& export HDF5_HOME=/opt/hdf5 \
 	&& wget https://github.com/szcompressor/SZ3.git \
 	&& cd SZ3 \
 	&& mkdir build installer \
