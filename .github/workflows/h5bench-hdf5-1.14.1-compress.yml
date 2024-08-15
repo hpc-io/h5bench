@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.14.0) 
+name: h5bench (HDF5 1.14.0 + compression) 
 
 on:
   pull_request:
@@ -9,27 +9,13 @@ jobs:
   h5bench:
     runs-on: ubuntu-20.04
     container:
-      image: hpcio/hdf5-1.14.1-compress
+      image: hpcio/hdf5-1.14.1-compression
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Build Argobots
-        run: |
-          current="$PWD"
-
-          export ABT_DIR=$current/vol-async/argobots
-          
-          cd $ABT_DIR
-
-          ./autogen.sh
-          ./configure --prefix=$ABT_DIR/install
-
-          make -j 8
-          make install
 
       - name: Build h5bench SYNC
         run: |
