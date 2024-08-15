@@ -37,7 +37,7 @@
 		},
 		{
 			"benchmark": "read",
-			"file": "test.h5"
+			"file": "test.h5",
 			"configuration": {
 				"MEM_PATTERN": "CONTIG",
 				"FILE_PATTERN": "CONTIG",
