@@ -5,7 +5,7 @@
 		"configuration": "--allow-run-as-root --oversubscribe"
     },
     "vol": {
-		"path": "opt/H5Z-ZFP/installer/plugin"
+		"path": "/opt/H5Z-ZFP/plugin"
     },
     "file-system": {
     },
