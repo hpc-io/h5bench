@@ -66,12 +66,12 @@ data_contig_md *BUF_STRUCT;
 mem_monitor *   MEM_MONITOR;
 
 typedef struct filter_info {
-	int USE_COMPRESS;
-	size_t *cd_nelmts;
-	unsigned int *cd_values;
-	char *name;
-	unsigned int *filter_config;
-	H5Z_filter_t filter_id;		
+    int           USE_COMPRESS;
+    size_t *      cd_nelmts;
+    unsigned int *cd_values;
+    char *        name;
+    unsigned int *filter_config;
+    H5Z_filter_t  filter_id;
 } filter_info;
 
 filter_info FILTER_INFO;
@@ -98,65 +98,66 @@ set_dspace_plist(hid_t *plist_id_out, int data_collective)
 
 // Allocate memory for filter_info
 void
-filter_info_init()	
+filter_info_init()
 {
-	FILTER_INFO.USE_COMPRESS = 0;
-	FILTER_INFO.cd_nelmts = (size_t *)malloc(sizeof(size_t));
-	*(FILTER_INFO.cd_nelmts) = 10;
-	FILTER_INFO.cd_values = (unsigned int *)malloc(10 * sizeof(unsigned int));
-	FILTER_INFO.name = (char *)malloc(10 * sizeof(char));
-	FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
+    FILTER_INFO.USE_COMPRESS  = 0;
+    FILTER_INFO.cd_nelmts     = (size_t *)malloc(sizeof(size_t));
+    *(FILTER_INFO.cd_nelmts)  = 10;
+    FILTER_INFO.cd_values     = (unsigned int *)malloc(10 * sizeof(unsigned int));
+    FILTER_INFO.name          = (char *)malloc(10 * sizeof(char));
+    FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
 }
-
 
 // Free memory for filter_info
 void
 filter_info_free()
 {
-	free(FILTER_INFO.cd_nelmts);
-	free(FILTER_INFO.cd_values);
-	free(FILTER_INFO.name);
-	free(FILTER_INFO.filter_config);
+    free(FILTER_INFO.cd_nelmts);
+    free(FILTER_INFO.cd_values);
+    free(FILTER_INFO.name);
+    free(FILTER_INFO.filter_config);
 }
 
 // Retrieve information about a filter on a dataset
 int
-get_filter_info(hid_t dset_id)	
+get_filter_info(hid_t dset_id)
 {
-	hid_t dcpl;
-	dcpl = H5Dget_create_plist(dset_id);
-	
-	if (dcpl < 0) {
-		printf("Invalid dataset creation property list identifier.\n");
-		return -1;	
-	}
+    hid_t dcpl;
+    dcpl = H5Dget_create_plist(dset_id);
 
-	// Check the number of filters in the pipeline, skip calling H5Pget_filter if 0 filter is detected in the pipeline
-	int num_filters = H5Pget_nfilters(dcpl);
-	if (num_filters <= 0) {
-		return 0;
-	}
-	FILTER_INFO.filter_id = H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 10, FILTER_INFO.name, FILTER_INFO.filter_config);
+    if (dcpl < 0) {
+        printf("Invalid dataset creation property list identifier.\n");
+        return -1;
+    }
 
-	if (FILTER_INFO.filter_id < 0) {
-		printf("Failed to retrieve filter information.\n");
-		return -1;
-	}
-	
-	FILTER_INFO.USE_COMPRESS = 1;
+    // Check the number of filters in the pipeline, skip calling H5Pget_filter if 0 filter is detected in the
+    // pipeline
+    int num_filters = H5Pget_nfilters(dcpl);
+    if (num_filters <= 0) {
+        return 0;
+    }
+    FILTER_INFO.filter_id =
+        H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 10,
+                       FILTER_INFO.name, FILTER_INFO.filter_config);
 
-	if (MY_RANK == 0) {
-		printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
-		printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
-		printf("  Number of compression filter parameters: %d\n", FILTER_INFO.cd_nelmts);
-		for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-			printf("  Compression parameter %d: %d\n", i, FILTER_INFO.cd_values[i]);
-		}
-	}
+    if (FILTER_INFO.filter_id < 0) {
+        printf("Failed to retrieve filter information.\n");
+        return -1;
+    }
 
-	return 0;
+    FILTER_INFO.USE_COMPRESS = 1;
+
+    if (MY_RANK == 0) {
+        printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
+        printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
+        printf("  Number of compression filter parameters: %d\n", FILTER_INFO.cd_nelmts);
+        for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
+            printf("  Compression parameter %d: %d\n", i, FILTER_INFO.cd_values[i]);
+        }
+    }
+
+    return 0;
 }
-
 
 // Create HDF5 file and read data
 void
@@ -165,7 +166,7 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
 {
     hid_t         dapl;
     unsigned long t1, t2, t3;
-	// Create a dataset access property list
+    // Create a dataset access property list
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 #if H5_VERSION_GE(1, 10, 0)
     H5Pset_all_coll_metadata_ops(dapl, true);
@@ -181,13 +182,13 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     dset_ids[5] = H5Dopen_async(loc, "px", dapl, ts->es_meta_create);
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
- 
-	int ret = get_filter_info(dset_ids[0]);
-	if (ret < 0) {
-		if (MY_RANK == 0) {
-			printf("get_filter_info() failed\n");
-		}
-    }	
+
+    int ret = get_filter_info(dset_ids[0]);
+    if (ret < 0) {
+        if (MY_RANK == 0) {
+            printf("get_filter_info() failed\n");
+        }
+    }
 
     t2 = get_time_usec();
 
@@ -595,7 +596,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
     unsigned long read_time_exp = 0, metadata_time_exp = 0;
     unsigned long read_time_imp = 0, metadata_time_imp = 0;
     int           dset_cnt = 8;
-	filter_info_init();
+    filter_info_init();
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         sprintf(grp_name, "Timestep_%d", ts_index);
@@ -687,9 +688,9 @@ int
 main(int argc, char *argv[])
 {
     int mpi_thread_lvl_provided = -1;
-	// Initialize the MPI exe env which multiple threads may make MPI calls
+    // Initialize the MPI exe env which multiple threads may make MPI calls
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
-	assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
 
@@ -731,9 +732,9 @@ main(int argc, char *argv[])
     hid_t fapl, gapl;
     set_pl(&fapl, &gapl);
 
-	// Initialize array to store the size of each dimension, at max 64 dimensions
+    // Initialize array to store the size of each dimension, at max 64 dimensions
     hsize_t dims[64] = {0};
-	// Open an existing HDF5 file with read-only access
+    // Open an existing HDF5 file with read-only access
     hid_t         file_id         = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     hid_t         filespace       = get_filespace(file_id);
     int           dims_cnt        = H5Sget_simple_extent_dims(filespace, dims, NULL);
@@ -742,7 +743,7 @@ main(int argc, char *argv[])
         for (int i = 0; i < dims_cnt; i++) {
             if (MY_RANK == 0)
                 printf("dims[%d] = %llu (total number for the file)\n", i, dims[i]);
-			// Calculate the size/area/volume
+            // Calculate the size/area/volume
             total_particles *= dims[i];
         }
     }
@@ -777,8 +778,8 @@ main(int argc, char *argv[])
             goto error;
         }
     }
-	// NUM_RANKS here refers to the number of processes instead of the number of dimensions
-	NUM_PARTICLES = total_particles / NUM_RANKS;
+    // NUM_RANKS here refers to the number of processes instead of the number of dimensions
+    NUM_PARTICLES = total_particles / NUM_RANKS;
 
     unsigned long long read_elem_cnt = params.try_num_particles;
 
@@ -799,7 +800,7 @@ main(int argc, char *argv[])
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     MPI_Scan(&NUM_PARTICLES, &FILE_OFFSET, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     FILE_OFFSET -= NUM_PARTICLES;
-	// Allocate memory for each particlee
+    // Allocate memory for each particlee
     BUF_STRUCT = prepare_contig_memory_multi_dim(params.dim_1, params.dim_2, params.dim_3);
 
     unsigned long t1 = get_time_usec();
@@ -889,15 +890,16 @@ main(int argc, char *argv[])
                     "seconds");
             value = format_human_readable(total_size_bytes);
             fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
-		
-			if (FILTER_INFO.USE_COMPRESS) {
-				fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
-				fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
-				fprintf(params.csv_fs, "number of compression filter parameters, %d\n", FILTER_INFO.cd_nelmts);
-				for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-					fprintf(params.csv_fs, "compression parameter %d, %d\n", i, FILTER_INFO.cd_values[i]);
-				}
-			}
+
+            if (FILTER_INFO.USE_COMPRESS) {
+                fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
+                fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
+                fprintf(params.csv_fs, "number of compression filter parameters, %d\n",
+                        FILTER_INFO.cd_nelmts);
+                for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
+                    fprintf(params.csv_fs, "compression parameter %d, %d\n", i, FILTER_INFO.cd_values[i]);
+                }
+            }
 
             fprintf(params.csv_fs, "raw time, %.3f, %s\n", rrt_s, "seconds");
             value = format_human_readable(raw_rate);
@@ -908,9 +910,8 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
             fclose(params.csv_fs);
         }
-		
     }
-	filter_info_free();
+    filter_info_free();
 error:
     H5E_BEGIN_TRY
     {
