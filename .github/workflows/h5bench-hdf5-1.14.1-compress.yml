@@ -11,7 +11,6 @@ jobs:
     container:
       image: hpcio/hdf5-1.14.1-compression
     timeout-minutes: 60
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v2
@@ -42,6 +41,7 @@ jobs:
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-N_BIT.json
 
       - name: Test h5bench SYNC write/read 1D SZIP filter
+        continue-on-error: true
         run: |
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZIP.json
