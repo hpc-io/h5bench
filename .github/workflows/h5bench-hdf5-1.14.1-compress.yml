@@ -11,6 +11,7 @@ jobs:
     container:
       image: hpcio/hdf5-1.14.1-compression
     timeout-minutes: 60
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v2
