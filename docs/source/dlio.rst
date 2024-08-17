@@ -3,8 +3,17 @@ DLIO
 
 The benchmark is designed to measure the performance of training and evaluation of deep learning models on data stored
 as HDF5 files. Based on collected and analysed I/O patterns from `DLIO Benchmark <https://github.com/argonne-lcf/dlio_benchmark>`_,
-this benchmark simulates the learning process and evaluation of deep learning models using PyTorch and Tensorflow
-frameworks, while gathering valuable information about system performance.
+this benchmark simulates the learning process and evaluation of deep learning models that use PyTorch and Tensorflow
+frameworks, while gathering valuable information about system performance. Most importantly, this extension allows users
+to test AI workloads without the need to install machine learning libraries, reducing complexity and enhancing the
+usability of the benchmark. Another advantage is that from our experiments, our extension ran faster than DLIO Benchmark,
+which we suspect was due to the difference in the overhead introduced by the C application in our extension and the
+Python application in the original benchmark. While the quicker runtime could be beneficial for faster testing, it also
+suggests that the benchmark might not fully capture the complexity of real AI workloads, such as high metadata
+operations introduced by the use of Python-based libraries. I/O pattern produced by this extension is based on the
+implementation of `DLIO benchmark version 1.1 <https://github.com/argonne-lcf/dlio_benchmark/releases/tag/v1.1>`_.
+Changes in the main DLIO Benchmark configurations after version 1.1 will not be reflected in this h5bench pattern. To
+reproduce them, DLIO Benchmark behavior can be studied using various I/O analysis tools. We recommend using Log VFD.
 
 Configuration
 -------------
