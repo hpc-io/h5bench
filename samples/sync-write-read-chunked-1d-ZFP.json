@@ -2,7 +2,7 @@
     "mpi": {
         "command": "mpirun",
         "ranks": "2",
-        "configuration": "--allow-run-as-root --oversubscribe"
+        "configuration": "--allow-run-as-root --oversubscribe -n 2"
     },
     "vol": {
         "path": "/opt/H5Z-ZFP/plugin"

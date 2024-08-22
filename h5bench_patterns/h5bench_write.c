@@ -1061,6 +1061,17 @@ main(int argc, char *argv[])
     char *       output_file;
     bench_params params;
 
+    params.cd_value_1 = 0;
+    params.cd_value_2 = 0;
+    params.cd_value_3 = 0;
+    params.cd_value_4 = 0;
+    params.cd_value_5 = 0;
+    params.cd_value_6 = 0;
+    params.cd_value_7 = 0;
+    params.cd_value_8 = 0;
+    params.cd_value_9 = 0;
+    params.cd_value_10 = 0;
+
     char *cfg_file_path = argv[1];
     output_file         = argv[2];
     if (MY_RANK == 0) {

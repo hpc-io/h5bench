@@ -104,7 +104,7 @@ filter_info_init()
     FILTER_INFO.cd_nelmts     = (size_t *)malloc(sizeof(size_t));
     *(FILTER_INFO.cd_nelmts)  = 10;
     FILTER_INFO.cd_values     = (unsigned int *)malloc(10 * sizeof(unsigned int));
-    FILTER_INFO.name          = (char *)malloc(10 * sizeof(char));
+    FILTER_INFO.name          = (char *)malloc(255 * sizeof(char));
     FILTER_INFO.filter_config = (unsigned int *)malloc(1 * sizeof(unsigned int));
 }
 
@@ -137,7 +137,7 @@ get_filter_info(hid_t dset_id)
         return 0;
     }
     FILTER_INFO.filter_id =
-        H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 10,
+        H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, &FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 255,
                        FILTER_INFO.name, FILTER_INFO.filter_config);
 
     if (FILTER_INFO.filter_id < 0) {
@@ -150,9 +150,9 @@ get_filter_info(hid_t dset_id)
     if (MY_RANK == 0) {
         printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
         printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
-        printf("  Number of compression filter parameters: %d\n", FILTER_INFO.cd_nelmts);
+        printf("  Number of compression filter parameters: %ld\n", *FILTER_INFO.cd_nelmts);
         for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-            printf("  Compression parameter %d: %d\n", i, FILTER_INFO.cd_values[i]);
+            printf("  Compression parameter %d: %lu\n", i, FILTER_INFO.cd_values[i]);
         }
     }
 
@@ -894,10 +894,10 @@ main(int argc, char *argv[])
             if (FILTER_INFO.USE_COMPRESS) {
                 fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
                 fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
-                fprintf(params.csv_fs, "number of compression filter parameters, %d\n",
-                        FILTER_INFO.cd_nelmts);
+                fprintf(params.csv_fs, "number of compression filter parameters, %ld\n",
+                        *FILTER_INFO.cd_nelmts);
                 for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-                    fprintf(params.csv_fs, "compression parameter %d, %d\n", i, FILTER_INFO.cd_values[i]);
+                    fprintf(params.csv_fs, "compression parameter %d, %lu\n", i, FILTER_INFO.cd_values[i]);
                 }
             }
 
