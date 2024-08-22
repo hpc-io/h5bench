@@ -150,10 +150,10 @@ get_filter_info(hid_t dset_id)
     if (MY_RANK == 0) {
         printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
         printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
-        printf("  Number of compression filter parameters: %ld\n", *FILTER_INFO.cd_nelmts);
-        for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-            printf("  Compression parameter %d: %lu\n", i, FILTER_INFO.cd_values[i]);
-        }
+        //printf("  Number of compression filter parameters: %ld\n", *FILTER_INFO.cd_nelmts);
+        //for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
+        //    printf("  Compression parameter %d: %lu\n", i, FILTER_INFO.cd_values[i]);
+        //}
     }
 
     return 0;
@@ -894,11 +894,11 @@ main(int argc, char *argv[])
             if (FILTER_INFO.USE_COMPRESS) {
                 fprintf(params.csv_fs, "compression filter name, %s\n", FILTER_INFO.name);
                 fprintf(params.csv_fs, "filter ID, %d\n", FILTER_INFO.filter_id);
-                fprintf(params.csv_fs, "number of compression filter parameters, %ld\n",
-                        *FILTER_INFO.cd_nelmts);
-                for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
-                    fprintf(params.csv_fs, "compression parameter %d, %lu\n", i, FILTER_INFO.cd_values[i]);
-                }
+                //fprintf(params.csv_fs, "number of compression filter parameters, %ld\n",
+                //        *FILTER_INFO.cd_nelmts);
+                //for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
+                //    fprintf(params.csv_fs, "compression parameter %d, %lu\n", i, FILTER_INFO.cd_values[i]);
+                //}
             }
 
             fprintf(params.csv_fs, "raw time, %.3f, %s\n", rrt_s, "seconds");
