@@ -148,7 +148,7 @@ get_filter_info(hid_t dset_id)
     FILTER_INFO.USE_COMPRESS = 1;
 
     if (MY_RANK == 0) {
-        printf("  Compression filter used to decompress: %s\n", FILTER_INFO.name);
+        printf("  Compression filter to decompress: %s\n", FILTER_INFO.name);
         printf("  Filter ID: %d\n", FILTER_INFO.filter_id);
         // printf("  Number of compression filter parameters: %ld\n", *FILTER_INFO.cd_nelmts);
         // for (int i = 0; i < *(FILTER_INFO.cd_nelmts); ++i) {
