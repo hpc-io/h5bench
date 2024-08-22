@@ -137,7 +137,7 @@ get_filter_info(hid_t dset_id)
         return 0;
     }
     FILTER_INFO.filter_id =
-        H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, &FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 255,
+        H5Pget_filter2(dcpl, 0, H5Z_FLAG_MANDATORY, FILTER_INFO.cd_nelmts, FILTER_INFO.cd_values, 255,
                        FILTER_INFO.name, FILTER_INFO.filter_config);
 
     if (FILTER_INFO.filter_id < 0) {
