@@ -41,7 +41,6 @@ jobs:
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-N_BIT.json
 
       - name: Test h5bench SYNC write/read 1D SZIP filter
-        continue-on-error: true
         run: |
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZIP.json
@@ -53,12 +52,13 @@ jobs:
 
       - name: Test h5bench SYNC write/read 1D SZ3 filter
         run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZ3.json
 
       - name: Test h5bench SYNC write/read 1D ZFP filter
         run: |
-          export LD_LIBRARY_PATH=/opt/zfp/lib64:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-ZFP.json
 
@@ -79,6 +79,7 @@ jobs:
 
       - name: Test h5bench SYNC write/read 2D SZ3 filter
         run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-SZ3.json
 
@@ -105,6 +106,7 @@ jobs:
 
       - name: Test h5bench SYNC write/read 3D SZ3 filter
         run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-SZ3.json
 
