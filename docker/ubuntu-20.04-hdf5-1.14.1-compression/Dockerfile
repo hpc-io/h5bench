@@ -20,7 +20,9 @@ RUN apt-get update \
         pkg-config \
         cmake \
         libtool \
-        zlib1g-dev \ 
+        zlib1g-dev \
+        libaec0 \
+        libaec-dev \ 
         python3 \ 
         python3-pip \
         python3-dev \
@@ -28,7 +30,8 @@ RUN apt-get update \
         gcc \
         g++ \
         libopenmpi-dev \
-        software-properties-common
+        software-properties-common \
+    && ldconfig
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null \
     && sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' \
     && apt-get update \
@@ -39,7 +42,7 @@ RUN wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_14_1.tar.gz \
     && mv hdf5-hdf5-1_14_1 hdf5 \
     && cd hdf5 \
     && ./autogen.sh \
-    && CC=mpicc ./configure --prefix=/opt/hdf5 --enable-parallel --enable-threadsafe --enable-shared --enable-unsupported \
+    && CC=mpicc CXX=mpicxx ./configure --prefix=/opt/hdf5 --enable-parallel --enable-cxx --enable-threadsafe --enable-shared --disable-static --enable-unsupported --with-zlib=yes --with-szlib=yes \
     && make -j 8 \
     && make install
 RUN cd ~ \
@@ -63,12 +66,14 @@ RUN cd ~ \
 	&& make install
 RUN cd ~ \
     && export HDF5_DIR=/opt/hdf5 \
-    && export ZFP_DIR=/opt/zfp/lib64/cmake/zfp \
+    && export PATH=/opt/hdf5/bin:$PATH \
+    && export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH \
+    && export ZFP_DIR=/opt/zfp/lib/cmake/zfp \
 	&& git clone https://github.com/LLNL/H5Z-ZFP \
 	&& cd H5Z-ZFP \
 	&& mkdir build \
 	&& cd build \
-	&& CC=mpicc cmake -DCMAKE_INSTALL_PREFIX=/opt/H5Z-ZFP -DFORTRAN_INTERFACE=OFF -DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/zfp" .. \
+	&& CC=mpicc cmake -DCMAKE_INSTALL_PREFIX=/opt/H5Z-ZFP -DFORTRAN_INTERFACE=OFF .. \
 	&& make \
 	&& make install
 RUN rm -rf /var/lib/apt/lists/* \
