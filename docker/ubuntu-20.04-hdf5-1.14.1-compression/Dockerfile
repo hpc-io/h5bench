@@ -51,6 +51,7 @@ RUN cd ~ \
 	&& export HDF5_HOME=/opt/hdf5 \
 	&& git clone https://github.com/szcompressor/SZ3 \
 	&& cd SZ3 \
+    && git checkout v3.1.8 \
 	&& mkdir build \
 	&& cd build \
 	&& cmake -DCMAKE_INSTALL_PREFIX=/opt/SZ3 -DBUILD_H5Z_FILTER=ON .. \
