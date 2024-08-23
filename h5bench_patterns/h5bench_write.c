@@ -1229,11 +1229,11 @@ main(int argc, char *argv[])
         value                   = format_human_readable(total_size_bytes);
         printf("Total write size: %.3lf %cB\n", value.value, value.unit);
 
-		// Assume no compression
-		float compression_ratio = 1.0;
-		if (COMPRESS_INFO.total_compressed_size > 0) {
-        	compression_ratio = total_size_bytes / COMPRESS_INFO.total_compressed_size;
-		}
+        // Assume no compression
+        float compression_ratio = 1.0;
+        if (COMPRESS_INFO.total_compressed_size > 0) {
+            compression_ratio = total_size_bytes / COMPRESS_INFO.total_compressed_size;
+        }
 
         // Report compression ratio
         if (COMPRESS_INFO.USE_COMPRESS) {
