@@ -16,7 +16,7 @@ BINARY_OVERWRITE = 'h5bench_overwrite'
 BINARY_UNLIMITED = 'h5bench_write_unlimited'
 
 samples = \
-	glob.glob('async-write-*d-*.json') + \
+	glob.glob('sync-write-*d-*[!SZIP,N_BIT,SZ3,GZIP,ZFP].json') + \
 	glob.glob('async-append*.json') + \
 	glob.glob('async-overwrite*.json') + \
 	glob.glob('async-write-unlimited*.json')
