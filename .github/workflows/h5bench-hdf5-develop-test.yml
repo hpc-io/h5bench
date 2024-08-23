@@ -131,6 +131,9 @@ jobs:
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
 
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
+
           cd build-sync
 
           ctest --verbose .
