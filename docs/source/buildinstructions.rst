@@ -104,7 +104,8 @@ Exerciser            ``h5bench_exerciser``       ``-DH5BENCH_EXERCISER=ON``
 OpenPMD (write)      ``h5bench_openpmd_write``   ``-DH5BENCH_OPENPMD=ON``
 OpenPMD (read)       ``h5bench_openpmd_read``    ``-DH5BENCH_OPENPMD=ON``
 E3SM-IO              ``h5bench_e3sm``            ``-DH5BENCH_E3SM=ON`` 
-MACSio               ``h5bench_macsio``          ``-DH5BENCH_MACSIO=ON`` 
+MACSio               ``h5bench_macsio``          ``-DH5BENCH_MACSIO=ON``
+DLIO                 ``h5bench_dlio``            ``-DH5BENCH_DLIO=ON``
 ==================== =========================== ===============================
 
 .. warning::

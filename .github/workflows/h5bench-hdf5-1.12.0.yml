@@ -252,6 +252,13 @@ jobs:
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
 
+      - name: Test h5bench SYNC dlio
+        run: |
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+          
+          cd build
+          ./h5bench --debug --abort-on-failure ../samples/sync-dlio.json
+
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3

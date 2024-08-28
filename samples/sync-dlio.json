@@ -1,0 +1,75 @@
+{
+  "mpi": {
+    "command": "mpirun",
+    "ranks": "4",
+    "configuration": "--allow-run-as-root --oversubscribe -np 4"
+  },
+  "vol": {
+
+  },
+  "file-system": {
+
+  },
+  "directory": "storage",
+  "benchmarks": [
+    {
+      "benchmark": "dlio",
+      "configuration": {
+        "generate-data": "true",
+        "chunking": "false",
+        "keep-files": "true",
+        "compression": "false",
+        "record-length": "1048576",
+        "num-files-train": "8",
+        "num-files-eval": "2",
+        "num-samples-per-file": "4",
+        "data-folder": "data",
+        "file-prefix": "img",
+        "random-seed": "42",
+        "train-data-folder": "train",
+        "valid-data-folder": "valid",
+        "records-dataset-name": "records",
+        "labels-dataset-name": "labels",
+        "output-csv-name": "output",
+        "output-ranks-data": "true"
+      }
+    },
+    {
+      "benchmark": "dlio",
+      "configuration": {
+        "train": "true",
+        "evaluation": "true",
+        "keep-files": "true",
+        "shuffle": "true",
+        "seed-change-epoch": "true",
+        "record-length": "1048576",
+        "num-files-train": "8",
+        "num-files-eval": "2",
+        "num-samples-per-file": "4",
+        "data-folder": "data",
+        "file-prefix": "img",
+        "batch-size": "2",
+        "batch-size-eval": "1",
+        "read-threads": "1",
+        "preprocess-time": "0.0",
+        "preprocess-time-stdev": "0.0",
+        "epochs": "1",
+        "computation-time": "0.123",
+        "computation-time-stdev": "0.0",
+        "random-seed": "42",
+        "eval-time": "0.123",
+        "eval-time-stdev": "0.0",
+        "epochs-between-evals": "1",
+        "train-data-folder": "train",
+        "valid-data-folder": "valid",
+        "records-dataset-name": "records",
+        "labels-dataset-name": "labels",
+        "collective-meta": "true",
+        "collective-data": "true",
+        "subfiling": "false",
+        "output-csv-name": "output",
+        "output-ranks-data": "true"
+      }
+    }
+  ]
+}
