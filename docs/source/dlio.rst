@@ -13,7 +13,8 @@ suggests that the benchmark might not fully capture the complexity of real AI wo
 operations introduced by the use of Python-based libraries. I/O pattern produced by this extension is based on the
 implementation of `DLIO benchmark version 1.1 <https://github.com/argonne-lcf/dlio_benchmark/releases/tag/v1.1>`_.
 Changes in the main DLIO Benchmark configurations after version 1.1 will not be reflected in this h5bench pattern. To
-reproduce them, DLIO Benchmark behavior can be studied using various I/O analysis tools. We recommend using Log VFD.
+reproduce them, DLIO Benchmark behavior can be studied using various I/O analysis tools. We recommend using
+`Log VFD <https://docs.hdfgroup.org/hdf5/v1_14/group___f_a_p_l.html#ga4e03be2fe83ed02b32266a6c81427beb>`_.
 
 Configuration
 -------------
