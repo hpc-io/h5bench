@@ -978,20 +978,20 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
     }
     else if (strcmp(key, "CSV_FILE") == 0) {
         (*params_in_out).useCSV   = 1;
-        (*params_in_out).csv_path = strdup(val);\
+        (*params_in_out).csv_path = strdup(val);
     }
     else if (strcmp(key, "DATA_DIST_PATH") == 0) {
-        (*params_in_out).useDataDist   = 1;
+        (*params_in_out).useDataDist    = 1;
         (*params_in_out).data_dist_path = strdup(val);
     }
     else if (strcmp(key, "DATA_DIST_SCALE") == 0) {
-      float num = 0.0;
-      char *tok;
-      tok = strtok(val, "/");
-      num = strtof(tok, NULL);
-      if (tok = strtok(NULL, "/"))
-	num = num / strtof(tok, NULL); // two terms with / delim is fraction
-      (*params_in_out).data_dist_scale = num;
+        float num = 0.0;
+        char *tok;
+        tok = strtok(val, "/");
+        num = strtof(tok, NULL);
+        if (tok = strtok(NULL, "/"))
+            num = num / strtof(tok, NULL); // two terms with / delim is fraction
+        (*params_in_out).data_dist_scale = num;
     }
     else if (strcmp(key, "ENV_METADATA_FILE") == 0) {
         (*params_in_out).env_meta_path = strdup(val);

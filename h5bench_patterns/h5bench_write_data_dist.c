@@ -1088,44 +1088,44 @@ main(int argc, char *argv[])
         printf("Given standard deviation : %ld \n", STDEV_DIM_1);
         printf("Total ranks %i \n", NUM_RANKS);
 
+        if (params.useDataDist) {
+            // read data file listed in config file
+            char size_line[256] = "";
 
-	if (params.useDataDist) {
-	  // read data file listed in config file
-	  char size_line[256] = "";
+            printf("Begin data dist processing\n");
+            printf("Read data file %s\n", params.data_dist_path);
 
-	  printf("Begin data dist processing\n");
-	  printf("Read data file %s\n", params.data_dist_path);
+            FILE *file = fopen(params.data_dist_path, "r");
 
-	  FILE *file = fopen(params.data_dist_path, "r");
+            while (fgets(size_line, 256, file)) {
 
-	  while (fgets(size_line, 256, file)) {
+                printf("Read line: %s\n", size_line);
+                char *    tokens[2];
+                int       index;
+                long long size;
+                char *    tok = strtok(size_line, " ");
+                if (tok) {
+                    index = atoi(tok);
+                    tok   = strtok(NULL, " ");
+                    if (tok) {
+                        /* don't compute scale if factor is 1, identity */
+                        if (params.data_dist_scale == 1.0)
+                            holder[index] = strtoll(tok, NULL, 10);
+                        else
+                            holder[index] = (long long)(params.data_dist_scale * strtoll(tok, NULL, 10));
+                    }
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
 
-	    printf("Read line: %s\n", size_line);
-	    char *tokens[2];
-	    int index;
-	    long long size;
-	    char *tok = strtok(size_line, " ");
-	    if (tok) {
-	      index = atoi(tok);
-	      tok       = strtok(NULL, " ");
-	      if (tok) {
-		/* don't compute scale if factor is 1, identity */
-		if (params.data_dist_scale == 1.0)
-		  holder[index] = strtoll(tok, NULL, 10);
-		else
-		  holder[index] = (long long) (params.data_dist_scale * strtoll(tok, NULL, 10));
-	      }
-	    } else {
-	      return -1;
-	    }
-	  }
-	}
-
-	else {
-	  for (int i = 0; i < NUM_RANKS; i++) {
-	    holder[i] = (long long)normal_dist_particle_giver(NUM_PARTICLES, STDEV_DIM_1);
-	  }
-	}
+        else {
+            for (int i = 0; i < NUM_RANKS; i++) {
+                holder[i] = (long long)normal_dist_particle_giver(NUM_PARTICLES, STDEV_DIM_1);
+            }
+        }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -1222,83 +1222,83 @@ main(int argc, char *argv[])
     std_1      = pow(NUM_PARTICLES - final_mean, 2);
     MPI_Allreduce(&std_1, &final_std, 1, MPI_LONG_LONG, MPI_SUM, comm);
 
-    //if (MY_RANK == 0) {
-        human_readable value;
-        char *         mode_str = NULL;
+    // if (MY_RANK == 0) {
+    human_readable value;
+    char *         mode_str = NULL;
 
-        if (has_vol_async) {
-            mode_str = "ASYNC";
-        }
-        else {
-            mode_str = "SYNC";
-        }
-        printf("\n=================== Performance Results ==================\n");
+    if (has_vol_async) {
+        mode_str = "ASYNC";
+    }
+    else {
+        mode_str = "SYNC";
+    }
+    printf("\n=================== Performance Results ==================\n");
 
-        printf("Total number of ranks: %d\n", NUM_RANKS);
-        printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
-        printf("Final mean particles: %ld \n", final_mean);
-        printf("Final standard deviation: %f \n", sqrt(final_std / NUM_RANKS));
-        unsigned long long total_sleep_time_us =
-            read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
-        printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
+    printf("Total number of ranks: %d\n", NUM_RANKS);
+    printf("Total number of particles: %lldM\n", TOTAL_PARTICLES / (M_VAL));
+    printf("Final mean particles: %ld \n", final_mean);
+    printf("Final standard deviation: %f \n", sqrt(final_std / NUM_RANKS));
+    unsigned long long total_sleep_time_us =
+        read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
+    printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
-        //double total_size_bytes = NUM_RANKS * local_data_size;
-	double total_size_bytes = local_data_size;
-        value                   = format_human_readable(total_size_bytes);
-        printf("Total write size: %.3lf %cB\n", value.value, value.unit);
+    // double total_size_bytes = NUM_RANKS * local_data_size;
+    double total_size_bytes = local_data_size;
+    value                   = format_human_readable(total_size_bytes);
+    printf("Total write size: %.3lf %cB\n", value.value, value.unit);
 
-        float rwt_s    = (float)raw_write_time / (1000.0 * 1000.0);
-        float raw_rate = (float)total_size_bytes / rwt_s;
-        printf("Raw write time: %.3f s\n", rwt_s);
+    float rwt_s    = (float)raw_write_time / (1000.0 * 1000.0);
+    float raw_rate = (float)total_size_bytes / rwt_s;
+    printf("Raw write time: %.3f s\n", rwt_s);
 
-        float meta_time_s = (float)inner_metadata_time / (1000.0 * 1000.0);
-        printf("Metadata time: %.3f s\n", meta_time_s);
+    float meta_time_s = (float)inner_metadata_time / (1000.0 * 1000.0);
+    printf("Metadata time: %.3f s\n", meta_time_s);
 
-        float fcreate_time_s = (float)(tfopen_end - tfopen_start) / (1000.0 * 1000.0);
-        printf("H5Fcreate() time: %.3f s\n", fcreate_time_s);
+    float fcreate_time_s = (float)(tfopen_end - tfopen_start) / (1000.0 * 1000.0);
+    printf("H5Fcreate() time: %.3f s\n", fcreate_time_s);
 
-        float flush_time_s = (float)(tflush_end - tflush_start) / (1000.0 * 1000.0);
-        printf("H5Fflush() time: %.3f s\n", flush_time_s);
+    float flush_time_s = (float)(tflush_end - tflush_start) / (1000.0 * 1000.0);
+    printf("H5Fflush() time: %.3f s\n", flush_time_s);
 
-        float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000.0 * 1000.0);
-        printf("H5Fclose() time: %.3f s\n", fclose_time_s);
+    float fclose_time_s = (float)(tfclose_end - tfclose_start) / (1000.0 * 1000.0);
+    printf("H5Fclose() time: %.3f s\n", fclose_time_s);
 
-        float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
-        printf("Observed completion time: %.3f s\n", oct_s);
+    float oct_s = (float)(t4 - t1) / (1000.0 * 1000.0);
+    printf("Observed completion time: %.3f s\n", oct_s);
 
+    value = format_human_readable(raw_rate);
+    printf("%s Raw write rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
+
+    float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
+    value       = format_human_readable(or_bs);
+    printf("%s Observed write rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
+
+    printf("===========================================================\n");
+
+    if (params.useCSV) {
+        fprintf(params.csv_fs, "metric, value, unit\n");
+        fprintf(params.csv_fs, "operation, %s, %s\n", "write_var_data_dist", "");
+        fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
+        fprintf(params.csv_fs, "Total number of particles, %lldM, %s\n", TOTAL_PARTICLES / (M_VAL), "");
+        fprintf(params.csv_fs, "Final mean particles, %ld, %s\n", final_mean, "");
+        fprintf(params.csv_fs, "Final standard deviation, %f, %s\n", sqrt(final_std / NUM_RANKS), "");
+        fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
+        fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
+        fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
+        fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
+                "seconds");
+        value = format_human_readable(total_size_bytes);
+        fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
+        fprintf(params.csv_fs, "raw time, %.3f, %s\n", rwt_s, "seconds");
         value = format_human_readable(raw_rate);
-        printf("%s Raw write rate: %.3f %cB/s \n", mode_str, value.value, value.unit);
-
-        float or_bs = (float)total_size_bytes / ((float)(t4 - t1 - total_sleep_time_us) / (1000.0 * 1000.0));
-        value       = format_human_readable(or_bs);
-        printf("%s Observed write rate: %.3f %cB/s\n", mode_str, value.value, value.unit);
-
-        printf("===========================================================\n");
-
-        if (params.useCSV) {
-            fprintf(params.csv_fs, "metric, value, unit\n");
-            fprintf(params.csv_fs, "operation, %s, %s\n", "write_var_data_dist", "");
-            fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
-            fprintf(params.csv_fs, "Total number of particles, %lldM, %s\n", TOTAL_PARTICLES / (M_VAL), "");
-            fprintf(params.csv_fs, "Final mean particles, %ld, %s\n", final_mean, "");
-            fprintf(params.csv_fs, "Final standard deviation, %f, %s\n", sqrt(final_std / NUM_RANKS), "");
-            fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
-                    "seconds");
-            value = format_human_readable(total_size_bytes);
-            fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
-            fprintf(params.csv_fs, "raw time, %.3f, %s\n", rwt_s, "seconds");
-            value = format_human_readable(raw_rate);
-            fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
-            fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
-            value = format_human_readable(or_bs);
-            fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
-            fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
-            fclose(params.csv_fs);
-        }
-	//}
+        fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
+        fprintf(params.csv_fs, "metadata time, %.3f, %s\n", meta_time_s, "seconds");
+        value = format_human_readable(or_bs);
+        fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
+        fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
+        fclose(params.csv_fs);
+    }
+    //}
 
     MPI_Finalize();
     return 0;
