@@ -1012,6 +1012,10 @@ main(int argc, char *argv[])
         return 0;
     }
 
+    if (MY_RANK == 0)
+	if (params.useCSV)
+	    params.csv_fs = csv_init(params.csv_path, params.env_meta_path);
+
     if (params.io_op != IO_WRITE) {
         if (MY_RANK == 0)
             printf("Make sure the configuration file has IO_OPERATION=WRITE defined\n");
