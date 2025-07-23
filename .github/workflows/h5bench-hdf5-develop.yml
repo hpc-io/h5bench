@@ -35,7 +35,7 @@ jobs:
           export HDF5_DIR=/opt/hdf5
 
           mkdir $HDF5_DIR
-          mkdir build
+          mkdir hdf5/build
 
           cd hdf5/build
 
