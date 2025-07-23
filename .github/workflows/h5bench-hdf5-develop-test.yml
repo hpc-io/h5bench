@@ -35,14 +35,19 @@ jobs:
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
-          export HDF5_LIBTOOL=/usr/bin/libtoolize
-          
+
           mkdir $HDF5_DIR
+          mkdir build
 
-          cd hdf5
+          cd hdf5/build
 
-          ./autogen.sh
-          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          cmake \
+            -DCMAKE_INSTALL_PREFIX=$HDF5_DIR \
+            -DHDF5_ENABLE_PARALLEL=ON \
+            -DHDF5_ENABLE_THREADSAFE=ON \
+            -DALLOW_UNSUPPORTED=ON \
+            -DCMAKE_C_COMPILER=mpicc ..
+
 
           make -j 2
           make install
