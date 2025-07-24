@@ -648,7 +648,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test
-          path:
-            - build*/storage/**/std*
-            - build*/h5bench_e3sm-prefix/src/h5bench_e3sm-stamp/h5bench_e3sm-build-*.log
+          path: |
+            build*/storage/**/std*
+            build*/h5bench_e3sm-prefix/src/h5bench_e3sm-stamp/h5bench_e3sm-build-*.log
           retention-days: 5
