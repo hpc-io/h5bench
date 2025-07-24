@@ -28,7 +28,7 @@ jobs:
           git clone https://github.com/HDFGroup/hdf5.git
 
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.9 /opt/vol-async
 
       - name: Build HDF5 develop
         run: |
@@ -156,10 +156,6 @@ jobs:
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
         
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
           export HDF5_HOME=/opt/hdf5
