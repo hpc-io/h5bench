@@ -1,7 +1,7 @@
 name: NERSC
 
 on:
-  pull_request_target
+  pull_request
 
 env:
   PR_NUMBER: ${{ github.event.number }}
