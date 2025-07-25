@@ -27,4 +27,4 @@ jobs:
           git fetch master
           git remote add gitlab https://${{ secrets.GITLAB_TOKEN_NAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_URL }}
           git checkout master
-          git push -f gitlab -u master
+          git push -f master -u gitlab
