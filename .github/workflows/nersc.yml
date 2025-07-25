@@ -37,4 +37,4 @@ jobs:
           git fetch origin pull/${PR_NUMBER}/head:PR-${PR_SHA}
           git remote add gitlab https://${{ secrets.GITLAB_TOKEN_NAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_URL }}
           git checkout PR-${PR_SHA}
-          git push -f gitlab -u PR-${PR_SHA}
+          git push -f -u gitlab PR-${PR_SHA}
