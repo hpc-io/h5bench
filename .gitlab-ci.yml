@@ -88,7 +88,7 @@ build-perlmutter:
         - mkdir -p ${H5BENCH_BUILD_PATH}/perlmutter
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
         - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter -DH5BENCH_ALL=ON
-        - make -j 8
+        - make
         - make install
     artifacts:
         paths:
