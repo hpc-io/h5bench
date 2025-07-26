@@ -1,14 +1,40 @@
 name: NERSC
 
 on:
-  workflow_dispatch:
-  push:
+  pull_request
+
+env:
+  PR_NUMBER: ${{ github.event.number }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  synchronize:
-    runs-on: ubuntu-20.04
-    timeout-minutes: 5
+  authorize:
+    runs-on: ubuntu-latest
     steps:
-      - name: Synchronize NERSC CI
+      - run: true
+
+  sync-with-nersc:
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup git
         run: |
-          curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.NERSC_GITLAB_TOKEN }}" "${{ secrets.NERSC_GITLAB_URL }}"
+          git config --global user.name "h5bench BOT"
+          git config --global user.email "h5bench@example.com"
+    
+      - name: Create PR branch
+        run: |
+          PR_SHA=$(git rev-parse --short "$GITHUB_SHA")
+          git fetch origin pull/${PR_NUMBER}/head:PR-${PR_SHA}
+          git remote add gitlab https://${{ secrets.GITLAB_TOKEN_NAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_URL }}
+          git checkout PR-${PR_SHA}
+          git push -f -u gitlab PR-${PR_SHA}
