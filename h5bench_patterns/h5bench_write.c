@@ -1013,8 +1013,8 @@ main(int argc, char *argv[])
     }
 
     if (MY_RANK == 0)
-	if (params.useCSV)
-	    params.csv_fs = csv_init(params.csv_path, params.env_meta_path);
+        if (params.useCSV)
+            params.csv_fs = csv_init(params.csv_path, params.env_meta_path);
 
     if (params.io_op != IO_WRITE) {
         if (MY_RANK == 0)
