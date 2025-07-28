@@ -7,7 +7,7 @@ on:
 
 jobs:
   h5bench:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -28,19 +28,27 @@ jobs:
           git clone https://github.com/HDFGroup/hdf5.git
 
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.9 /opt/vol-async
 
       - name: Build HDF5 develop
         run: |
           export HDF5_DIR=/opt/hdf5
-          export HDF5_LIBTOOL=/usr/bin/libtoolize
-          
+
           mkdir $HDF5_DIR
+          mkdir hdf5/build
 
-          cd hdf5
+          cd hdf5/build
 
-          ./autogen.sh
-          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          cmake \
+            -DCMAKE_INSTALL_PREFIX=$HDF5_DIR \
+            -DHDF5_ENABLE_PARALLEL=ON \
+            -DHDF5_ENABLE_THREADSAFE=ON \
+            -DHDF5_ALLOW_UNSUPPORTED=ON \
+            -DBUILD_TESTING=OFF \
+            -DHDF5_BUILD_HL_LIB=OFF \
+            -DHDF5_BUILD_EXAMPLES=OFF \
+            -DHDF5_BUILD_TOOLS:BOOL=OFF \
+            -DCMAKE_C_COMPILER=mpicc ..
 
           make -j 2
           make install
@@ -148,10 +156,6 @@ jobs:
 
           ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
         
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
           export HDF5_HOME=/opt/hdf5
@@ -639,14 +643,12 @@ jobs:
 
           ./h5bench --debug --abort-on-failure ../samples/async-amrex.json
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: test
-          path: build*/storage/**/std*
+          path: |
+            build*/storage/**/std*
+            build*/h5bench_e3sm-prefix/src/h5bench_e3sm-stamp/h5bench_e3sm-build-*.log
           retention-days: 5
