@@ -1,5 +1,5 @@
 MACSio
-====
+======
 
 MACSio (Multi-purpose, Application-Centric, Scalable I/O Proxy Application) is being developed to fill a long existing void in co-design proxy applications that allow for I/O performance testing and evaluation of tradeoffs in data models, I/O library interfaces and parallel I/O paradigms for multi-physics, HPC applications.
 
