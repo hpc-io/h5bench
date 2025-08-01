@@ -1,6 +1,6 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
-LABEL Description="Ubuntu 18.04 environment with HDF5 1.10.8"
+LABEL Description="Ubuntu 20.04 environment with HDF5 1.10.8"
 
 ENV DEBIAN_FRONTEND=noninteractive 
 ENV HDF5_LIBTOOL=/usr/bin/libtoolize

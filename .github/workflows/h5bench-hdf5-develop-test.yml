@@ -19,7 +19,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: "yes"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -142,6 +142,9 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
+
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
 
           cd build-sync
 

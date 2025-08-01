@@ -101,4 +101,7 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
+# Build and installer directories
+/build
+/installer
 # End of https://www.toptal.com/developers/gitignore/api/macos,c++,cmake,linux
