@@ -12,9 +12,13 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   h5bench:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     container:
       image: hpcio/hdf5-1.10.4
     timeout-minutes: 60
@@ -219,10 +223,6 @@ jobs:
 
           cd build
           ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
-
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
 
       - name: Upload artifact
         if: always()
