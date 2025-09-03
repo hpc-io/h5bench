@@ -1049,9 +1049,6 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         (*params_in_out).asyncMode = MODE_SYNC;
     }
 
-    if ((*params_in_out).useCSV)
-        (*params_in_out).csv_fs = csv_init(params_in_out->csv_path, params_in_out->env_meta_path);
-
     if (val)
         free(val);
     return 1;
