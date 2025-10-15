@@ -919,6 +919,7 @@ main(int argc, char *argv[])
     H5Pclose(createPropList);
     H5Pclose(accessPropList);
 
+    if (rank == 0)
     if (!keepFile) {
         unlink(testFileName);
     }
