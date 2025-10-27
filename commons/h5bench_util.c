@@ -175,7 +175,7 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     if (!mon || !metadata_time_total)
         return -1;
 
-    time_step *   ts_run;
+    time_step    *ts_run;
     size_t        num_in_progress;
     H5ES_status_t op_failed;
     unsigned long t1, t2;
@@ -212,7 +212,7 @@ mem_monitor_check_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
         return -1;
     if (!has_vol_async)
         return 0;
-    time_step *   ts_run;
+    time_step    *ts_run;
     size_t        num_in_progress;
     hbool_t       op_failed;
     unsigned long t1, t2, t3, t4;
@@ -248,14 +248,23 @@ mem_monitor_check_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
     return 0;
 }
 
+/**
+ * data_wait_time_per_step, metadata_wait_time_per_step can
+ * safely but set to NULL if info is not needed.
+ */
 int
-mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsigned long *data_time_total)
+mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsigned long *data_time_total,
+                      unsigned long *data_wait_time_per_step, unsigned long *metadata_wait_time_per_step)
 {
+    if (metadata_wait_time_per_step != NULL)
+        memset(metadata_wait_time_per_step, 0, mon->time_step_cnt * sizeof(unsigned long));
+    if (data_wait_time_per_step)
+        memset(data_wait_time_per_step, 0, mon->time_step_cnt * sizeof(unsigned long));
     *metadata_time_total = 0;
     *data_time_total     = 0;
     size_t        num_in_progress;
     hbool_t       op_failed;
-    time_step *   ts_run;
+    time_step    *ts_run;
     unsigned long t1, t2, t3, t4, t5, t6;
     unsigned long meta_time = 0, data_time = 0;
     int           dset_cnt = 8;
@@ -292,7 +301,6 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
             ts_run->status = TS_READY;
         }
     }
-
     t2 = get_time_usec();
     meta_time += (t2 - t1);
 
@@ -317,6 +325,10 @@ mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total, unsi
 
             t6 = get_time_usec();
 
+            if (metadata_wait_time_per_step != NULL)
+                metadata_wait_time_per_step[i] = ((t2 - t1) + (t4 - t3));
+            if (data_wait_time_per_step != NULL)
+                data_wait_time_per_step[i] = (t3 - t2);
             meta_time += ((t2 - t1) + (t4 - t3));
             data_time += (t3 - t2);
             ts_run->status = TS_DONE;
@@ -439,7 +451,7 @@ parse_time(char *str_in, duration *time)
     if (!time)
         time = calloc(1, sizeof(duration));
     unsigned long long num = 0;
-    char *             unit_str;
+    char              *unit_str;
     parse_unit(str_in, &num, &unit_str);
 
     if (!unit_str)
@@ -470,7 +482,7 @@ str_to_ull(char *str_in, unsigned long long *num_out)
         return -1;
     }
     unsigned long long num = 0;
-    char *             unit_str;
+    char              *unit_str;
     int                ret = parse_unit(str_in, &num, &unit_str);
     if (ret < 0)
         return -1;

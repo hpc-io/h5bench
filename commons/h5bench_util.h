@@ -102,8 +102,8 @@ typedef struct bench_params {
     } access_pattern;
 
     // write_pattern bench_pattern;
-    char *             data_file_path;
-    char *             pattern_name;
+    char              *data_file_path;
+    char              *pattern_name;
     int                meta_coll; // for write only, metadata collective
     int                data_coll; // data collective
     int                cnt_time_step;
@@ -123,9 +123,9 @@ typedef struct bench_params {
     unsigned long chunk_dim_1;
     unsigned long chunk_dim_2;
     unsigned long chunk_dim_3;
-    char *        csv_path;
-    char *        env_meta_path;
-    FILE *        csv_fs;
+    char         *csv_path;
+    char         *env_meta_path;
+    FILE         *csv_fs;
     int           file_per_proc;
     int           align;
     unsigned long align_threshold;
@@ -136,10 +136,10 @@ typedef struct bench_params {
 typedef struct data_md {
     unsigned long long particle_cnt;
     unsigned long long dim_1, dim_2, dim_3;
-    float *            x, *y, *z;
-    float *            px, *py, *pz;
-    int *              id_1;
-    float *            id_2;
+    float             *x, *y, *z;
+    float             *px, *py, *pz;
+    int               *id_1;
+    float             *id_2;
 } data_contig_md;
 
 typedef struct csv_hanle {
@@ -166,7 +166,7 @@ typedef struct mem_monitor {
     unsigned long long mem_used;
     unsigned long long mem_threshold;
     async_mode         mode;
-    time_step *        time_steps;
+    time_step         *time_steps;
 } mem_monitor;
 
 unsigned long long read_time_val(duration time, time_unit unit);
@@ -183,7 +183,8 @@ int          ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_tot
 int          mem_monitor_check_run(mem_monitor *mon, unsigned long *metadata_time_total,
                                    unsigned long *data_time_total);
 int          mem_monitor_final_run(mem_monitor *mon, unsigned long *metadata_time_total,
-                                   unsigned long *data_time_total);
+                                   unsigned long *data_time_total, unsigned long *data_wait_time_per_step,
+                                   unsigned long *metadata_wait_time_per_step);
 // Uniform random number
 float uniform_random_number();
 

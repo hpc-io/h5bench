@@ -32,7 +32,7 @@ hid_t      PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor *   MEM_MONITOR;
+mem_monitor    *MEM_MONITOR;
 
 void
 print_data(int n)
@@ -67,7 +67,7 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 
-    int *  data_1D_INT, **data_2D_INT, ***data_3D_INT;
+    int   *data_1D_INT, **data_2D_INT, ***data_3D_INT;
     float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
 
     if (params.num_dims == 1) {
@@ -449,7 +449,7 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
         *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
     }
 
-    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp, NULL, NULL);
     *raw_read_time_out += read_time_imp;
     *inner_metadata_time += metadata_time_imp;
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
@@ -633,7 +633,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *         mode_str = NULL;
+        char          *mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
