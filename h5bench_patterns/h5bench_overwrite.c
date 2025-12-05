@@ -32,7 +32,7 @@ hid_t      PARTICLE_COMPOUND_TYPE_SEPARATES[8];
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor    *MEM_MONITOR;
+mem_monitor *   MEM_MONITOR;
 
 void
 print_data(int n)
@@ -67,7 +67,7 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 
-    int   *data_1D_INT, **data_2D_INT, ***data_3D_INT;
+    int *  data_1D_INT, **data_2D_INT, ***data_3D_INT;
     float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
 
     if (params.num_dims == 1) {
@@ -633,7 +633,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char          *mode_str = NULL;
+        char *         mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";

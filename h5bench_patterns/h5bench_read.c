@@ -63,7 +63,7 @@ int        subfiling = 0;
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor    *MEM_MONITOR;
+mem_monitor *   MEM_MONITOR;
 
 void
 print_data(int n)
@@ -425,8 +425,8 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     int            sleep_time = 0;
     bench_params   params;
-    char          *cfg_file_path      = argv[1];
-    char          *file_name          = argv[2]; // data file to read
+    char *         cfg_file_path      = argv[1];
+    char *         file_name          = argv[2]; // data file to read
     unsigned long *data_time_per_step = NULL, *metadata_time_per_step = NULL;
     unsigned long *data_wait_time_per_step = NULL, *metadata_wait_time_per_step = NULL;
 
@@ -570,7 +570,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char          *mode_str = NULL;
+        char *         mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
