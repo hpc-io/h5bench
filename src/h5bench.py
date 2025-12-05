@@ -23,6 +23,7 @@ class H5bench:
     H5BENCH_PATTERNS_WRITE = 'h5bench_write'
     H5BENCH_PATTERNS_WRITE_UNLIMITED = 'h5bench_write_unlimited'
     H5BENCH_PATTERNS_WRITE_VAR_NORMAL_DIST = 'h5bench_write_var_normal_dist'
+    H5BENCH_PATTERNS_WRITE_VAR_DATA_DIST = 'h5bench_write_var_data_dist'
     H5BENCH_PATTERNS_APPEND = 'h5bench_append'
     H5BENCH_PATTERNS_OVERWRITE = 'h5bench_overwrite'
     H5BENCH_PATTERNS_READ = 'h5bench_read'
@@ -231,7 +232,7 @@ class H5bench:
 
             self.prepare_parallel(setup['mpi'])
 
-            if name in ['write', 'write-unlimited', 'overwrite', 'append', 'read', 'write_var_normal_dist']:
+            if name in ['write', 'write-unlimited', 'overwrite', 'append', 'read', 'write_var_normal_dist', 'write_var_data_dist']:
                 self.run_pattern(id, name, benchmark, setup['vol'])
             elif name == 'exerciser':
                 self.run_exerciser(id, benchmark)
@@ -388,6 +389,9 @@ class H5bench:
 
             if operation == 'write_var_normal_dist':
                 benchmark_path = self.H5BENCH_PATTERNS_WRITE_VAR_NORMAL_DIST
+
+            if operation == 'write_var_data_dist':
+                benchmark_path = self.H5BENCH_PATTERNS_WRITE_VAR_DATA_DIST
 
             if operation == 'overwrite':
                 benchmark_path = self.H5BENCH_PATTERNS_OVERWRITE

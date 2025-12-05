@@ -73,6 +73,7 @@ message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 
 include_directories(${HDF5_HOME}/include)
 link_directories(${HDF5_HOME}/lib)
+link_directories(/usr/lib/x86_64-linux-gnu/hdf5/openmpi)
 
 # Check if HDF5 has subfiling VFD
 set(HAVE_subfiling 0)
@@ -127,6 +128,14 @@ set(h5bench_write_normal_dist_src h5bench_patterns/h5bench_write_normal_dist.c)
 
 add_executable(h5bench_write_var_normal_dist ${h5bench_write_normal_dist_src})
 target_link_libraries(h5bench_write_var_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
+
+# h5bench WRITE varying particle based on data distribution ######################
+#
+
+set(h5bench_write_data_dist_src h5bench_patterns/h5bench_write_data_dist.c)
+
+add_executable(h5bench_write_var_data_dist ${h5bench_write_data_dist_src})
+target_link_libraries(h5bench_write_var_data_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C)
 
 # h5bench WRITE ###############################################################
 #
@@ -356,6 +365,7 @@ install(
     h5bench_write
     h5bench_write_unlimited
     h5bench_write_var_normal_dist
+    h5bench_write_var_data_dist
     h5bench_overwrite
     h5bench_append
     h5bench_read
