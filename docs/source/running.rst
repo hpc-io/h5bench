@@ -263,7 +263,7 @@ When the ``--debug`` option is enabled, you can expect an output similar to:
    2021-10-25 16:31:49,174 h5bench - INFO - Finishing h5bench Suite
 
 Perlmutter (NERSC)
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 In Perlmutter you need to load Python and its libraries for the main ``h5bench`` script to work. For manual execution of each benchmark, that is not required. 
 

@@ -559,9 +559,7 @@ main(int argc, char *argv[])
             /* If we are chunking the data.. */
             if (useChunked) {
                 H5Pset_chunk(dataSetPropList, numDims, fileBlock);
-                H5Pset_dxpl_mpio_chunk_opt(xferPropList, H5FD_MPIO_CHUNK_MULTI_IO);
-                // H5Pset_dxpl_mpio_chunk_opt(xferPropList, H5FD_MPIO_CHUNK_ONE_IO); //Not implemented in CCIO
-                // yet!
+                H5Pset_dxpl_mpio_chunk_opt(xferPropList, H5FD_MPIO_CHUNK_ONE_IO);
             }
 
             H5Pset_fill_time(dataSetPropList, H5D_FILL_TIME_NEVER);

@@ -70,7 +70,7 @@ If you want to build your own HDF5, use the following:
 
 .. warning::
 
-    This snippet assumed you had already defined the ``HDF5_HOME`` environment variable to the location where you want HDF5 to be installed. Furthermore, it assumes you have ``mpicc`` available in your path. Notice that in some machines (e.g., Perlmutter), you might want to use ``cc` instead.
+    This snippet assumed you had already defined the ``HDF5_HOME`` environment variable to the location where you want HDF5 to be installed. Furthermore, it assumes you have ``mpicc`` available in your path. Notice that in some machines (e.g., Perlmutter), you might want to use ``cc`` instead.
 
 Compile with CMake
 ---------------------------------------------------
