@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 project(
     h5bench
     VERSION 1.3.0
