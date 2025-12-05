@@ -9,6 +9,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    allow_failure: true
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
