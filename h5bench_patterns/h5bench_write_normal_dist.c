@@ -653,7 +653,7 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
 
     unsigned t2 = get_time_usec();
     ierr        = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                          ts->es_data);
+                                 ts->es_data);
 
     // should write all things in data_in
     unsigned t3    = get_time_usec();
@@ -742,7 +742,7 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
             set_select_space_multi_3D_array(filespace_out, memspace_out, params.dim_1, params.dim_2,
                                             params.dim_3);
             data     = (void *)prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3,
-                                                  data_size);
+                                                      data_size);
             dset_cnt = 8;
             break;
         default:
@@ -886,7 +886,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
     // all done, check if any timesteps undone
 
-    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp, NULL, NULL);
 
     *metadata_time_total += metadata_time_imp;
     *data_time_total += data_time_imp;
@@ -1019,7 +1019,7 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm           comm    = MPI_COMM_WORLD;
     MPI_Info           info    = MPI_INFO_NULL;
-    char *             num_str = "1024 Ks";
+    char              *num_str = "1024 Ks";
     unsigned long long num     = 0;
 
     char buffer[200];
@@ -1034,7 +1034,7 @@ main(int argc, char *argv[])
         }
     }
 
-    char *       output_file;
+    char        *output_file;
     bench_params params;
 
     char *cfg_file_path = argv[1];
@@ -1157,7 +1157,7 @@ main(int argc, char *argv[])
 
     unsigned long raw_write_time, inner_metadata_time, local_data_size;
     int           stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
-                                    &local_data_size, &raw_write_time, &inner_metadata_time);
+                                              &local_data_size, &raw_write_time, &inner_metadata_time);
 
     if (stat < 0) {
         if (MY_RANK == 0)
@@ -1188,7 +1188,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *         mode_str = NULL;
+        char          *mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";

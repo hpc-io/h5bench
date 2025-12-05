@@ -615,7 +615,7 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
 
     unsigned t2 = get_time_usec();
     ierr        = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
-                          ts->es_data);
+                                 ts->es_data);
 
     // should write all things in data_in
     unsigned t3    = get_time_usec();
@@ -704,7 +704,7 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
             set_select_space_multi_3D_array(filespace_out, memspace_out, params.dim_1, params.dim_2,
                                             params.dim_3);
             data     = (void *)prepare_data_contig_3D(particle_cnt, params.dim_1, params.dim_2, params.dim_3,
-                                                  data_size);
+                                                      data_size);
             dset_cnt = 8;
             break;
         default:
@@ -718,7 +718,9 @@ _prepare_data(bench_params params, hid_t *filespace_out, hid_t *memspace_out,
 int
 _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t filespace, hid_t memspace,
                      void *data, unsigned long data_size, unsigned long *total_data_size_out,
-                     unsigned long *data_time_total, unsigned long *metadata_time_total)
+                     unsigned long *data_time_total, unsigned long *metadata_time_total,
+                     unsigned long *data_time_per_step, unsigned long *metadata_time_per_step,
+                     unsigned long *data_wait_time_per_step, unsigned long *metadata_wait_time_per_step)
 {
     unsigned long long data_preparation_time;
 
@@ -726,6 +728,8 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     int           timestep_cnt = params.cnt_time_step;
     *metadata_time_total       = 0;
     *data_time_total           = 0;
+    memset(metadata_time_per_step, 0, timestep_cnt * sizeof(unsigned long));
+    memset(data_time_per_step, 0, timestep_cnt * sizeof(unsigned long));
     char  grp_name[128];
     int   grp_cnt = 0, dset_cnt = 0;
     hid_t plist_id; //, filespace, memspace;
@@ -760,7 +764,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
-        //        print_mem_bound(MEM_MONITOR);
+
         sprintf(grp_name, "Timestep_%d", ts_index);
         assert(ts);
 
@@ -842,14 +846,16 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
             }
         }
 
-        *metadata_time_total += (meta_time1 + meta_time2 + meta_time3 + meta_time4);
-        *data_time_total += (data_time_exp + data_time_imp);
+        metadata_time_per_step[ts_index] = meta_time1 + meta_time2 + meta_time3 + meta_time4;
+        data_time_per_step[ts_index]     = data_time_exp + data_time_imp;
+        *metadata_time_total += metadata_time_per_step[ts_index];
+        *data_time_total += data_time_per_step[ts_index];
     } // end for timestep_cnt
 
     // all done, check if any timesteps undone
 
-    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp);
-
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &data_time_imp, data_wait_time_per_step,
+                          metadata_wait_time_per_step);
     *metadata_time_total += metadata_time_imp;
     *data_time_total += data_time_imp;
 
@@ -979,10 +985,12 @@ main(int argc, char *argv[])
     assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
-    MPI_Comm           comm    = MPI_COMM_WORLD;
-    MPI_Info           info    = MPI_INFO_NULL;
-    char *             num_str = "1024 Ks";
-    unsigned long long num     = 0;
+    MPI_Comm           comm               = MPI_COMM_WORLD;
+    MPI_Info           info               = MPI_INFO_NULL;
+    char              *num_str            = "1024 Ks";
+    unsigned long long num                = 0;
+    unsigned long     *data_time_per_step = NULL, *metadata_time_per_step = NULL;
+    unsigned long     *data_wait_time_per_step = NULL, *metadata_wait_time_per_step = NULL;
 
     char buffer[200];
 
@@ -996,7 +1004,7 @@ main(int argc, char *argv[])
         }
     }
 
-    char *       output_file;
+    char        *output_file;
     bench_params params;
 
     char *cfg_file_path = argv[1];
@@ -1051,6 +1059,11 @@ main(int argc, char *argv[])
     unsigned long data_size             = 0;
     unsigned long data_preparation_time = 0;
 
+    data_time_per_step          = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    metadata_time_per_step      = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    data_wait_time_per_step     = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    metadata_wait_time_per_step = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, comm);
@@ -1066,9 +1079,7 @@ main(int argc, char *argv[])
     ALIGN_THRESHOLD = params.align_threshold;
     ALIGN_LEN       = params.align_len;
 
-    if (params.file_per_proc) {
-    }
-    else {
+    if (!params.file_per_proc) {
 #ifdef HAVE_SUBFILING
         if (params.subfiling == 1)
             H5Pset_fapl_subfiling(fapl, NULL);
@@ -1098,14 +1109,16 @@ main(int argc, char *argv[])
     unsigned long tfopen_end = get_time_usec();
 
     if (MY_RANK == 0)
-        printf("Opened HDF5 file... \n");
+        printf("Opened HDF5 file...\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, inner_metadata_time, local_data_size;
-    int           stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
-                                    &local_data_size, &raw_write_time, &inner_metadata_time);
+    int           stat =
+        _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size, &local_data_size,
+                             &raw_write_time, &inner_metadata_time, data_time_per_step,
+                             metadata_time_per_step, data_wait_time_per_step, metadata_wait_time_per_step);
 
     if (stat < 0) {
         if (MY_RANK == 0)
@@ -1131,7 +1144,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *         mode_str = NULL;
+        char          *mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
@@ -1197,9 +1210,41 @@ main(int argc, char *argv[])
             value = format_human_readable(or_bs);
             fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
+            // Per timestep data time
+            for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                float t = (float)data_time_per_step[i] / (1000.0 * 1000.0);
+                fprintf(params.csv_fs, "timestep %d data time, %.3f, %s\n", i, t, "seconds");
+            }
+            // Per timestep inner metadata time
+            for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                float t = (float)metadata_time_per_step[i] / (1000.0 * 1000.0);
+                fprintf(params.csv_fs, "timestep %d metadata time, %.3f, %s\n", i, t, "seconds");
+            }
+            // Print wait time if async is enabled
+            if (has_vol_async) {
+                // Per timestep data wait time
+                for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                    float t = (float)data_wait_time_per_step[i] / (1000.0 * 1000.0);
+                    fprintf(params.csv_fs, "timestep %d data wait time, %.3f, %s\n", i, t, "seconds");
+                }
+                // Per timestep metadata wait time
+                for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                    float t = (float)metadata_wait_time_per_step[i] / (1000.0 * 1000.0);
+                    fprintf(params.csv_fs, "timestep %d metadata wait time, %.3f, %s\n", i, t, "seconds");
+                }
+            }
             fclose(params.csv_fs);
         }
     }
+
+    if (data_time_per_step)
+        free(data_time_per_step);
+    if (metadata_time_per_step)
+        free(metadata_time_per_step);
+    if (data_wait_time_per_step)
+        free(data_wait_time_per_step);
+    if (metadata_wait_time_per_step)
+        free(metadata_wait_time_per_step);
 
     MPI_Finalize();
     return 0;

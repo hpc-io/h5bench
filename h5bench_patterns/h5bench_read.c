@@ -63,7 +63,7 @@ int        subfiling = 0;
 
 herr_t          ierr;
 data_contig_md *BUF_STRUCT;
-mem_monitor *   MEM_MONITOR;
+mem_monitor    *MEM_MONITOR;
 
 void
 print_data(int n)
@@ -278,10 +278,14 @@ set_dataspace(bench_params params, unsigned long long try_read_elem_cnt, hid_t *
 int
 _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, bench_params params,
                     unsigned long *total_data_size_out, unsigned long *raw_read_time_out,
-                    unsigned long *inner_metadata_time)
+                    unsigned long *inner_metadata_time, unsigned long *data_time_per_step,
+                    unsigned long *metadata_time_per_step, unsigned long *data_wait_time_per_step,
+                    unsigned long *metadata_wait_time_per_step)
 {
-    *raw_read_time_out               = 0;
-    *inner_metadata_time             = 0;
+    *raw_read_time_out   = 0;
+    *inner_metadata_time = 0;
+    memset(metadata_time_per_step, 0, params.cnt_time_step * sizeof(unsigned long));
+    memset(data_time_per_step, 0, params.cnt_time_step * sizeof(unsigned long));
     int                nts           = params.cnt_time_step;
     unsigned long long read_elem_cnt = params.try_num_particles;
     hid_t              grp;
@@ -370,11 +374,14 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
             }
         }
 
-        *raw_read_time_out += (read_time_exp + read_time_imp);
-        *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
+        metadata_time_per_step[ts_index] = (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
+        data_time_per_step[ts_index]     = (read_time_exp + read_time_imp);
+        *raw_read_time_out += data_time_per_step[ts_index];
+        *inner_metadata_time += metadata_time_per_step[ts_index];
     }
 
-    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp, data_wait_time_per_step,
+                          metadata_wait_time_per_step);
     *raw_read_time_out += read_time_imp;
     *inner_metadata_time += metadata_time_imp;
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
@@ -416,13 +423,12 @@ main(int argc, char *argv[])
     assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
-
-    int sleep_time = 0;
-
-    bench_params params;
-
-    char *cfg_file_path = argv[1];
-    char *file_name     = argv[2]; // data file to read
+    int            sleep_time = 0;
+    bench_params   params;
+    char          *cfg_file_path      = argv[1];
+    char          *file_name          = argv[2]; // data file to read
+    unsigned long *data_time_per_step = NULL, *metadata_time_per_step = NULL;
+    unsigned long *data_wait_time_per_step = NULL, *metadata_wait_time_per_step = NULL;
 
     if (MY_RANK == 0) {
         printf("Configuration file: %s\n", argv[1]);
@@ -516,6 +522,11 @@ main(int argc, char *argv[])
         printf("Number of particles available per rank: %llu \n", NUM_PARTICLES);
     }
 
+    data_time_per_step          = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    metadata_time_per_step      = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    data_wait_time_per_step     = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    metadata_wait_time_per_step = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Allreduce(&NUM_PARTICLES, &TOTAL_PARTICLES, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
@@ -537,7 +548,8 @@ main(int argc, char *argv[])
     unsigned long raw_read_time, metadata_time, local_data_size;
 
     int ret = _run_benchmark_read(file_id, fapl, gapl, filespace, params, &local_data_size, &raw_read_time,
-                                  &metadata_time);
+                                  &metadata_time, data_time_per_step, metadata_time_per_step,
+                                  data_wait_time_per_step, metadata_wait_time_per_step);
 
     if (ret < 0) {
         if (MY_RANK == 0)
@@ -558,7 +570,7 @@ main(int argc, char *argv[])
 
     if (MY_RANK == 0) {
         human_readable value;
-        char *         mode_str = NULL;
+        char          *mode_str = NULL;
 
         if (has_vol_async) {
             mode_str = "ASYNC";
@@ -617,6 +629,29 @@ main(int argc, char *argv[])
             value = format_human_readable(or_bs);
             fprintf(params.csv_fs, "observed rate, %.3f, %cB/s\n", value.value, value.unit);
             fprintf(params.csv_fs, "observed time, %.3f, %s\n", oct_s, "seconds");
+            // Per timestep data time
+            for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                float t = (float)data_time_per_step[i] / (1000.0 * 1000.0);
+                fprintf(params.csv_fs, "timestep %d data time, %.3f, %s\n", i, t, "seconds");
+            }
+            // Per timestep inner metadata time
+            for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                float t = (float)metadata_time_per_step[i] / (1000.0 * 1000.0);
+                fprintf(params.csv_fs, "timestep %d metadata time, %.3f, %s\n", i, t, "seconds");
+            }
+            // Print wait time if async is enabled
+            if (has_vol_async) {
+                // Per timestep data wait time
+                for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                    float t = (float)data_wait_time_per_step[i] / (1000.0 * 1000.0);
+                    fprintf(params.csv_fs, "timestep %d data wait time, %.3f, %s\n", i, t, "seconds");
+                }
+                // Per timestep metadata wait time
+                for (int i = 0; i < NUM_TIMESTEPS; i++) {
+                    float t = (float)metadata_wait_time_per_step[i] / (1000.0 * 1000.0);
+                    fprintf(params.csv_fs, "timestep %d metadata wait time, %.3f, %s\n", i, t, "seconds");
+                }
+            }
             fclose(params.csv_fs);
         }
     }
@@ -631,6 +666,16 @@ error:
 
 done:
     H5close();
+
+    if (data_time_per_step)
+        free(data_time_per_step);
+    if (metadata_time_per_step)
+        free(metadata_time_per_step);
+    if (data_wait_time_per_step)
+        free(data_wait_time_per_step);
+    if (metadata_wait_time_per_step)
+        free(metadata_wait_time_per_step);
+
     MPI_Finalize();
     return 0;
 }
