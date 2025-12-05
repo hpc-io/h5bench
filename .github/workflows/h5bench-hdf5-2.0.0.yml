@@ -60,7 +60,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
@@ -89,6 +89,7 @@ jobs:
           cd build-sync
 
           cmake .. \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
@@ -106,6 +107,7 @@ jobs:
           cd build-async
 
           cmake .. \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DWITH_ASYNC_VOL:BOOL=ON \
             -DCMAKE_C_FLAGS="-I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
             -DH5BENCH_ALL=ON
