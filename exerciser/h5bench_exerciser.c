@@ -919,13 +919,12 @@ main(int argc, char *argv[])
     H5Pclose(createPropList);
     H5Pclose(accessPropList);
 
-    if (rank == 0)
-    if (!keepFile) {
-        unlink(testFileName);
-    }
-
-    if (rank == 0)
+    if (rank == 0) {
+        if (!keepFile) {
+            unlink(testFileName);
+        }
         printf("All done -- Finishing normally.\n");
+    }
     MPI_Barrier(comm);
 
     MPI_Finalize();
