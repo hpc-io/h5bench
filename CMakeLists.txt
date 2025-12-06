@@ -234,7 +234,7 @@ endif()
 if(H5BENCH_E3SM)
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME}
+        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} "LIBS=-ldl -lpthread"
         BUILD_COMMAND make
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
@@ -249,7 +249,7 @@ endif()
 
 if(H5BENCH_OPENPMD)
     add_subdirectory(openpmd)
-    
+
     set(openPMD_USE_MPI ON CACHE BOOL "" FORCE)
     set(openPMD_USE_HDF5 ON CACHE BOOL "" FORCE)
     set(openPMD_USE_ADIOS1 OFF CACHE BOOL "" FORCE)
