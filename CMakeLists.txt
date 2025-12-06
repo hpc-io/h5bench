@@ -317,7 +317,7 @@ if(H5BENCH_MACSIO)
             -DWITH_HDF5_PREFIX=${HDF5_HOME}
             -DWITH_JSON-CWX_PREFIX=${JSON_HOME}
             -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
-            -DDCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         BUILD_COMMAND make
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio-prefix/src/h5bench_macsio-build/macsio/macsio ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio
         LOG_CONFIGURE 1
