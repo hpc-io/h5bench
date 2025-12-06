@@ -232,9 +232,12 @@ endif()
 # https://github.com/Parallel-NetCDF/E3SM-IO
 
 if(H5BENCH_E3SM)
+    string(REPLACE ";" " " HDF5_LIBS_CLEAN "${HDF5_LIBRARIES}")
+    set(E3SM_LIBS "${HDF5_LIBS_CLEAN} -ldl -lpthread")
+
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} "LIBS=-ldl -lpthread"
+        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} "LIBS=${E3SM_LIBS}"
         BUILD_COMMAND make
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
