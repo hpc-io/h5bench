@@ -89,7 +89,7 @@ jobs:
           cd build-sync
 
           cmake .. \
-            -DH5BENCH_ALL=ON
+            -DH5BENCH_E3SM=ON
           make -j 2
           sudo make install
           ldconfig
