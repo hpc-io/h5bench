@@ -29,7 +29,7 @@ jobs:
           git clone https://github.com/HDFGroup/hdf5.git
 
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch develop /opt/vol-async
 
           python3 -m pip install pytest
 
@@ -42,8 +42,10 @@ jobs:
 
           cd hdf5
 
-          ./autogen.sh
-          ./configure --prefix=$HDF5_DIR --enable-parallel --enable-threadsafe --enable-unsupported
+          mkdir build
+          cd build
+
+          CC=mpicc cmake -DCMAKE_INSTALL_PREFIX=$HDF5_DIR -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ALLOW_UNSUPPORTED=ON -DHDF5_ENABLE_THREADSAFE=ON -DBUILD_STATIC_LIBS=OFF ..
 
           make -j 2
           make install
