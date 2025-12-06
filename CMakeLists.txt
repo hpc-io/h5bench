@@ -248,6 +248,8 @@ endif()
 # https://github.com/openPMD/openPMD-api
 
 if(H5BENCH_OPENPMD)
+    add_subdirectory(openpmd)
+    
     set(openPMD_USE_MPI ON CACHE BOOL "" FORCE)
     set(openPMD_USE_HDF5 ON CACHE BOOL "" FORCE)
     set(openPMD_USE_ADIOS1 OFF CACHE BOOL "" FORCE)
@@ -258,8 +260,6 @@ if(H5BENCH_OPENPMD)
     set(openPMD_BUILD_TESTING OFF CACHE BOOL "" FORCE)
     set(openPMD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(openPMD_BUILD_CLI_TOOLS OFF CACHE BOOL "" FORCE)
-
-    add_subdirectory(openpmd)
 
     add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
     target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
