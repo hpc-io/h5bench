@@ -18,7 +18,11 @@ You can configure the ``h5bench_write`` and ``h5bench_read`` benchmarks with the
 ``NUM_DIMS``                            The number of dimensions, valid values are 1, 2 and 3   
 ``DIM_1``                               The dimensionality of the source data                   
 ``DIM_2``                               The dimensionality of the source data                   
-``DIM_3``                               The dimensionality of the source data                   
+``DIM_3``                               The dimensionality of the source data      
+``BLOCK_SIZE``             				Size of the block of data along ``dim_1`` for ``CS``, ``LDC``, ``RDC`` and Size of frame along ``dim_1`` for ``PRL``
+``BLOCK_SIZE_2``             			Size of the block of data along ``dim_2`` for ``CS``, ``LDC``, ``RDC`` and Size of frame along ``dim_2`` for ``PRL``
+``STRIDE_SIZE``             			Stride of the block of data along ``dim_1``, required for ``PRL``
+``STRIDE_SIZE_2``             			Stride of the block of data along ``dim_2``, required for ``PRL``
 ======================================= ==========================================================
 
 For ``MEM_PATTERN``, ``CONTIG`` represents arrays of basic data types (i.e., int, float, double, etc.); ``INTERLEAVED`` represents an array of structure (AOS) where each array element is a C struct; and ``STRIDED`` represents a few elements in an array of basic data types that are separated by a constant stride. ``STRIDED`` is supported only for 1D arrays. 
@@ -37,10 +41,10 @@ READ Settings (``h5bench_read``)
 ======================================= ==========================================================
 **Parameter**                           **Description**                                         
 ======================================= ==========================================================
-``READ_OPTION``                         Options: ``FULL``, ``PARTIAL``, and ``STRIDED``         
+``READ_OPTION``                         Options: ``FULL``, ``PARTIAL``, ``STRIDED``, ``PRL``, ``RDC``, ``LDC``, ``CS``         
 ======================================= ==========================================================
 
-For the ``PARTIAL`` option, the benchmark will read only the first ``TO_READ_NUM_PARTICLES`` particles.
+For the ``PARTIAL`` option, the benchmark will read only the first ``TO_READ_NUM_PARTICLES`` particles. ``PRL``, ``LDC``, ``RDC`` and ``CS`` options work with a single MPI process. In case multiple processes are used, only the root performs the read operations and all other processes skip the reads. 
 
 
 Asynchronous Settings
@@ -192,6 +196,38 @@ Contiguously read the first ``TO_READ_NUM_PARTICLES`` elements:
 	'MEM_PATTERN': 'CONTIG'
 	'FILE_PATTERN': 'STRIDED'
 	'READ_OPTION': 'STRIDED'
+
+- 4 patterns for 2D read
+
+1. PRL: Refers to the Peripheral data access pattern. Data is read from the periphery of the 2D dataset, which is a frame of fixed width and height around the dataset.
+.. code-block:: none
+
+	'MEM_PATTERN': 'CONTIG'
+	'FILE_PATTERN': 'CONTIG'
+	'READ_OPTION': 'PRL'
+
+2. RDC: Refers to the Right Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top right corner and the other in the bottom left corner in the 2D HDF5 dataset
+.. code-block:: none
+
+	'MEM_PATTERN': 'CONTIG'
+	'FILE_PATTERN': 'CONTIG'
+	'READ_OPTION': 'RDC'
+
+3. LDC: Refers to the Left Diagonal Corner data access pattern. Data is read from two identical blocks of fixed sides, one in the top left corner and the other in the bottom right corner in the 2D HDF5 dataset
+.. code-block:: none
+
+	'MEM_PATTERN': 'CONTIG'
+	'FILE_PATTERN': 'CONTIG'
+	'READ_OPTION': 'LDC'
+
+4. CS: Refers to the Cross Stencil data access pattern. A block of fixed sides is used to read data from an HDF5 dataset. This block is given a fixed stride in each dimension and data till end of dataset is read.
+.. code-block:: none
+
+	'MEM_PATTERN': 'CONTIG'
+	'FILE_PATTERN': 'CONTIG'
+	'READ_OPTION': 'CS'
+
+
 
 Understanding the Output
 ------------------------

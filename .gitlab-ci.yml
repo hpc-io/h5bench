@@ -1,23 +1,86 @@
 variables:
+    STATUS_PROJECT: "hpc-io/h5bench"
+    STATUS_NAME: "NERSC / Perlmutter"
     H5BENCH_BUILD_PATH: "${CI_PROJECT_DIR}/build"
     H5BENCH_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
+    GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
 
 stages:
+    - authorize
     - build
     - test
     - metrics
 
+.report-status:
+    script:
+        # For complete details on the GitHub API please see:
+        # https://developer.github.com/v3/repos/statuses
+        - |
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
+          -d "{\"state\":\"${CI_JOB_NAME}\",\"description\":\"${STATUS_MESSAGE}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
+
+pending:
+    stage: .pre
+    variables:
+        STATUS_MESSAGE: "Waiting for manual approval..."
+    extends:
+        - .report-status
+
+success:
+    stage: .post
+    variables:
+        STATUS_MESSAGE: "Successfully passed all tests on Perlmutter!"
+    extends:
+        - .report-status
+
+failure:
+    stage: .post
+    variables:
+        STATUS_MESSAGE: "Failed to pass all tests on Perlmutter!"
+    extends:
+        - .report-status
+    rules:
+        - when: on_failure
+
+perlmutter-authorize:
+    stage: authorize
+    rules:
+    - if: '$METRICS == null'
+      when: manual
+    script:
+        - |
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
+          -d "{\"state\":\"pending\",\"description\":\"Running...\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
+
 build-perlmutter:
     stage: build
+    needs:
+        - perlmutter-authorize
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://gitlab.com
+
+    allow_failure: false
     rules:
         - if: '$METRICS == null'
     tags:
         - perlmutter
     variables:
         GIT_SUBMODULE_STRATEGY: recursive
-        SCHEDULER_PARAMETERS: " -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
-        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
-        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        SCHEDULER_PARAMETERS: " -A ${H5BENCH_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        HDF5_DIR: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
     script:
         - echo "Build h5bench"
         - module list
@@ -25,7 +88,7 @@ build-perlmutter:
         - mkdir -p ${H5BENCH_BUILD_PATH}/perlmutter
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
         - cmake ../.. -DCMAKE_INSTALL_PREFIX=${H5BENCH_INSTALL_PATH}/perlmutter -DH5BENCH_ALL=ON
-        - make -j 8
+        - make
         - make install
     artifacts:
         paths:
@@ -34,20 +97,24 @@ build-perlmutter:
 
 test-perlmutter:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://gitlab.comgov/
     rules:
         - if: '$METRICS == null'
     needs: ["build-perlmutter"]
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: " -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
-        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
-        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        SCHEDULER_PARAMETERS: " -A ${H5BENCH_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        HDF5_DIR: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
         MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
         - echo "Test h5bench SYNC"
         - cd ${H5BENCH_BUILD_PATH}/perlmutter
-        - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
+        - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$H5BENCH_INSTALL_PATH/perlmutter/lib:$LD_LIBRARY_PATH
         - echo "Test h5bench SYNC write/read"
         - python3 ../../samples/update-perlmutter.py ../../samples/sync-write-read-contig-1d-small.json
         - ./h5bench --debug --abort-on-failure --validate-mode ../../samples/sync-write-read-contig-1d-small.json
@@ -75,15 +142,19 @@ test-perlmutter:
 
 build-perlmutter-metrics:
     stage: build
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://gitlab.com/
     rules:
         - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
     tags:
         - perlmutter
     variables:
         GIT_SUBMODULE_STRATEGY: recursive
-        SCHEDULER_PARAMETERS: "--qos=debug -N 1 -t 00:30:00"
-        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
-        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        SCHEDULER_PARAMETERS: " -A ${H5BENCH_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        HDF5_DIR: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
     script:
         - echo "Build h5bench"
         - module list
@@ -100,20 +171,26 @@ build-perlmutter-metrics:
 
 metrics-perlmutter:
     stage: metrics
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://gitlab.com/
     rules:
         - if: '$CI_PIPELINE_SOURCE == "schedule" && $METRICS == "true"'
     needs: ["build-perlmutter-metrics"]
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: " -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 8 -t 00:30:00"
-        HDF5_DIR: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
-        HDF5_HOME: "/global/cfs/cdirs/m2621/h5bench-perlmutter/hdf5/install"
+        SCHEDULER_PARAMETERS: " -A ${H5BENCH_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 8 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        HDF5_DIR: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
+        HDF5_HOME: "/global/cfs/cdirs/${H5BENCH_PROJECT}/h5bench-perlmutter/hdf5/install"
         MPICH_MAX_THREAD_SAFETY: "multiple"
     script:
+        - hostname
+        - echo "JOBID ${SLURM_JOB_ID}"
+        - export NERSC_HOST=`cat /etc/clustername`
         - module load python
         - module load darshan
-        - export LD_PRELOAD="$DARSHAN_BASE_DIR/lib/libdarshan.so"
         - echo "h5bench SYNC"
         - cd ${H5BENCH_BUILD_PATH}/perlmutter-metrics
         - export LD_LIBRARY_PATH=$HDF5_DIR/lib:$LD_LIBRARY_PATH
@@ -128,7 +205,7 @@ metrics-perlmutter:
         - export RESULTS="/global/homes/j/jeanbez/h5bench-ci-metrics/perlmutter/$(date +%s)"
         - mkdir -p $RESULTS
         - echo "Fetching Darshan log file"
-        - cp /pscratch/darshanlogs/$(date +%Y)/$(date +%-m)/$(date +%d | sed 's/^0*//')/jeanbez_h5bench* ${RESULTS}
+        - cp /pscratch/darshanlogs/$(date +%Y)/$(date +%-m)/$(date +%d | sed 's/^0*//')/jeanbez_h5bench* ${RESULTS} 2> /dev/null || true
         - echo "Fetching runtime files"
         - cp h5bench-suite-sync.err ${RESULTS}
         - cp h5bench-suite-sync.out ${RESULTS}

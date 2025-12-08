@@ -127,8 +127,8 @@ endif()
 
 set(h5bench_write_normal_dist_src h5bench_patterns/h5bench_write_normal_dist.c)
 
-add_executable(h5bench_write_normal_dist ${h5bench_write_normal_dist_src})
-target_link_libraries(h5bench_write_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
+add_executable(h5bench_write_var_normal_dist ${h5bench_write_normal_dist_src})
+target_link_libraries(h5bench_write_var_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
 
 # h5bench WRITE ###############################################################
 #
@@ -234,8 +234,8 @@ endif()
 if(H5BENCH_E3SM)
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME}
-        BUILD_COMMAND make
+        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
+        BUILD_COMMAND make -j 1
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
         BUILD_IN_SOURCE 1
         LOG_CONFIGURE 1
@@ -358,7 +358,7 @@ install(
     TARGETS
     h5bench_write
     h5bench_write_unlimited
-    h5bench_write_normal_dist
+    h5bench_write_var_normal_dist
     h5bench_overwrite
     h5bench_append
     h5bench_read

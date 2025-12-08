@@ -1,7 +1,7 @@
 Metadata Stress
 ===============
 
-The Metadata Stress benchmark (``h5bench_hdf5_iotest``) is a simple I/O performance tester for HDF5. Its purpose is to assess the performance variability of a set of logically equivalent HDF5 representations of a common pattern. The test repeatedly writes (and reads) in parallel a set of 2D array variables in a tiled fashion, over a set of time steps. For more information referer to HDF Group `GitHub repository <https://github.com/HDFGroup/hdf5-iotest>`_. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
+The Metadata Stress benchmark (``h5bench_hdf5_iotest``) is a simple I/O performance tester for HDF5. Its purpose is to assess the performance variability of a set of logically equivalent HDF5 representations of a common pattern. The test repeatedly writes (and reads) in parallel a set of 2D array variables in a tiled fashion, over a set of time steps. For more information refer to HDF Group `GitHub repository <https://github.com/HDFGroup/hdf5-iotest>`_. We modified this benchmark slightly so to be able to specify the config file location, everything else remains untouched.
 
 Configuration
 -------------

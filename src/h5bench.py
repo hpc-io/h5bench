@@ -7,7 +7,7 @@ import time
 import uuid
 import shlex
 import errno
-import distutils.spawn
+import shutil
 import argparse
 import collections
 import subprocess
@@ -464,7 +464,7 @@ class H5bench:
 
     def is_available(self, executable):
         """Check if binary is available."""
-        return distutils.spawn.find_executable(
+        return shutil.which(
             executable,
             path=os.environ['PATH'] + ':.'
         )

@@ -1,0 +1,61 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: h5bench
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Suren
+    family-names: Byna
+    email: sbyna@lbl.gov
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 'https://orcid.org/0000-0003-3048-3448'
+  - given-names: Jean Luca
+    family-names: Bez
+    email: jlbez@lbl.gov
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 'https://orcid.org/0000-0002-3915-1135'
+  - given-names: Tonglin
+    family-names: Li
+    affiliation: Lawrence Berkeley National Laboratory
+  - given-names: Quincey
+    family-names: Koziol
+    affiliation: National Energy Research Scientific Computing Center
+  - given-names: Houjun
+    family-names: Tang
+    email: htang4@lbl.gov
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 'https://orcid.org/0000-0001-7038-8360'
+  - given-names: Qiao
+    family-names: Kang
+    affiliation: Lawrence Berkeley National Laboratory
+identifiers:
+  - type: url
+    value: >-
+      https://sdm.lbl.gov/~sbyna/research/papers/2021/202106-CUG_2021_h5bench.pdf
+    description: CUG Paper
+  - type: url
+    value: 'https://github.com/hpc-io/h5bench'
+    description: Github Repository
+  - type: url
+    value: 'https://h5bench.readthedocs.io'
+    description: h5bench Documentation
+repository-code: 'https://github.com/hpc-io/h5bench'
+abstract: >-
+  h5bench is a suite of parallel I/O benchmarks or kernels
+  representing I/O patterns that are commonly used in HDF5
+  applications on high performance computing systems.
+  h5bench measures I/O performance from various aspects,
+  including the I/O overhead, observed I/O rate, etc. 
+keywords:
+  - HDF5
+  - I/O
+  - HPC
+  - I/O benchmark
+  - I/O kernel
+commit: ' 67a3e6d91508e5ab77db79c6187b2eb3c96119e0'
+version: v.1.4
+date-released: '2023-05-31'
