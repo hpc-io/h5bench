@@ -1,52 +1,42 @@
-name: h5bench (HDF5 develop) 
+name: h5bench (HDF5 2.0.0) 
 
 on:
   pull_request:
 
   workflow_dispatch:
 
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   h5bench:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    container:
+      image: hpcio/hdf5-2.0.0
     timeout-minutes: 60
-    allow_failure: true
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      OMPI_MCA_rmaps_base_oversubscribe: "yes"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v2
         with:
           submodules: true
 
+      - name: Configuration
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
+
       - name: Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install cmake gcc gdb libtool zlib1g-dev python3 libopenmpi-dev -y
-          
-          # HDF5
-          git clone https://github.com/HDFGroup/hdf5.git
-
           # VOL-ASYNC
           git clone --recursive https://github.com/hpc-io/vol-async.git --branch develop /opt/vol-async
-
-      - name: Build HDF5 develop
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export HDF5_LIBTOOL=/usr/bin/libtoolize
-          
-          mkdir $HDF5_DIR
-
-          cd hdf5
-
-          mkdir build
-          cd build
-
-          CC=mpicc cmake -DCMAKE_INSTALL_PREFIX=$HDF5_DIR -DHDF5_ENABLE_PARALLEL=ON -DHDF5_ALLOW_UNSUPPORTED=ON -DHDF5_ENABLE_THREADSAFE=ON -DBUILD_STATIC_LIBS=OFF ..
-
-          make -j 2
-          make install
 
       - name: Build Argobots
         run: |
@@ -70,7 +60,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
@@ -82,7 +72,7 @@ jobs:
           export ASYNC_DIR=/opt/vol-async
 
           export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
-          export HDF5_PLUGIN_PATH="$ASYNC_DIR/lib"
+          export HDF5_PLUGIN_PATH="$ASYNC_DIR/include"
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
           cd $ASYNC_DIR/build
@@ -93,10 +83,7 @@ jobs:
 
       - name: Build h5bench SYNC
         run: |
-          export HDF5_DIR=/opt/hdf5
-          export HDF5_HOME=$HDF5_DIR
-          
-          export LD_LIBRARY_PATH=$HDF5_HOME/lib:$LD_LIBRARY_PATH
+          export HDF5_HOME=/opt/hdf5
 
           mkdir build-sync
           cd build-sync
@@ -105,12 +92,10 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
-          sudo ldconfig
+          ldconfig
 
       - name: Build h5bench ASYNC
         run: |
-          current="$PWD"
-
           export HDF5_HOME=/opt/hdf5
           export ABT_HOME=/opt/argobots
           export ASYNC_HOME=/opt/vol-async
@@ -126,295 +111,179 @@ jobs:
             -DH5BENCH_ALL=ON
           make -j 2
           sudo make install
-          sudo ldconfig
+          ldconfig
 
       - name: Test h5bench SYNC write/read
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
 
-      - name: Test h5bench ASYNC write/read
-        run: |
-          export HDF5_DIR=/opt/hdf5
-          export ABT_DIR=/opt/argobots
-          export ASYNC_DIR=/opt/vol-async
-
-          cd build-async
-
-          python3 ../samples/update.py ../samples/async-write-read-contig-1d-small.json
-
-          ./h5bench --debug --abort-on-failure ../samples/async-write-read-contig-1d-small.json
-        
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-
       - name: Test h5bench SYNC write 1D contiguous (memory) strided (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-strided.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) contiguous (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig.json
 
       - name: Test h5bench SYNC write 1D contiguous (memory) interleaved (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) contiguous (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 1D interleaved (memory) interleaved (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) contiguous (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig.json
 
       - name: Test h5bench SYNC write 2D contiguous (memory) interleaved (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-interleaved.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) contiguous (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-contig.json
 
       - name: Test h5bench SYNC write 2D interleaved (memory) interleaved (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-interleaved-interleaved.json
 
       - name: Test h5bench SYNC write 3D contiguous (memory) contiguous (file)
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-3d-contig-contig.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) full
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) partial
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-partial.json
 
       - name: Test h5bench SYNC read 1D contiguous (memory) contiguous (file) strided
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-1d-contig-contig-read-strided.json
 
       - name: Test h5bench SYNC read 2D contiguous (memory) contiguous (file) full
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC read 3D contiguous (memory) contiguous (file) full
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-2d-contig-contig-read-full.json
 
       - name: Test h5bench SYNC write unlimited
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-write-unlimited.json
 
       - name: Test h5bench SYNC overwrite
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-overwrite.json
 
       - name: Test h5bench SYNC append
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-append.json
 
       - name: Test h5bench SYNC exerciser
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-exerciser.json
 
       - name: Test h5bench SYNC metadata
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-metadata.json
 
       - name: Test h5bench SYNC amrex
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-amrex.json
 
       - name: Test h5bench SYNC openpmd
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-openpmd.json
 
       - name: Test h5bench SYNC e3sm
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-e3sm.json
 
       - name: Test h5bench SYNC macsio
         run: |
-          export HDF5_HOME=/opt/hdf5
-          export ABT_HOME=/opt/argobots
-          export ASYNC_HOME=/opt/vol-async
-
-          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
 
           cd build-sync
           ./h5bench --debug --abort-on-failure ../samples/sync-macsio.json
@@ -644,8 +513,8 @@ jobs:
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: test
-          path: build*/storage/**/std*
+          path: build*
           retention-days: 5

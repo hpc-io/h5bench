@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 project(
     h5bench
     VERSION 1.3.0
@@ -246,18 +248,18 @@ endif()
 # https://github.com/openPMD/openPMD-api
 
 if(H5BENCH_OPENPMD)
-    set(openPMD_USE_MPI ON)
-    set(openPMD_USE_HDF5 ON)
-    set(openPMD_USE_ADIOS1 OFF)
-    set(openPMD_USE_ADIOS2 OFF)
-    set(openPMD_USE_JSON OFF)
-    set(openPMD_USE_PYTHON OFF)
-    set(openPMD_INSTALL ON)
-    set(openPMD_BUILD_TESTING OFF)
-    set(openPMD_BUILD_EXAMPLES OFF)
-    set(openPMD_BUILD_CLI_TOOLS OFF)
-
     add_subdirectory(openpmd)
+
+    set(openPMD_USE_MPI ON CACHE BOOL "" FORCE)
+    set(openPMD_USE_HDF5 ON CACHE BOOL "" FORCE)
+    set(openPMD_USE_ADIOS1 OFF CACHE BOOL "" FORCE)
+    set(openPMD_USE_ADIOS2 OFF CACHE BOOL "" FORCE)
+    set(openPMD_USE_JSON OFF CACHE BOOL "" FORCE)
+    set(openPMD_USE_PYTHON OFF CACHE BOOL "" FORCE)
+    set(openPMD_INSTALL ON CACHE BOOL "" FORCE)
+    set(openPMD_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(openPMD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(openPMD_BUILD_CLI_TOOLS OFF CACHE BOOL "" FORCE)
 
     add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
     target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
@@ -315,6 +317,7 @@ if(H5BENCH_MACSIO)
             -DWITH_HDF5_PREFIX=${HDF5_HOME}
             -DWITH_JSON-CWX_PREFIX=${JSON_HOME}
             -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         BUILD_COMMAND make
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio-prefix/src/h5bench_macsio-build/macsio/macsio ${CMAKE_CURRENT_BINARY_DIR}/h5bench_macsio
         LOG_CONFIGURE 1
