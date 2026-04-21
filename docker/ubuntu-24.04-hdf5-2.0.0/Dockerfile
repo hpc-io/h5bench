@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:24.04
 
 LABEL Description="Ubuntu 24.04 environment with HDF5 2.0.0"
 
@@ -31,7 +31,7 @@ RUN apt-get update \
         software-properties-common
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null \
-    && sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' \
+    && sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ noble main' \
     && apt-get update \
     && apt-get install cmake -y \
     && pip3 install psutil
