@@ -12,6 +12,14 @@ include(CTest)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
+# Keep every h5bench_* executable at the top of the build tree. The Python
+# driver's is_available() check falls back to PWD (shutil.which path=PATH + ':.'),
+# and some CI environments (notably NERSC) install to a non-PATH prefix and rely
+# on running `./h5bench` from the build dir. Before the per-subdir CMakeLists
+# refactor every add_executable() was at root scope, so binaries naturally
+# landed at ${CMAKE_BINARY_DIR}; this restores that layout explicitly.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 find_package(Python REQUIRED)
 find_package(MPI REQUIRED)
 
