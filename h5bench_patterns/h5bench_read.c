@@ -625,8 +625,9 @@ main(int argc, char *argv[])
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
     if (mpi_thread_lvl_provided != MPI_THREAD_MULTIPLE) {
-        fprintf(stderr, "h5bench_read: MPI implementation does not provide MPI_THREAD_MULTIPLE "
-                        "(got level %d)\n",
+        fprintf(stderr,
+                "h5bench_read: MPI implementation does not provide MPI_THREAD_MULTIPLE "
+                "(got level %d)\n",
                 mpi_thread_lvl_provided);
         h5bench_die(NULL);
     }
