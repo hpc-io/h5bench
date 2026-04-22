@@ -100,13 +100,21 @@ read_h5_data(time_step *ts, hid_t loc, hid_t *dset_ids, hid_t filespace, hid_t m
     t1 = get_time_usec();
 
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[0], "H5Dopen_async(x)");
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[1], "H5Dopen_async(y)");
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[2], "H5Dopen_async(z)");
     dset_ids[3] = H5Dopen_async(loc, "id_1", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[3], "H5Dopen_async(id_1)");
     dset_ids[4] = H5Dopen_async(loc, "id_2", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[4], "H5Dopen_async(id_2)");
     dset_ids[5] = H5Dopen_async(loc, "px", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[5], "H5Dopen_async(px)");
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[6], "H5Dopen_async(py)");
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[7], "H5Dopen_async(pz)");
 
     t2 = get_time_usec();
 
@@ -405,11 +413,14 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 hid_t
 get_filespace(hid_t file_id)
 {
-    char *grp_name  = "/Timestep_0";
-    char *ds_name   = "px";
-    hid_t gid       = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
-    hid_t dsid      = H5Dopen2(gid, ds_name, H5P_DEFAULT);
+    char *grp_name = "/Timestep_0";
+    char *ds_name  = "px";
+    hid_t gid      = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
+    H5B_CHECK_HID(gid, "H5Gopen2(/Timestep_0)");
+    hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
+    H5B_CHECK_HID(dsid, "H5Dopen2(px)");
     hid_t filespace = H5Dget_space(dsid);
+    H5B_CHECK_HID(filespace, "H5Dget_space");
     H5Dclose(dsid);
     H5Gclose(gid);
     return filespace;
@@ -523,7 +534,6 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         sprintf(grp_name, "Timestep_%d", ts_index);
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         MEM_MONITOR->mem_used += ts->mem_size;
-        assert(ts);
 
         if (params.cnt_time_step_delay > 0) {
             if (ts_index > params.cnt_time_step_delay - 1) // delayed close on all ids of the previous ts
@@ -534,6 +544,7 @@ _run_benchmark_read(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, benc
         t1 = get_time_usec();
 
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+        H5B_CHECK_HID(ts->grp_id, "H5Gopen_async");
 
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
@@ -613,7 +624,12 @@ main(int argc, char *argv[])
 {
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
-    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    if (mpi_thread_lvl_provided != MPI_THREAD_MULTIPLE) {
+        fprintf(stderr, "h5bench_read: MPI implementation does not provide MPI_THREAD_MULTIPLE "
+                        "(got level %d)\n",
+                mpi_thread_lvl_provided);
+        h5bench_die(NULL);
+    }
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     int            sleep_time = 0;
@@ -656,7 +672,8 @@ main(int argc, char *argv[])
 
     hsize_t dims[64] = {0};
 
-    hid_t         file_id         = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
+    H5B_CHECK_HID(file_id, "H5Fopen");
     hid_t         filespace       = get_filespace(file_id);
     int           dims_cnt        = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;
@@ -715,10 +732,10 @@ main(int argc, char *argv[])
         printf("Number of particles available per rank: %llu \n", NUM_PARTICLES);
     }
 
-    data_time_per_step          = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    metadata_time_per_step      = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    data_wait_time_per_step     = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    metadata_wait_time_per_step = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(data_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(metadata_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(data_wait_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(metadata_wait_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
 
     MPI_Barrier(MPI_COMM_WORLD);
 

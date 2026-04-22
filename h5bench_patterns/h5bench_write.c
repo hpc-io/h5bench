@@ -160,7 +160,8 @@ make_compound_type_separates()
 particle *
 prepare_data_interleaved(long particle_cnt, unsigned long *data_size_out)
 {
-    particle *data_out = (particle *)malloc(particle_cnt * sizeof(particle));
+    particle *data_out;
+    H5B_MALLOC(data_out, particle_cnt * sizeof(particle));
 
     for (long i = 0; i < particle_cnt; i++) {
         data_out[i].id_1 = i;
@@ -179,17 +180,18 @@ prepare_data_interleaved(long particle_cnt, unsigned long *data_size_out)
 data_contig_md *
 prepare_data_contig_1D(unsigned long long particle_cnt, unsigned long *data_size_out)
 {
-    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
-    data_out->particle_cnt   = particle_cnt;
+    data_contig_md *data_out;
+    H5B_MALLOC(data_out, sizeof(data_contig_md));
+    data_out->particle_cnt = particle_cnt;
 
-    data_out->x     = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->y     = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->z     = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->px    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->py    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->pz    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->id_1  = (int *)malloc(particle_cnt * sizeof(int));
-    data_out->id_2  = (float *)malloc(particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->x, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->y, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->z, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->px, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->py, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->pz, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->id_1, particle_cnt * sizeof(int));
+    H5B_MALLOC(data_out->id_2, particle_cnt * sizeof(float));
     data_out->dim_1 = particle_cnt;
     data_out->dim_2 = 1;
     data_out->dim_3 = 1;
@@ -219,21 +221,21 @@ prepare_data_contig_2D(unsigned long long particle_cnt, long dim_1, long dim_2, 
                    dim_1, dim_2, dim_1 * dim_2, particle_cnt);
         return NULL;
     }
-    assert(particle_cnt == dim_1 * dim_2);
-    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
-    data_out->particle_cnt   = particle_cnt;
-    data_out->dim_1          = dim_1;
-    data_out->dim_2          = dim_2;
-    data_out->dim_3          = 1;
+    data_contig_md *data_out;
+    H5B_MALLOC(data_out, sizeof(data_contig_md));
+    data_out->particle_cnt = particle_cnt;
+    data_out->dim_1        = dim_1;
+    data_out->dim_2        = dim_2;
+    data_out->dim_3        = 1;
 
-    data_out->x    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->y    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->z    = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->px   = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->py   = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->pz   = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->id_1 = (int *)malloc(particle_cnt * sizeof(int));
-    data_out->id_2 = (float *)malloc(particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->x, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->y, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->z, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->px, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->py, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->pz, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->id_1, particle_cnt * sizeof(int));
+    H5B_MALLOC(data_out->id_2, particle_cnt * sizeof(float));
 
     long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
@@ -266,20 +268,20 @@ prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, 
         return NULL;
     }
 
-    assert(particle_cnt == dim_1 * dim_2 * dim_3);
-    data_contig_md *data_out = (data_contig_md *)malloc(sizeof(data_contig_md));
-    data_out->particle_cnt   = particle_cnt;
-    data_out->dim_1          = dim_1;
-    data_out->dim_2          = dim_2;
-    data_out->dim_3          = dim_3;
-    data_out->x              = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->y              = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->z              = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->px             = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->py             = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->pz             = (float *)malloc(particle_cnt * sizeof(float));
-    data_out->id_1           = (int *)malloc(particle_cnt * sizeof(int));
-    data_out->id_2           = (float *)malloc(particle_cnt * sizeof(float));
+    data_contig_md *data_out;
+    H5B_MALLOC(data_out, sizeof(data_contig_md));
+    data_out->particle_cnt = particle_cnt;
+    data_out->dim_1        = dim_1;
+    data_out->dim_2        = dim_2;
+    data_out->dim_3        = dim_3;
+    H5B_MALLOC(data_out->x, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->y, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->z, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->px, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->py, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->pz, particle_cnt * sizeof(float));
+    H5B_MALLOC(data_out->id_1, particle_cnt * sizeof(int));
+    H5B_MALLOC(data_out->id_2, particle_cnt * sizeof(float));
     long idx                 = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
         for (long i2 = 0; i2 < dim_2; i2++) {
@@ -458,20 +460,28 @@ data_write_contig_contig_MD_array(time_step *ts, hid_t loc, hid_t *dset_ids, hid
 
     dset_ids[0] = H5Dcreate_async(loc, "x", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[0], "H5Dcreate_async(x)");
     dset_ids[1] = H5Dcreate_async(loc, "y", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[1], "H5Dcreate_async(y)");
     dset_ids[2] = H5Dcreate_async(loc, "z", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[2], "H5Dcreate_async(z)");
     dset_ids[3] = H5Dcreate_async(loc, "px", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[3], "H5Dcreate_async(px)");
     dset_ids[4] = H5Dcreate_async(loc, "py", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[4], "H5Dcreate_async(py)");
     dset_ids[5] = H5Dcreate_async(loc, "pz", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[5], "H5Dcreate_async(pz)");
     dset_ids[6] = H5Dcreate_async(loc, "id_1", H5T_NATIVE_INT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[6], "H5Dcreate_async(id_1)");
     dset_ids[7] = H5Dcreate_async(loc, "id_2", H5T_NATIVE_FLOAT, filespace, H5P_DEFAULT, dcpl, H5P_DEFAULT,
                                   ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[7], "H5Dcreate_async(id_2)");
 
     unsigned t2 = get_time_usec();
 
@@ -516,6 +526,7 @@ data_write_contig_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids, hid_
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
                                   H5P_DEFAULT, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[0], "H5Dcreate_async(particles)");
 
     unsigned t2 = get_time_usec();
     ierr = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE_SEPARATES[0], memspace, filespace, plist_id,
@@ -612,6 +623,7 @@ data_write_interleaved_to_interleaved(time_step *ts, hid_t loc, hid_t *dset_ids,
     unsigned t1 = get_time_usec();
     dset_ids[0] = H5Dcreate_async(loc, "particles", PARTICLE_COMPOUND_TYPE, filespace, H5P_DEFAULT, dcpl,
                                   H5P_DEFAULT, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[0], "H5Dcreate_async(particles)");
 
     unsigned t2 = get_time_usec();
     ierr        = H5Dwrite_async(dset_ids[0], PARTICLE_COMPOUND_TYPE, memspace, filespace, plist_id, data_in,
@@ -766,7 +778,6 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
         MEM_MONITOR->mem_used += ts->mem_size;
 
         sprintf(grp_name, "Timestep_%d", ts_index);
-        assert(ts);
 
         if (params.cnt_time_step_delay > 0) {
             if (ts_index > params.cnt_time_step_delay - 1) // delayed close on all ids of the previous ts
@@ -982,7 +993,12 @@ main(int argc, char *argv[])
 {
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
-    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    if (mpi_thread_lvl_provided != MPI_THREAD_MULTIPLE) {
+        fprintf(stderr, "h5bench_write: MPI implementation does not provide MPI_THREAD_MULTIPLE "
+                        "(got level %d)\n",
+                mpi_thread_lvl_provided);
+        h5bench_die(NULL);
+    }
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm           comm               = MPI_COMM_WORLD;
@@ -1059,10 +1075,10 @@ main(int argc, char *argv[])
     unsigned long data_size             = 0;
     unsigned long data_preparation_time = 0;
 
-    data_time_per_step          = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    metadata_time_per_step      = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    data_wait_time_per_step     = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
-    metadata_wait_time_per_step = malloc(NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(data_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(metadata_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(data_wait_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
+    H5B_MALLOC(metadata_wait_time_per_step, NUM_TIMESTEPS * sizeof(unsigned long));
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1106,6 +1122,7 @@ main(int argc, char *argv[])
     else {
         file_id = H5Fcreate_async(output_file, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }
+    H5B_CHECK_HID(file_id, "H5Fcreate_async");
     unsigned long tfopen_end = get_time_usec();
 
     if (MY_RANK == 0)
