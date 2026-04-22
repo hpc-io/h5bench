@@ -7,6 +7,22 @@ if(Python3_Interpreter_FOUND)
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 
+	# Output-correctness tests (Wave C-prep). These verify HDF5 group/
+	# dataset/shape/dtype + deterministic id patterns in the files the
+	# benchmarks produce. Require h5py (see tests/requirements.txt).
+	add_test(
+		NAME "h5bench-output-validation"
+		COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_output_validation.py
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+
+	# Read-path round-trip test — until now h5bench_read had no pytest coverage.
+	add_test(
+		NAME "h5bench-read-roundtrip"
+		COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_read_roundtrip.py
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+
     if(WITH_ASYNC_VOL)
 		add_test(
 			NAME "h5bench-async"
