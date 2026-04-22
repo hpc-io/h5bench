@@ -282,7 +282,7 @@ prepare_data_contig_3D(unsigned long long particle_cnt, long dim_1, long dim_2, 
     H5B_MALLOC(data_out->pz, particle_cnt * sizeof(float));
     H5B_MALLOC(data_out->id_1, particle_cnt * sizeof(int));
     H5B_MALLOC(data_out->id_2, particle_cnt * sizeof(float));
-    long idx                 = 0;
+    long idx = 0;
     for (long i1 = 0; i1 < dim_1; i1++) {
         for (long i2 = 0; i2 < dim_2; i2++) {
             for (long i3 = 0; i3 < dim_3; i3++) {
@@ -994,8 +994,9 @@ main(int argc, char *argv[])
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
     if (mpi_thread_lvl_provided != MPI_THREAD_MULTIPLE) {
-        fprintf(stderr, "h5bench_write: MPI implementation does not provide MPI_THREAD_MULTIPLE "
-                        "(got level %d)\n",
+        fprintf(stderr,
+                "h5bench_write: MPI implementation does not provide MPI_THREAD_MULTIPLE "
+                "(got level %d)\n",
                 mpi_thread_lvl_provided);
         h5bench_die(NULL);
     }
