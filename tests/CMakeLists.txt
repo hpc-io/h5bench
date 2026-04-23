@@ -31,6 +31,13 @@ if(Python3_Interpreter_FOUND)
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 
+	# Pure-Python driver unit tests — no benchmark binary required.
+	add_test(
+		NAME "h5bench-driver-unit"
+		COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_driver_unit.py
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+
     if(WITH_ASYNC_VOL)
 		add_test(
 			NAME "h5bench-async"
