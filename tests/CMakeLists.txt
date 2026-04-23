@@ -83,4 +83,20 @@ if(Python3_Interpreter_FOUND)
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		)
 	endif()
+
+	if(H5BENCH_E3SM)
+		add_test(
+			NAME "h5bench-sync-e3sm"
+			COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_sync_e3sm.py
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		)
+	endif()
+
+	if(H5BENCH_MACSIO)
+		add_test(
+			NAME "h5bench-sync-macsio"
+			COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_sync_macsio.py
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		)
+	endif()
 endif()
