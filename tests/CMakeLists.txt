@@ -23,6 +23,14 @@ if(Python3_Interpreter_FOUND)
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 
+	# Variable-distribution write test — replaces the broken
+	# test_sync_h5bench_normal_dist.py (wrong binary name, wrong sample name).
+	add_test(
+		NAME "h5bench-write-var-normal-dist"
+		COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_write_var_normal_dist.py
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+
     if(WITH_ASYNC_VOL)
 		add_test(
 			NAME "h5bench-async"

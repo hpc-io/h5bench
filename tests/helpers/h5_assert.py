@@ -145,3 +145,30 @@ def assert_datasets_equal(path_a, path_b, dset_path):
         b,
         err_msg=f"{dset_path} differs between {path_a} and {path_b}",
     )
+
+
+# The compound-type write paths emit a single "particles" dataset per timestep
+# with 8 named fields in the HDF5 compound type (see make_compound_type() in
+# h5bench_write.c). These helpers let the compound-variant tests express the
+# same invariants that CONTIG_DATASETS expresses for the 8-dataset layout.
+COMPOUND_FIELDS = ("x", "y", "z", "px", "py", "pz", "id_1", "id_2")
+
+
+def assert_compound_dataset_present(path, group="/Timestep_0", name="particles"):
+    """The file has exactly one compound dataset per timestep, named `particles`,
+    whose HDF5 compound type carries the 8 named fields above."""
+    dset_path = f"{group}/{name}"
+    with h5py.File(path, "r") as f:
+        assert name in f[group], (
+            f"{path}{group}: expected a '{name}' compound dataset, have {sorted(f[group].keys())}"
+        )
+        dtype = f[dset_path].dtype
+    assert dtype.kind == "V", (
+        f"{path}{dset_path}: expected compound/void dtype, got {dtype} (kind '{dtype.kind}')"
+    )
+    field_names = set(dtype.names or ())
+    missing = set(COMPOUND_FIELDS) - field_names
+    assert not missing, (
+        f"{path}{dset_path}: compound type missing fields {sorted(missing)} "
+        f"(have {sorted(field_names)})"
+    )
