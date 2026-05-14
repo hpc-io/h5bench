@@ -34,7 +34,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     && sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ noble main' \
     && apt-get update \
     && apt-get install cmake -y \
-    && pip3 install psutil
+    && pip3 install psutil --break-system-packages
 
 RUN wget https://github.com/HDFGroup/hdf5/archive/refs/tags/2.0.0.tar.gz \
     && tar zxvf 2.0.0.tar.gz \
