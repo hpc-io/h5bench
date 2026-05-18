@@ -50,15 +50,17 @@ jobs:
 
       - name: Install coverage tooling
         run: |
-          # Isolate the Python bits in a venv so PEP 668 ("externally-
-          # managed") base images (Ubuntu 24.04+) don't block pip. gcovr
-          # itself is a Python package, so one install covers both.
-          apt-get update
-          apt-get install -y --no-install-recommends python3-pip python3-venv
-          python3 -m venv /opt/h5bench-venv
-          /opt/h5bench-venv/bin/pip install --upgrade pip
-          /opt/h5bench-venv/bin/pip install coverage gcovr h5py numpy
-          echo "/opt/h5bench-venv/bin" >> $GITHUB_PATH
+          # The hpcio/hdf5-1.14.0 base image is Ubuntu 20.04 with python3
+          # + pip preinstalled but no python3-venv, and its apt sources
+          # reference a Kitware repo whose GPG key has rotated and now
+          # breaks `apt-get update`. Skip apt entirely and install the
+          # coverage tools (gcovr is a pure-Python package too) into
+          # /root/.local via `pip --user`. 20.04 predates PEP 668 so no
+          # externally-managed-environment dance is needed.
+          python3 --version
+          pip3 install --quiet --user --upgrade 'pip<24.1'
+          python3 -m pip install --quiet --user coverage gcovr h5py numpy pytest
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Clone VOL-ASYNC
         run: |
