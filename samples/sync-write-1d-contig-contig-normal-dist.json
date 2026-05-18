@@ -11,7 +11,7 @@
     "directory": "storage",
     "benchmarks": [
         {
-            "benchmark": "write_normal_dist",
+            "benchmark": "write_var_normal_dist",
             "file": "test.h5",
             "configuration": {
                 "MEM_PATTERN": "CONTIG",

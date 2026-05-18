@@ -241,6 +241,12 @@ You can find several samples of configuration file with all the options in our [
 
 For a description of all the options available in each benchmark, please refer to their entries in the documentation.
 
+The full configuration grammar is captured in a JSON Schema file at ``schemas/h5bench-config.schema.json`` (root of the repository). When the optional ``jsonschema`` Python package is installed (``pip install jsonschema``), the driver validates every config against this schema on startup and rejects unknown keys, wrong-typed values, and out-of-enum settings (for example ``MODE: "BOGUS"`` or ``MEM_PATTERN: "sequential"``) with a precise error message pointing at the offending field. Without ``jsonschema``, the driver falls back to a minimal five-required-keys check and prints a warning.
+
+You can run the schema against a config out-of-band before launching::
+
+   python3 -c "import json, jsonschema; jsonschema.validate(json.load(open('my.json')), json.load(open('schemas/h5bench-config.schema.json')))"
+
 When the ``--debug`` option is enabled, you can expect an output similar to:
 
 .. code-block::
