@@ -229,12 +229,8 @@ endif()
 # https://github.com/openPMD/openPMD-api
 
 if(H5BENCH_OPENPMD)
-    # These openPMD_* options must be set BEFORE add_subdirectory(openpmd):
-    # CMake processes the subproject's CMakeLists.txt at the add_subdirectory
-    # call, so any cache variable set afterwards is too late to influence it.
-    # With the old ordering openPMD configured with its own defaults and
-    # registered its CLI tool tests (CLI.help.pipe.py, CLI.py.help.ls), which
-    # then ran -- and failed -- under h5bench's own `ctest`.
+    add_subdirectory(openpmd)
+
     set(openPMD_USE_MPI ON CACHE BOOL "" FORCE)
     set(openPMD_USE_HDF5 ON CACHE BOOL "" FORCE)
     set(openPMD_USE_ADIOS1 OFF CACHE BOOL "" FORCE)
@@ -245,8 +241,6 @@ if(H5BENCH_OPENPMD)
     set(openPMD_BUILD_TESTING OFF CACHE BOOL "" FORCE)
     set(openPMD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(openPMD_BUILD_CLI_TOOLS OFF CACHE BOOL "" FORCE)
-
-    add_subdirectory(openpmd)
 
     add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
     target_include_directories(h5bench_openpmd_write PRIVATE ${HDF5_INCLUDE_DIRS})

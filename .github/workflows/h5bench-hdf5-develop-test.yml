@@ -147,7 +147,11 @@ jobs:
 
           cd build-sync
 
-          ctest --verbose .
+          # Restrict to h5bench's own tests (all registered as h5bench-*).
+          # add_subdirectory(openpmd)/(amrex) pull in those projects' own
+          # ctest suites (e.g. CLI.help.pipe.py); -R keeps the run scoped to
+          # what this repository owns.
+          ctest --verbose -R '^h5bench-' .
 
       - name: Test h5bench ASYNC
         run: |
@@ -158,7 +162,8 @@ jobs:
 
           cd build-async
 
-          ctest --verbose .
+          # See the SYNC step — keep ctest scoped to h5bench-* tests only.
+          ctest --verbose -R '^h5bench-' .
 
       - name: Upload artifact
         if: always()
