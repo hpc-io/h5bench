@@ -40,9 +40,6 @@ jobs:
 
           cd hdf5/build
 
-          mkdir build
-          cd build
-
           cmake \
             -DCMAKE_INSTALL_PREFIX=$HDF5_DIR \
             -DHDF5_ENABLE_PARALLEL=ON \
@@ -80,7 +77,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
