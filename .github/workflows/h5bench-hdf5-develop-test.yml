@@ -36,6 +36,7 @@ jobs:
           git clone --recursive https://github.com/hpc-io/vol-async.git --branch develop /opt/vol-async
 
           python3 -m pip install pytest
+          python3 -m pip install -r tests/requirements.txt
 
       - name: Build HDF5 develop
         run: |

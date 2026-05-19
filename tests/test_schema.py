@@ -15,8 +15,13 @@ import glob
 import json
 import os
 
-import jsonschema
 import pytest
+
+# jsonschema is the one hard dependency of this module. CI installs it from
+# tests/requirements.txt; if it is somehow absent the whole module skips
+# (rather than erroring at collection) so a missing dev dependency degrades
+# gracefully instead of failing the ctest run.
+jsonschema = pytest.importorskip("jsonschema")
 
 from src import h5bench as _h5bench
 
