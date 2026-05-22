@@ -56,6 +56,6 @@ keywords:
   - HPC
   - I/O benchmark
   - I/O kernel
-commit: ' 67a3e6d91508e5ab77db79c6187b2eb3c96119e0'
-version: v.1.4
-date-released: '2023-05-31'
+commit: '675c86d11832c625f1d71e63d7626308170ba8c5'
+version: v.1.6
+date-released: '2025-08-21'

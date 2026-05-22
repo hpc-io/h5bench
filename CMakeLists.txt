@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(
     h5bench
-    VERSION 1.3.0
+    VERSION 1.6.0
 )
 
 include(ExternalProject)
@@ -22,7 +22,10 @@ enable_testing()
 # Options and Variants ########################################################
 #
 
-set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+endif()
 
 option(H5BENCH_ALL              "Enable all benchmarks"             OFF)
 option(H5BENCH_METADATA         "Enable Metadata benchmark"         OFF)

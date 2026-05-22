@@ -1,4 +1,4 @@
-h5bench version 1.4
+h5bench version 1.6
 ===================
 
 
