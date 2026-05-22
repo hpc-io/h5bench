@@ -297,7 +297,7 @@ main(int argc, char *argv[])
     struct timeval time;
     gettimeofday(&time, NULL);
     srand(((unsigned int)time.tv_sec * 1000) + ((unsigned int)time.tv_usec / 1000));
-    sprintf(testFileName, "hdf5TestFile-%d", rand());
+    snprintf(testFileName, sizeof(testFileName), "hdf5TestFile-%d", rand());
     MPI_Bcast(testFileName, NAME_LENGTH, MPI_CHAR, 0, comm);
     char dataSetName1[NAME_LENGTH] = "hdf5DataSet1";
 
@@ -534,9 +534,9 @@ main(int argc, char *argv[])
                 MPI_Barrier(comm);
                 startTime = MPI_Wtime();
                 for (i = 0; i < NUM_ATTRIBUTES; i++) {
-                    sprintf(attr1Buf, "This is my attribute string number %d", i);
+                    snprintf(attr1Buf, sizeof(attr1Buf), "This is my attribute string number %d", i);
                     attr1DS = H5Screate_simple(1, attr1Dims, NULL);
-                    sprintf(attributeName, "Attribute %d Name", i);
+                    snprintf(attributeName, sizeof(attributeName), "Attribute %d Name", i);
                     attr1id = H5Acreate(topgroupid, attributeName, H5T_NATIVE_CHAR, attr1DS, H5P_DEFAULT,
                                         H5P_DEFAULT);
                     rc      = H5Awrite(attr1id, H5T_NATIVE_CHAR, attr1Buf);
@@ -583,7 +583,8 @@ main(int argc, char *argv[])
             H5Sselect_hyperslab(fileDataSpace, H5S_SELECT_SET, fileStart, fileStride, fileCount, fileBlock);
 
             /* create the file dataset */
-            sprintf(dataSetName1, "hdf5DataSet1-iter%d-size%d", loopIter, NumDoubleElements);
+            snprintf(dataSetName1, sizeof(dataSetName1), "hdf5DataSet1-iter%d-size%d", loopIter,
+                     NumDoubleElements);
 
             MPI_Barrier(comm);
             startTime = MPI_Wtime();
