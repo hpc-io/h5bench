@@ -145,7 +145,7 @@ main(int argc, char *argv[])
                 {
                     for (istep = 0; istep < config.steps; ++istep) {
                         create_time -= MPI_Wtime();
-                        sprintf(path, "step=%d", istep);
+                        snprintf(path, sizeof(path), "step=%d", istep);
                         assert((dset = create_dataset(&config, file, path)) >= 0);
                         create_time += MPI_Wtime();
 
@@ -167,7 +167,7 @@ main(int argc, char *argv[])
                 {
                     for (istep = 0; istep < config.steps; ++istep) {
                         for (iarray = 0; iarray < config.arrays; ++iarray) {
-                            sprintf(path, "array=%d", iarray);
+                            snprintf(path, sizeof(path), "array=%d", iarray);
                             if (istep == 0) {
                                 create_time -= MPI_Wtime();
                                 assert((dset = create_dataset(&config, file, path)) >= 0);
@@ -201,8 +201,9 @@ main(int argc, char *argv[])
                     for (iarray = 0; iarray < config.arrays; ++iarray) {
                         create_time -= MPI_Wtime();
                         /* group per step or array of 2D datasets */
-                        sprintf(path, (step_first_flg ? "step=%d/array=%d" : "array=%d/step=%d"),
-                                (step_first_flg ? istep : iarray), (step_first_flg ? iarray : istep));
+                        snprintf(path, sizeof(path),
+                                 (step_first_flg ? "step=%d/array=%d" : "array=%d/step=%d"),
+                                 (step_first_flg ? istep : iarray), (step_first_flg ? iarray : istep));
                         assert((dset = create_dataset(&config, file, path)) >= 0);
                         create_time += MPI_Wtime();
 
@@ -256,7 +257,7 @@ main(int argc, char *argv[])
                 if (step_first_flg) /* dataset per step */
                 {
                     for (istep = 0; istep < config.steps; ++istep) {
-                        sprintf(path, "step=%d", istep);
+                        snprintf(path, sizeof(path), "step=%d", istep);
                         assert((dset = H5Dopen(file, path, H5P_DEFAULT)) >= 0);
                         assert((fspace = H5Dget_space(dset)) >= 0);
 
@@ -276,7 +277,7 @@ main(int argc, char *argv[])
                 {
                     for (istep = 0; istep < config.steps; ++istep) {
                         for (iarray = 0; iarray < config.arrays; ++iarray) {
-                            sprintf(path, "array=%d", iarray);
+                            snprintf(path, sizeof(path), "array=%d", iarray);
                             assert((dset = H5Dopen(file, path, H5P_DEFAULT)) >= 0);
                             assert((fspace = H5Dget_space(dset)) >= 0);
                             create_selection(&config, fspace, my_proc_row, my_proc_col, istep, iarray);
@@ -295,8 +296,9 @@ main(int argc, char *argv[])
                 for (istep = 0; istep < config.steps; ++istep) {
                     for (iarray = 0; iarray < config.arrays; ++iarray) {
                         /* group per step or array */
-                        sprintf(path, (step_first_flg ? "step=%d/array=%d" : "array=%d/step=%d"),
-                                (step_first_flg ? istep : iarray), (step_first_flg ? iarray : istep));
+                        snprintf(path, sizeof(path),
+                                 (step_first_flg ? "step=%d/array=%d" : "array=%d/step=%d"),
+                                 (step_first_flg ? istep : iarray), (step_first_flg ? iarray : istep));
 
                         assert((dset = H5Dopen(file, path, H5P_DEFAULT)) >= 0);
 
