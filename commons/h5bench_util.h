@@ -8,9 +8,54 @@
 #ifndef COMMONS_H5BENCH_UTIL_H_
 #define COMMONS_H5BENCH_UTIL_H_
 
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #define DEBUG_PRINT                                                                                          \
     printf("%s:%d\n", __func__, __LINE__);                                                                   \
     fflush(stdout);
+
+/*
+ * Abort the process with a final message. MPI-aware: if MPI has been
+ * initialized (and not yet finalized), uses MPI_Abort so the whole job tears
+ * down rather than leaving ranks orphaned. Otherwise falls back to abort().
+ * Always terminates — safe to call from macros that want a non-returning error.
+ */
+void h5bench_die(const char *msg);
+
+/*
+ * Abort-on-failure helpers. These trade recoverability for simplicity: any
+ * malloc/HDF5 failure becomes a fatal, logged error with file/line context
+ * instead of a silent NULL/invalid-id propagating into later code.
+ */
+#define H5B_MALLOC(ptr, size)                                                                                \
+    do {                                                                                                     \
+        size_t __h5b_sz = (size_t)(size);                                                                    \
+        (ptr)           = malloc(__h5b_sz);                                                                  \
+        if ((ptr) == NULL) {                                                                                 \
+            fprintf(stderr, "h5bench: malloc(%zu) failed at %s:%d\n", __h5b_sz, __FILE__, __LINE__);         \
+            h5bench_die("out of memory");                                                                    \
+        }                                                                                                    \
+    } while (0)
+
+#define H5B_CHECK_HID(hid, name)                                                                             \
+    do {                                                                                                     \
+        if ((hid) < 0) {                                                                                     \
+            fprintf(stderr, "h5bench: HDF5 call '%s' returned invalid id at %s:%d\n", (name), __FILE__,      \
+                    __LINE__);                                                                               \
+            h5bench_die(NULL);                                                                               \
+        }                                                                                                    \
+    } while (0)
+
+#define H5B_CHECK_HERR(herr, name)                                                                           \
+    do {                                                                                                     \
+        if ((herr) < 0) {                                                                                    \
+            fprintf(stderr, "h5bench: HDF5 call '%s' returned error at %s:%d\n", (name), __FILE__,           \
+                    __LINE__);                                                                               \
+            h5bench_die(NULL);                                                                               \
+        }                                                                                                    \
+    } while (0)
 // Maximal line length of the config file
 #define CFG_LINE_LEN_MAX 510
 #define CFG_DELIMS       "=\n"

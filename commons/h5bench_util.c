@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <mpi.h>
 #include <hdf5.h>
 
 #ifdef USE_ASYNC_VOL
@@ -24,6 +25,23 @@
 #endif
 
 #include "h5bench_util.h"
+
+void
+h5bench_die(const char *msg)
+{
+    if (msg)
+        fprintf(stderr, "h5bench: %s\n", msg);
+    fflush(stderr);
+
+    int mpi_initialized = 0;
+    int mpi_finalized   = 0;
+    MPI_Initialized(&mpi_initialized);
+    MPI_Finalized(&mpi_finalized);
+    if (mpi_initialized && !mpi_finalized) {
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    abort();
+}
 
 int str_to_ull(char *str_in, unsigned long long *num_out);
 int parse_time(char *str_in, duration *time);
@@ -371,40 +389,42 @@ uniform_random_number()
 data_contig_md *
 prepare_contig_memory(long particle_cnt, long dim_1, long dim_2, long dim_3)
 {
-    data_contig_md *buf_struct = (data_contig_md *)malloc(sizeof(data_contig_md));
-    buf_struct->particle_cnt   = particle_cnt;
-    buf_struct->dim_1          = dim_1;
-    buf_struct->dim_2          = dim_2;
-    buf_struct->dim_3          = dim_3;
-    buf_struct->x              = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->y              = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->z              = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->px             = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->py             = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->pz             = (float *)malloc(particle_cnt * sizeof(float));
-    buf_struct->id_1           = (int *)malloc(particle_cnt * sizeof(int));
-    buf_struct->id_2           = (float *)malloc(particle_cnt * sizeof(float));
+    data_contig_md *buf_struct;
+    H5B_MALLOC(buf_struct, sizeof(data_contig_md));
+    buf_struct->particle_cnt = particle_cnt;
+    buf_struct->dim_1        = dim_1;
+    buf_struct->dim_2        = dim_2;
+    buf_struct->dim_3        = dim_3;
+    H5B_MALLOC(buf_struct->x, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->y, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->z, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->px, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->py, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->pz, particle_cnt * sizeof(float));
+    H5B_MALLOC(buf_struct->id_1, particle_cnt * sizeof(int));
+    H5B_MALLOC(buf_struct->id_2, particle_cnt * sizeof(float));
     return buf_struct;
 }
 
 data_contig_md *
 prepare_contig_memory_multi_dim(unsigned long long dim_1, unsigned long long dim_2, unsigned long long dim_3)
 {
-    data_contig_md *buf_struct       = (data_contig_md *)malloc(sizeof(data_contig_md));
+    data_contig_md *buf_struct;
+    H5B_MALLOC(buf_struct, sizeof(data_contig_md));
     buf_struct->dim_1                = dim_1;
     buf_struct->dim_2                = dim_2;
     buf_struct->dim_3                = dim_3;
     unsigned long long num_particles = dim_1 * dim_2 * dim_3;
 
     buf_struct->particle_cnt = num_particles;
-    buf_struct->x            = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->y            = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->z            = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->px           = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->py           = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->pz           = (float *)malloc(num_particles * sizeof(float));
-    buf_struct->id_1         = (int *)malloc(num_particles * sizeof(int));
-    buf_struct->id_2         = (float *)malloc(num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->x, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->y, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->z, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->px, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->py, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->pz, num_particles * sizeof(float));
+    H5B_MALLOC(buf_struct->id_1, num_particles * sizeof(int));
+    H5B_MALLOC(buf_struct->id_2, num_particles * sizeof(float));
     return buf_struct;
 }
 
