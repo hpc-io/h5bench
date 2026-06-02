@@ -411,7 +411,7 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
     int           dset_cnt = 8;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
-        sprintf(grp_name, "Timestep_%d", ts_index);
+        snprintf(grp_name, sizeof(grp_name), "Timestep_%d", ts_index);
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
         assert(ts);
         MEM_MONITOR->mem_used += ts->mem_size;

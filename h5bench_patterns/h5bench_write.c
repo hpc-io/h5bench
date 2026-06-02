@@ -775,9 +775,10 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
+        assert(ts);
         MEM_MONITOR->mem_used += ts->mem_size;
 
-        sprintf(grp_name, "Timestep_%d", ts_index);
+        snprintf(grp_name, sizeof(grp_name), "Timestep_%d", ts_index);
 
         if (params.cnt_time_step_delay > 0) {
             if (ts_index > params.cnt_time_step_delay - 1) // delayed close on all ids of the previous ts
@@ -1115,8 +1116,8 @@ main(int argc, char *argv[])
     unsigned long tfopen_start = get_time_usec();
     if (params.file_per_proc) {
         char mpi_rank_output_file_path[4096];
-        sprintf(mpi_rank_output_file_path, "%s/rank_%d_%s", get_dir_from_path(output_file), MY_RANK,
-                get_file_name_from_path(output_file));
+        snprintf(mpi_rank_output_file_path, sizeof(mpi_rank_output_file_path), "%s/rank_%d_%s",
+                 get_dir_from_path(output_file), MY_RANK, get_file_name_from_path(output_file));
 
         file_id = H5Fcreate_async(mpi_rank_output_file_path, H5F_ACC_TRUNC, H5P_DEFAULT, fapl, 0);
     }

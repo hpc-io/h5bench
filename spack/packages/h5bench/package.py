@@ -17,9 +17,13 @@ class H5bench(CMakePackage):
     version('master', branch='master', submodules=True)
     version('develop', branch='develop', submodules=True)
 
-    version('1.2', tag='1.2', submodules=True)
-    version('1.1', tag='1.1', submodules=True, depecrated=True)
-    version('1.0', tag='1.0', submodules=True, depecrated=True)
+    version('1.6', tag='1.6', submodules=True)
+    version('1.5', tag='1.5', submodules=True)
+    version('1.4', tag='1.4', submodules=True)
+    version('1.3', tag='1.3', submodules=True)
+    version('1.2', tag='1.2', submodules=True, deprecated=True)
+    version('1.1', tag='1.1', submodules=True, deprecated=True)
+    version('1.0', tag='1.0', submodules=True, deprecated=True)
 
     variant('async', default=False, description='Enable the HDF5 VOL-ASYNC connector support')
 
