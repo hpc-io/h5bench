@@ -12,10 +12,16 @@ include(CTest)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
+# Keep every h5bench_* executable at the top of the build tree. The Python
+# driver's is_available() check falls back to PWD (shutil.which path=PATH + ':.'),
+# and some CI environments (notably NERSC) install to a non-PATH prefix and rely
+# on running `./h5bench` from the build dir. Before the per-subdir CMakeLists
+# refactor every add_executable() was at root scope, so binaries naturally
+# landed at ${CMAKE_BINARY_DIR}; this restores that layout explicitly.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 find_package(Python REQUIRED)
 find_package(MPI REQUIRED)
-
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 enable_testing()
 
@@ -76,22 +82,21 @@ find_package(HDF5 REQUIRED)
 
 message(STATUS "Using HDF5 version: ${HDF5_VERSION}")
 
-include_directories(${HDF5_HOME}/include)
-link_directories(${HDF5_HOME}/lib)
-
 # Check if HDF5 has subfiling VFD
-set(HAVE_subfiling 0)
-find_file (H5FDsubfiling_H H5FDsubfiling.h PATHS ${HDF5_INCLUDE_DIRS})
+set(HAVE_SUBFILING_VFD 0)
+find_file(H5FDsubfiling_H H5FDsubfiling.h PATHS ${HDF5_INCLUDE_DIRS})
 if(EXISTS ${H5FDsubfiling_H})
-   include(CheckSymbolExists)
-   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${HDF5_INCLUDE_DIRS})
-   check_symbol_exists(H5_HAVE_SUBFILING_VFD hdf5.h HAVE_SUBFILING_VFD)
-   if(${HAVE_SUBFILING_VFD})
-       add_definitions(-DHAVE_SUBFILING)
-   endif()
-   unset(CMAKE_REQUIRED_INCLUDES)
+    include(CheckSymbolExists)
+    set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${HDF5_INCLUDE_DIRS})
+    check_symbol_exists(H5_HAVE_SUBFILING_VFD hdf5.h HAVE_SUBFILING_VFD)
+    unset(CMAKE_REQUIRED_INCLUDES)
 endif()
 message(STATUS "   Detected HDF5 subfiling support: ${HAVE_SUBFILING_VFD}")
+
+# ZLIB Dependency #############################################################
+#
+
+find_package(ZLIB REQUIRED)
 
 # VOL ASYNC Dependency ########################################################
 #
@@ -101,9 +106,8 @@ option(WITH_ASYNC_VOL "Enable HDF5 VOL ASYNC connector" OFF)
 
 if(WITH_ASYNC_VOL)
     if(${HDF5_VERSION} VERSION_GREATER_EQUAL "1.13.0")
-        add_definitions(-DUSE_ASYNC_VOL)
-        include_directories(${ASYNC_HOME}/include)
-        link_directories(${ASYNC_HOME}/lib)
+        # USE_ASYNC_VOL define + include/link paths are applied to
+        # h5bench_util (and thus every consumer) in commons/CMakeLists.txt.
     else()
         message(SEND_ERROR "VOL ASYNC requires HDF5 1.13.0 or newer.")
     endif()
@@ -111,97 +115,20 @@ endif()
 
 message(STATUS "HDF5 VOL ASYNC: ${WITH_ASYNC_VOL}")
 
-# h5bench Utility #############################################################
+# h5bench Benchmarks ##########################################################
 #
 
-set(h5bench_util_src
-    commons/h5bench_util.c
-    commons/h5bench_util.h
-)
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMake/h5benchFunctions.cmake)
 
-add_library(h5bench_util ${h5bench_util_src})
-
-if(WITH_ASYNC_VOL)
-    target_link_libraries(h5bench_util asynchdf5 h5async)
-endif()
-
-# h5bench WRITE varying particle based on normal distribution ######################
-#
-
-set(h5bench_write_normal_dist_src h5bench_patterns/h5bench_write_normal_dist.c)
-
-add_executable(h5bench_write_var_normal_dist ${h5bench_write_normal_dist_src})
-target_link_libraries(h5bench_write_var_normal_dist h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C) 
-
-# h5bench WRITE ###############################################################
-#
-
-set(h5bench_write_src h5bench_patterns/h5bench_write.c)
-
-add_executable(h5bench_write ${h5bench_write_src})
-target_link_libraries(h5bench_write h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C) 
-
-# h5bench WRITE UNLIMITED #####################################################
-#
-
-set(h5bench_write_unlimited_src h5bench_patterns/h5bench_write_unlimited.c)
-
-add_executable(h5bench_write_unlimited ${h5bench_write_unlimited_src})
-target_link_libraries(h5bench_write_unlimited h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C) 
-
-# h5bench OVERWRITE ###########################################################
-#
-
-set(h5bench_overwrite_src h5bench_patterns/h5bench_overwrite.c)
-
-add_executable(h5bench_overwrite ${h5bench_overwrite_src})
-target_link_libraries(h5bench_overwrite h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C)
-
-# h5bench APPEND ##############################################################
-#
-
-set(h5bench_append_src h5bench_patterns/h5bench_append.c)
-
-add_executable(h5bench_append ${h5bench_append_src})
-target_link_libraries(h5bench_append h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C)
-
-# h5bench READ ################################################################
-#
-
-set(h5bench_read_src h5bench_patterns/h5bench_read.c)
-
-add_executable(h5bench_read ${h5bench_read_src})
-target_link_libraries(h5bench_read h5bench_util hdf5 z ${CMAKE_DL_LIBS} MPI::MPI_C)
-
-
-# Exerciser ###################################################################
-#
+add_subdirectory(commons)
+add_subdirectory(h5bench_patterns)
 
 if(H5BENCH_EXERCISER)
-    set(exerciser_src exerciser/h5bench_exerciser.c)
-
-    add_executable(h5bench_exerciser ${exerciser_src})
-
-    target_link_libraries(h5bench_exerciser hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C)
+    add_subdirectory(exerciser)
 endif()
 
-# IOTEST ######################################################################
-#
-
 if(H5BENCH_METADATA)
-    set(meta_stress_src
-        metadata_stress/hdf5_iotest.c
-        metadata_stress/configuration.c
-        metadata_stress/configuration.h
-        metadata_stress/dataset.c
-        metadata_stress/dataset.h
-        metadata_stress/ini.c
-        metadata_stress/ini.h
-    )
-
-    add_executable(h5bench_hdf5_iotest ${meta_stress_src})
-
-    target_link_libraries(h5bench_hdf5_iotest h5bench_util hdf5 z m ${CMAKE_DL_LIBS} MPI::MPI_C)
+    add_subdirectory(metadata_stress)
 endif()
 
 # AMReX #######################################################################
@@ -218,7 +145,17 @@ if(H5BENCH_AMREX)
     set(amrex_src amrex/Tests/HDF5Benchmark/main.cpp)
 
     add_executable(h5bench_amrex_sync ${amrex_src})
-    target_link_libraries(h5bench_amrex_sync hdf5 z m amrex pthread ${CMAKE_DL_LIBS} MPI::MPI_C)
+    target_include_directories(h5bench_amrex_sync PRIVATE ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(h5bench_amrex_sync
+        PRIVATE
+            ${HDF5_LIBRARIES}
+            ZLIB::ZLIB
+            m
+            amrex
+            pthread
+            ${CMAKE_DL_LIBS}
+            MPI::MPI_C
+    )
 
     if(WITH_ASYNC_VOL)
         message(WARNING "h5bench AMReX with ASYNC-VOL: ensure ASYNC-VOL was compiled with -DENABLE_WRITE_MEMCPY=ON")
@@ -226,7 +163,20 @@ if(H5BENCH_AMREX)
         set(AMReX_HDF5_ASYNC YES)
 
         add_executable(h5bench_amrex_async ${amrex_src})
-        target_link_libraries(h5bench_amrex_async hdf5 z m amrex pthread asynchdf5 h5async ${CMAKE_DL_LIBS} MPI::MPI_C)
+        target_include_directories(h5bench_amrex_async PRIVATE ${HDF5_INCLUDE_DIRS} ${ASYNC_HOME}/include)
+        target_link_directories(h5bench_amrex_async PRIVATE ${ASYNC_HOME}/lib)
+        target_link_libraries(h5bench_amrex_async
+            PRIVATE
+                ${HDF5_LIBRARIES}
+                ZLIB::ZLIB
+                m
+                amrex
+                pthread
+                asynchdf5
+                h5async
+                ${CMAKE_DL_LIBS}
+                MPI::MPI_C
+        )
     endif()
 endif()
 
@@ -239,7 +189,7 @@ if(H5BENCH_E3SM)
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
         CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
         BUILD_COMMAND make -j 1
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm 
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm
         BUILD_IN_SOURCE 1
         LOG_CONFIGURE 1
         LOG_BUILD 1
@@ -265,7 +215,8 @@ if(H5BENCH_OPENPMD)
     set(openPMD_BUILD_CLI_TOOLS OFF CACHE BOOL "" FORCE)
 
     add_executable(h5bench_openpmd_write openpmd/examples/8a_benchmark_write_parallel.cpp)
-    target_link_libraries(h5bench_openpmd_write openPMD hdf5 MPI::MPI_C)
+    target_include_directories(h5bench_openpmd_write PRIVATE ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(h5bench_openpmd_write PRIVATE openPMD ${HDF5_LIBRARIES} MPI::MPI_C)
 
     set_target_properties(h5bench_openpmd_write PROPERTIES
         CXX_EXTENSIONS OFF
@@ -274,7 +225,8 @@ if(H5BENCH_OPENPMD)
     )
 
     add_executable(h5bench_openpmd_read openpmd/examples/8b_benchmark_read_parallel.cpp)
-    target_link_libraries(h5bench_openpmd_read openPMD hdf5 MPI::MPI_C)
+    target_include_directories(h5bench_openpmd_read PRIVATE ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(h5bench_openpmd_read PRIVATE openPMD ${HDF5_LIBRARIES} MPI::MPI_C)
 
     set_target_properties(h5bench_openpmd_read PROPERTIES
         CXX_EXTENSIONS OFF
@@ -330,11 +282,11 @@ if(H5BENCH_MACSIO)
     add_dependencies(h5bench_macsio json_cwx)
 endif()
 
+# Python driver ###############################################################
+
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench.py ${CMAKE_BINARY_DIR}/h5bench COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_version.py ${CMAKE_BINARY_DIR}/h5bench_version.py COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/h5bench_configuration.py.in ${CMAKE_BINARY_DIR}/h5bench_configuration.py)
-
-# Install binaries ############################################################
 
 install(
     FILES
@@ -357,32 +309,8 @@ install(
     DESTINATION bin
 )
 
-install(
-    TARGETS
-    h5bench_write
-    h5bench_write_unlimited
-    h5bench_write_var_normal_dist
-    h5bench_overwrite
-    h5bench_append
-    h5bench_read
-    DESTINATION bin
-)
-
-if(H5BENCH_EXERCISER)
-    install(
-        TARGETS
-        h5bench_exerciser
-        DESTINATION bin
-    )
-endif()
-
-if(H5BENCH_METADATA)
-    install(
-        TARGETS
-        h5bench_hdf5_iotest
-        DESTINATION bin
-    )
-endif()
+# Optional-benchmark installs (core patterns, exerciser, metadata_stress
+# install themselves from their own subdirectory CMakeLists.txt).
 
 if(H5BENCH_OPENPMD)
     install(
@@ -408,9 +336,9 @@ if(H5BENCH_AMREX)
     )
 
     if(WITH_ASYNC_VOL)
-        install( 
+        install(
             TARGETS
-            h5bench_amrex_async 
+            h5bench_amrex_async
             DESTINATION bin
         )
     endif()
