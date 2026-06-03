@@ -185,15 +185,43 @@ endif()
 # https://github.com/Parallel-NetCDF/E3SM-IO
 
 if(H5BENCH_E3SM)
+    # Upstream E3SM-IO is autotools-only. Keep the ExternalProject wrapper but:
+    #   * build out of source (BUILD_IN_SOURCE 0) so the submodule stays clean
+    #     (autoreconf still writes configure/Makefile.in back into the source
+    #     tree — that's a limitation of autotools itself);
+    #   * let the outer Make jobserver parallelise via $(MAKE) instead of the
+    #     hard-coded -j 1;
+    #   * only pass -fno-var-tracking-assignments when building with GCC
+    #     (it's a gcc-specific debug-info slowdown workaround);
+    #   * add an install(PROGRAMS) rule so `cmake --install` actually ships
+    #     the binary into bin/ alongside the other h5bench_* executables.
+
+    set(h5bench_e3sm_cflags "")
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        set(h5bench_e3sm_cflags
+            CFLAGS=-fno-var-tracking-assignments
+            CXXFLAGS=-fno-var-tracking-assignments
+        )
+    endif()
+
     ExternalProject_Add(h5bench_e3sm
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
-        CONFIGURE_COMMAND autoreconf -i COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure --prefix=${CMAKE_BINARY_DIR} --with-hdf5=${HDF5_HOME} CFLAGS=-fno-var-tracking-assignments CXXFLAGS=-fno-var-tracking-assignments
-        BUILD_COMMAND make -j 1
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm
-        BUILD_IN_SOURCE 1
+        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/e3sm-build
+        CONFIGURE_COMMAND
+            autoreconf -i ${CMAKE_CURRENT_SOURCE_DIR}/e3sm
+            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/e3sm/configure
+                --prefix=${CMAKE_BINARY_DIR}
+                --with-hdf5=${HDF5_HOME}
+                ${h5bench_e3sm_cflags}
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/src/e3sm_io ${CMAKE_BINARY_DIR}/h5bench_e3sm
+        BUILD_IN_SOURCE 0
         LOG_CONFIGURE 1
         LOG_BUILD 1
+        LOG_INSTALL 1
     )
+
+    install(PROGRAMS ${CMAKE_BINARY_DIR}/h5bench_e3sm DESTINATION bin)
 endif()
 
 # OpenPMD #####################################################################
