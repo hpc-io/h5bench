@@ -9,7 +9,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    allow_failure: true
+    continue-on-error: true
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -39,9 +39,6 @@ jobs:
           mkdir hdf5/build
 
           cd hdf5/build
-
-          mkdir build
-          cd build
 
           cmake \
             -DCMAKE_INSTALL_PREFIX=$HDF5_DIR \
@@ -80,7 +77,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 

@@ -13,7 +13,7 @@ jobs:
   h5bench:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    allow_failure: true
+    continue-on-error: true
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -45,9 +45,6 @@ jobs:
           mkdir hdf5/build
 
           cd hdf5/build
-
-          mkdir build
-          cd build
 
           CC=mpicc cmake \
             -DCMAKE_INSTALL_PREFIX=$HDF5_DIR \
@@ -86,7 +83,7 @@ jobs:
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
@@ -150,7 +147,11 @@ jobs:
 
           cd build-sync
 
-          ctest --verbose .
+          # Restrict to h5bench's own tests (all registered as h5bench-*).
+          # add_subdirectory(openpmd)/(amrex) pull in those projects' own
+          # ctest suites (e.g. CLI.help.pipe.py); -R keeps the run scoped to
+          # what this repository owns.
+          ctest --verbose -R '^h5bench-' .
 
       - name: Test h5bench ASYNC
         run: |
@@ -161,7 +162,8 @@ jobs:
 
           cd build-async
 
-          ctest --verbose .
+          # See the SYNC step — keep ctest scoped to h5bench-* tests only.
+          ctest --verbose -R '^h5bench-' .
 
       - name: Upload artifact
         if: always()
