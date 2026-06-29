@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-import os
 import glob
+import os
+
 import pytest
 
 from src import h5bench
+from tests.helpers.build_config import requires_async_vol
 
 DEBUG = True
 ABORT = True
@@ -21,15 +23,18 @@ samples = \
 	glob.glob('async-overwrite*.json') + \
 	glob.glob('async-write-unlimited*.json')
 
+
 @pytest.mark.parametrize('configuration', samples)
-@pytest.mark.skipif(
-	os.path.isfile(BINARY_WRITE) == False or
-	os.path.isfile(BINARY_APPEND) == False or
-	os.path.isfile(BINARY_OVERWRITE) == False or
-	os.path.isfile(BINARY_UNLIMITED) == False,
-	reason="Benchmarks (ASYNC) are disabled"
-)
+@requires_async_vol
 def test_benchmark(configuration):
+	# Pattern binaries are built unconditionally; ASYNC mode needs the
+	# VOL-ASYNC connector to actually run asynchronously. We gate on the
+	# build flag and then assert the binaries exist (any missing one here
+	# is a build regression, not a configuration choice).
+	for binary in (BINARY_WRITE, BINARY_APPEND, BINARY_OVERWRITE, BINARY_UNLIMITED):
+		assert os.path.isfile(binary), (
+			f"Pattern binary {binary!r} is missing from the build dir"
+		)
 	assert os.path.isfile(configuration) is True
 
 	benchmark = h5bench.H5bench(

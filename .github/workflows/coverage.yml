@@ -1,0 +1,178 @@
+name: Coverage
+
+# Collects line + branch coverage for the C benchmarks and the Python
+# driver, then uploads both reports to Codecov. Runs against a single HDF5
+# version (1.14.0) with every optional benchmark + VOL-ASYNC enabled, so a
+# single job reflects the whole test matrix's coverage surface — at the
+# cost of a ~60–90 minute wall clock that we don't want to repeat on every
+# per-HDF5-version workflow.
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+
+  push:
+    branches:
+      - master
+
+  workflow_dispatch:
+
+  schedule:
+    # Weekly drift check — catches regressions from merges that don't
+    # touch a coverage-triggering path.
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    container:
+      image: hpcio/hdf5-1.14.0
+    timeout-minutes: 90
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Configuration
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
+
+      - name: Install coverage tooling
+        run: |
+          # The hpcio/hdf5-1.14.0 base image is Ubuntu 20.04 with python3
+          # + pip preinstalled but no python3-venv, and its apt sources
+          # reference a Kitware repo whose GPG key has rotated and now
+          # breaks `apt-get update`. Skip apt entirely and install the
+          # coverage tools (gcovr is a pure-Python package too) into
+          # /root/.local via `pip --user`. 20.04 predates PEP 668 so no
+          # externally-managed-environment dance is needed.
+          python3 --version
+          pip3 install --quiet --user --upgrade 'pip<24.1'
+          python3 -m pip install --quiet --user coverage gcovr h5py numpy pytest
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Clone VOL-ASYNC
+        run: |
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
+
+      - name: Build Argobots
+        run: |
+          export ABT_DIR=/opt/argobots
+          cd /opt/vol-async/argobots
+          ./autogen.sh
+          ./configure --prefix=$ABT_DIR
+          make -j 2
+          make install
+
+      - name: Build VOL-ASYNC
+        run: |
+          export HDF5_DIR=/opt/hdf5
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          cd $ASYNC_DIR
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR \
+            -DCMAKE_PREFIX_PATH=$HDF5_DIR \
+            -DENABLE_WRITE_MEMCPY=ON
+          make
+          make install
+
+      - name: Build h5bench with coverage instrumentation
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export ABT_HOME=/opt/argobots
+          export ASYNC_HOME=/opt/vol-async
+          export LD_LIBRARY_PATH=$ASYNC_HOME/lib:$HDF5_HOME/lib:$ABT_HOME/lib:$LD_LIBRARY_PATH
+
+          mkdir build-cov
+          cd build-cov
+
+          # --coverage applies to every compilation unit reached through
+          # the h5bench CMakeLists; AMReX/OpenPMD/etc. are built via
+          # add_subdirectory and inherit it too.
+          cmake .. \
+            -DH5BENCH_ALL=ON \
+            -DWITH_ASYNC_VOL:BOOL=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS="--coverage -g -O0 -I$ASYNC_HOME/include -L$ASYNC_HOME/lib" \
+            -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
+
+          make -j 2
+
+      - name: Run tests under coverage
+        run: |
+          export HDF5_HOME=/opt/hdf5
+          export HDF5_DIR=$HDF5_HOME
+          export ABT_DIR=/opt/argobots
+          export ASYNC_DIR=/opt/vol-async
+          export LD_LIBRARY_PATH=$ASYNC_DIR/lib:$HDF5_DIR/lib:$ABT_DIR/lib:$LD_LIBRARY_PATH
+
+          cd build-cov
+
+          # Drive pytest directly (the tests/CMakeLists.txt entries each
+          # wrap one test file). --source=${GITHUB_WORKSPACE}/src keeps
+          # coverage.py focused on the driver module; the legacy tests in
+          # .github/workflows/h5bench-hdf5-*.yml cover behaviour, this
+          # job exists for the *numbers*.
+          python3 -m coverage run --branch \
+            --source=${GITHUB_WORKSPACE}/src \
+            -m pytest --verbose --rootdir . ${GITHUB_WORKSPACE}/tests/
+        continue-on-error: true
+
+      - name: Collect C coverage (gcovr)
+        run: |
+          cd build-cov
+          gcovr \
+            --root ${GITHUB_WORKSPACE} \
+            --filter="${GITHUB_WORKSPACE}/commons/" \
+            --filter="${GITHUB_WORKSPACE}/h5bench_patterns/" \
+            --filter="${GITHUB_WORKSPACE}/exerciser/" \
+            --filter="${GITHUB_WORKSPACE}/metadata_stress/" \
+            --print-summary \
+            --xml coverage-c.xml \
+            --html-details coverage-c.html \
+            .
+
+      - name: Collect Python coverage
+        run: |
+          cd build-cov
+          python3 -m coverage xml -o coverage-python.xml
+          python3 -m coverage report
+
+      - name: Upload reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: build-cov/coverage-c.xml,build-cov/coverage-python.xml
+          flags: c,python
+          fail_ci_if_error: false
+          # Optional secret. Public-repo tokenless upload still works in
+          # v4 but adding CODECOV_TOKEN in Settings → Secrets makes
+          # uploads more reliable under rate limiting.
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            build-cov/coverage-c.xml
+            build-cov/coverage-c.html
+            build-cov/coverage-python.xml
+          retention-days: 14
