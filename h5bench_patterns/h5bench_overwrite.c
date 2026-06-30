@@ -67,8 +67,17 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
 
-    int *  data_1D_INT, **data_2D_INT, ***data_3D_INT;
-    float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
+    int *  data_1D_INT = NULL, **data_2D_INT = NULL, ***data_3D_INT = NULL;
+    float *data_1D_FLOAT = NULL, **data_2D_FLOAT = NULL, ***data_3D_FLOAT = NULL;
+
+    /* H5Dwrite expects a single contiguous buffer for multi-dimensional
+     * datasets. Back the 2D/3D row/plane pointers with one contiguous
+     * allocation per type so the row indexing in the fill loops still
+     * works while H5Dwrite reads from real contiguous memory. */
+    int *  data_2D_INT_buf = NULL, *data_3D_INT_buf = NULL;
+    float *data_2D_FLOAT_buf = NULL, *data_3D_FLOAT_buf = NULL;
+    int ** data_3D_INT_planes = NULL;
+    float **data_3D_FLOAT_planes = NULL;
 
     if (params.num_dims == 1) {
         H5B_MALLOC(data_1D_INT, params.dim_1 * sizeof(int));
@@ -76,23 +85,29 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
     }
 
     if (params.num_dims == 2) {
+        H5B_MALLOC(data_2D_INT_buf, params.dim_1 * params.dim_2 * sizeof(int));
+        H5B_MALLOC(data_2D_FLOAT_buf, params.dim_1 * params.dim_2 * sizeof(float));
         H5B_MALLOC(data_2D_INT, params.dim_1 * sizeof(int *));
         H5B_MALLOC(data_2D_FLOAT, params.dim_1 * sizeof(float *));
         for (int i = 0; i < params.dim_1; i++) {
-            H5B_MALLOC(data_2D_INT[i], params.dim_2 * sizeof(int));
-            H5B_MALLOC(data_2D_FLOAT[i], params.dim_2 * sizeof(float));
+            data_2D_INT[i]   = data_2D_INT_buf + i * params.dim_2;
+            data_2D_FLOAT[i] = data_2D_FLOAT_buf + i * params.dim_2;
         }
     }
 
     if (params.num_dims == 3) {
+        H5B_MALLOC(data_3D_INT_buf, params.dim_1 * params.dim_2 * params.dim_3 * sizeof(int));
+        H5B_MALLOC(data_3D_FLOAT_buf, params.dim_1 * params.dim_2 * params.dim_3 * sizeof(float));
+        H5B_MALLOC(data_3D_INT_planes, params.dim_1 * params.dim_2 * sizeof(int *));
+        H5B_MALLOC(data_3D_FLOAT_planes, params.dim_1 * params.dim_2 * sizeof(float *));
         H5B_MALLOC(data_3D_INT, params.dim_1 * sizeof(int **));
         H5B_MALLOC(data_3D_FLOAT, params.dim_1 * sizeof(float **));
         for (int i = 0; i < params.dim_1; i++) {
-            H5B_MALLOC(data_3D_INT[i], params.dim_2 * sizeof(int *));
-            H5B_MALLOC(data_3D_FLOAT[i], params.dim_2 * sizeof(float *));
+            data_3D_INT[i]   = data_3D_INT_planes + i * params.dim_2;
+            data_3D_FLOAT[i] = data_3D_FLOAT_planes + i * params.dim_2;
             for (int j = 0; j < params.dim_2; j++) {
-                H5B_MALLOC(data_3D_INT[i][j], params.dim_3 * sizeof(int));
-                H5B_MALLOC(data_3D_FLOAT[i][j], params.dim_3 * sizeof(float));
+                data_3D_INT[i][j]   = data_3D_INT_buf + (i * params.dim_2 + j) * params.dim_3;
+                data_3D_FLOAT[i][j] = data_3D_FLOAT_buf + (i * params.dim_2 + j) * params.dim_3;
             }
         }
     }
@@ -176,25 +191,25 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
             break;
 
         case CONTIG_2D:
-            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_2D_INT);
-            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
-            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT);
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_2D_INT_buf);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_2D_FLOAT_buf);
             break;
 
         case CONTIG_3D:
-            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_3D_INT);
-            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
-            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT);
+            H5Dwrite(dset_ids[0], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[1], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[2], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[3], H5T_NATIVE_INT, memspace, filespace, dapl, data_3D_INT_buf);
+            H5Dwrite(dset_ids[4], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[5], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[6], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
+            H5Dwrite(dset_ids[7], H5T_NATIVE_FLOAT, memspace, filespace, dapl, data_3D_FLOAT_buf);
             break;
         default:
             printf("Unknown read pattern\n");
@@ -216,25 +231,19 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
     }
 
     if (params.num_dims == 2) {
-        for (int i = 0; i < params.dim_1; i++) {
-            free(data_2D_INT[i]);
-            free(data_2D_FLOAT[i]);
-        }
         free(data_2D_INT);
         free(data_2D_FLOAT);
+        free(data_2D_INT_buf);
+        free(data_2D_FLOAT_buf);
     }
 
     if (params.num_dims == 3) {
-        for (int i = 0; i < params.dim_1; i++) {
-            for (int j = 0; j < params.dim_2; j++) {
-                free(data_3D_INT[i][j]);
-                free(data_3D_FLOAT[i][j]);
-            }
-            free(data_3D_INT[i]);
-            free(data_3D_FLOAT[i]);
-        }
         free(data_3D_INT);
         free(data_3D_FLOAT);
+        free(data_3D_INT_planes);
+        free(data_3D_FLOAT_planes);
+        free(data_3D_INT_buf);
+        free(data_3D_FLOAT_buf);
     }
 }
 
