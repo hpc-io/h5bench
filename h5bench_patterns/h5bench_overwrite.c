@@ -74,9 +74,9 @@ overwrite_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids
      * datasets. Back the 2D/3D row/plane pointers with one contiguous
      * allocation per type so the row indexing in the fill loops still
      * works while H5Dwrite reads from real contiguous memory. */
-    int *  data_2D_INT_buf = NULL, *data_3D_INT_buf = NULL;
-    float *data_2D_FLOAT_buf = NULL, *data_3D_FLOAT_buf = NULL;
-    int ** data_3D_INT_planes = NULL;
+    int *   data_2D_INT_buf = NULL, *data_3D_INT_buf = NULL;
+    float * data_2D_FLOAT_buf = NULL, *data_3D_FLOAT_buf = NULL;
+    int **  data_3D_INT_planes   = NULL;
     float **data_3D_FLOAT_planes = NULL;
 
     if (params.num_dims == 1) {
