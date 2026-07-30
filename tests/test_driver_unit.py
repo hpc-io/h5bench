@@ -50,7 +50,17 @@ _REQUIRED_KEYS = ("mpi", "vol", "file-system", "directory", "benchmarks")
 
 
 def _full_setup():
-    return {k: {} if k != "benchmarks" else [] for k in _REQUIRED_KEYS}
+    """A minimal setup dict that both the legacy top-level-keys check and
+    the JSON schema (`schemas/h5bench-config.schema.json`) accept. The
+    opaque-benchmark branch is the least-restrictive way to satisfy the
+    `benchmarks` oneOf, so we use it here."""
+    return {
+        "mpi": {"command": "mpirun"},
+        "vol": {},
+        "file-system": {},
+        "directory": "storage",
+        "benchmarks": [{"benchmark": "amrex", "configuration": {}}],
+    }
 
 
 def test_validate_json_accepts_all_required_keys(bench):
