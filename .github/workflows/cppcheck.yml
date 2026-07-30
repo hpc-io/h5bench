@@ -1,0 +1,63 @@
+name: cppcheck
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-24.04
+    # Report-only for the first landing; individual finding families can
+    # be tightened later by dropping error-exitcode or promoting a subset
+    # of checks with --error-exitcode=1.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck on h5bench-owned code
+        run: |
+          # Scope: only directories h5bench owns. Vendored submodules
+          # (amrex/e3sm/macsio/openpmd) are excluded implicitly by not
+          # being listed.
+          #
+          # missingIncludeSystem: silences the noise about not finding
+          # hdf5.h/mpi.h; cppcheck already tolerates unresolved system
+          # headers via --suppress.
+          cppcheck \
+            --enable=warning,style,performance,portability \
+            --inline-suppr \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --std=c99 \
+            --language=c \
+            --error-exitcode=0 \
+            --output-file=cppcheck.txt \
+            commons/ h5bench_patterns/ exerciser/ metadata_stress/
+
+          echo '--- cppcheck report ---'
+          cat cppcheck.txt || true
+
+      - name: Upload cppcheck report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-report
+          path: cppcheck.txt
+          retention-days: 14

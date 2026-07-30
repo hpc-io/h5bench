@@ -1,0 +1,71 @@
+name: clang-tidy
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-24.04
+    # Report-only for the first landing. Once a check family is clean on
+    # h5bench-owned code, promote it via WarningsAsErrors in .clang-tidy
+    # and drop this flag.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Install clang-tidy and dev headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-tidy \
+            libhdf5-openmpi-dev \
+            libopenmpi-dev
+          # libhdf5-openmpi-dev installs headers under
+          # /usr/include/hdf5/openmpi so clang-tidy can resolve hdf5.h
+          # without a full source build. Same for mpi.h.
+
+      - name: Generate compile_commands.json
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_COMPILER=mpicc \
+            -DHDF5_HOME=/usr/include/hdf5/openmpi \
+            -DH5BENCH_ALL=OFF
+
+      - name: Run clang-tidy on h5bench-owned code
+        run: |
+          # Scope: only h5bench-owned .c files. Vendored submodules
+          # (amrex/e3sm/macsio/openpmd) are excluded by not being listed.
+          # clang-tidy reads .clang-tidy from the repo root automatically.
+          FILES=$(find commons h5bench_patterns exerciser metadata_stress \
+                    -maxdepth 3 -name '*.c' 2>/dev/null | sort)
+
+          echo '--- files to analyze ---'
+          printf '%s\n' "$FILES"
+          echo '--- clang-tidy output ---'
+
+          clang-tidy \
+            -p build \
+            --quiet \
+            $FILES 2>&1 | tee clang-tidy.txt || true
+
+      - name: Upload clang-tidy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-report
+          path: clang-tidy.txt
+          retention-days: 14
