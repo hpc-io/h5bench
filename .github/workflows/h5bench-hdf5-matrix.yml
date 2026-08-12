@@ -1,4 +1,4 @@
-name: h5bench (HDF5 1.14.0) 
+name: h5bench
 
 on:
   pull_request:
@@ -15,16 +15,21 @@ concurrency:
 
 jobs:
   h5bench:
+    name: HDF5 ${{ matrix.hdf5_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        hdf5_version: [1.14.0, 1.14.1, 2.0.0, 2.1.1, 2.2.0]
     runs-on: ubuntu-24.04
     container:
-      image: hpcio/hdf5-1.14.0
+      image: hpcio/hdf5-${{ matrix.hdf5_version }}
     timeout-minutes: 60
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v2
         with:
           submodules: true
 
@@ -36,12 +41,12 @@ jobs:
       - name: Dependencies
         run: |
           # VOL-ASYNC
-          git clone --recursive https://github.com/hpc-io/vol-async.git --branch v1.7 /opt/vol-async
+          git clone --recursive https://github.com/hpc-io/vol-async.git --branch develop /opt/vol-async
 
       - name: Build Argobots
         run: |
           export ABT_DIR=/opt/argobots
-          
+
           cd /opt/vol-async/argobots
 
           ./autogen.sh
@@ -55,12 +60,12 @@ jobs:
           export HDF5_DIR=/opt/hdf5
           export ABT_DIR=/opt/argobots
           export ASYNC_DIR=/opt/vol-async
-          
+
           cd $ASYNC_DIR
           mkdir build
           cd build
 
-          cmake .. -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
+          cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=$ASYNC_DIR -DCMAKE_PREFIX_PATH=$HDF5_DIR -DENABLE_WRITE_MEMCPY=ON
           make
           make install
 
@@ -76,7 +81,7 @@ jobs:
           export HDF5_VOL_CONNECTOR="async under_vol=0;under_info={}"
 
           cd $ASYNC_DIR/build
-          
+
           export LD_PRELOAD=$ASYNC_DIR/lib/libh5async.so:$ABT_DIR/lib/libabt.so:$HDF5_DIR/lib/libhdf5.so
 
           ctest
@@ -513,8 +518,8 @@ jobs:
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: test
-          path: build*/storage/**/std*
+          path: build*
           retention-days: 5
