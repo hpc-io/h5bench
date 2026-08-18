@@ -1,0 +1,23 @@
+# codecov configuration
+#
+# h5bench's test suite is expanding gradually (Wave C-prep in #157
+# added Python-side coverage from ~0% up; the C benchmark binaries
+# themselves are mostly exercised by integration tests, not unit
+# tests, so line-level coverage is inherently modest). The default
+# "auto" target for codecov/patch demands new lines meet or exceed
+# the project average, which is too strict while coverage is still
+# growing.
+#
+# Mark both status checks as informational: codecov continues to
+# annotate PRs with per-line coverage, but does not block merges on
+# a coverage-percentage target. Revisit once project coverage has
+# a stable baseline.
+
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
