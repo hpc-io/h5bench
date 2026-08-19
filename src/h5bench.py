@@ -158,20 +158,71 @@ class H5bench:
             self.logger.info('Lustre support not detected')
 
     def validate_json(self, setup):
-        """Make sure JSON contains all the necessary properties."""
-        properties = [
-            'mpi',
-            'vol',
-            'file-system',
-            'directory',
-            'benchmarks'
-        ]
+        """Validate the JSON configuration against the bundled JSON schema.
 
-        for p in properties:
-            if p not in setup:
-                self.logger.critical('JSON configuration file is invalid: "{}" property is missing'.format(p))
+        Uses ``schemas/h5bench-config.schema.json`` (located next to or one
+        level above this script, with an ``H5BENCH_SCHEMA`` env-var override)
+        and the optional ``jsonschema`` package for full type/enum/regex
+        validation. When ``jsonschema`` or the schema file is unavailable,
+        falls back to the legacy five-required-keys check so existing setups
+        keep working without a new pip dependency.
+        """
+        schema, jsonschema_mod = self._load_config_schema()
 
+        if schema is not None and jsonschema_mod is not None:
+            try:
+                jsonschema_mod.validate(setup, schema)
+                return
+            except jsonschema_mod.ValidationError as e:
+                location = '/'.join(str(p) for p in e.absolute_path) or '<root>'
+                self.logger.critical(
+                    'JSON configuration invalid at "%s": %s', location, e.message
+                )
                 sys.exit(os.EX_DATAERR)
+
+        if schema is None or jsonschema_mod is None:
+            self.logger.warning(
+                'jsonschema or schema file unavailable; falling back to a '
+                'minimal top-level key check. Install jsonschema '
+                '(pip install jsonschema) for full validation.'
+            )
+
+        for p in ('mpi', 'vol', 'file-system', 'directory', 'benchmarks'):
+            if p not in setup:
+                self.logger.critical(
+                    'JSON configuration file is invalid: "{}" property is missing'.format(p)
+                )
+                sys.exit(os.EX_DATAERR)
+
+    def _load_config_schema(self):
+        """Locate ``h5bench-config.schema.json`` and the ``jsonschema`` module.
+
+        Returns (schema_dict, jsonschema_module). Either element may be None
+        when the file or the package is missing — callers fall back to the
+        legacy validation in that case.
+        """
+        try:
+            import jsonschema as jsonschema_mod
+        except ImportError:
+            return None, None
+
+        here = os.path.dirname(os.path.abspath(__file__))
+        candidates = []
+        env_path = os.environ.get('H5BENCH_SCHEMA')
+        if env_path:
+            candidates.append(env_path)
+        candidates.extend([
+            os.path.join(here, 'schemas', 'h5bench-config.schema.json'),
+            os.path.join(here, '..', 'schemas', 'h5bench-config.schema.json'),
+            os.path.join(here, '..', 'share', 'h5bench', 'schemas', 'h5bench-config.schema.json'),
+        ])
+
+        for path in candidates:
+            if path and os.path.isfile(path):
+                with open(path) as f:
+                    return json.load(f), jsonschema_mod
+
+        return None, jsonschema_mod
 
     def run(self):
         """Run all the benchmarks/kernels."""

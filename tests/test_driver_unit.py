@@ -50,7 +50,17 @@ _REQUIRED_KEYS = ("mpi", "vol", "file-system", "directory", "benchmarks")
 
 
 def _full_setup():
-    return {k: {} if k != "benchmarks" else [] for k in _REQUIRED_KEYS}
+    """A minimal setup dict that both the legacy top-level-keys check and
+    the JSON schema (`schemas/h5bench-config.schema.json`) accept. The
+    opaque-benchmark branch is the least-restrictive way to satisfy the
+    `benchmarks` oneOf, so we use it here."""
+    return {
+        "mpi": {"command": "mpirun"},
+        "vol": {},
+        "file-system": {},
+        "directory": "storage",
+        "benchmarks": [{"benchmark": "amrex", "configuration": {}}],
+    }
 
 
 def test_validate_json_accepts_all_required_keys(bench):
@@ -72,6 +82,55 @@ def test_validate_json_tolerates_extra_keys(bench):
     setup["this-is-fine"] = {"nested": True}
     # The current contract is permissive about extras — lock that in.
     bench.validate_json(setup)
+
+
+# ---------------------------------------------------------------------------
+# _load_config_schema and validate_json's legacy-fallback branches
+# ---------------------------------------------------------------------------
+
+
+def test_load_config_schema_returns_none_when_jsonschema_missing(bench, monkeypatch):
+    # Force `import jsonschema` inside _load_config_schema to raise so
+    # the ImportError branch (and the (None, None) return) is exercised.
+    monkeypatch.setitem(sys.modules, "jsonschema", None)
+    schema, mod = bench._load_config_schema()
+    assert schema is None
+    assert mod is None
+
+
+def test_load_config_schema_returns_none_when_no_file_found(bench, monkeypatch):
+    # jsonschema itself imports fine, but no candidate path exists on disk.
+    monkeypatch.setattr(os.path, "isfile", lambda p: False)
+    schema, mod = bench._load_config_schema()
+    assert schema is None
+    assert mod is not None
+
+
+def test_load_config_schema_honors_env_var(bench, monkeypatch, tmp_path):
+    fake = tmp_path / "custom-schema.json"
+    fake.write_text('{"type": "object"}')
+    monkeypatch.setenv("H5BENCH_SCHEMA", str(fake))
+    schema, mod = bench._load_config_schema()
+    assert schema == {"type": "object"}
+    assert mod is not None
+
+
+def test_validate_json_falls_back_when_schema_unavailable(bench, monkeypatch):
+    # When _load_config_schema returns (None, None), validate_json must
+    # still accept a setup that has all five legacy required keys.
+    monkeypatch.setattr(bench, "_load_config_schema", lambda: (None, None))
+    legacy_setup = {k: {} if k != "benchmarks" else [] for k in _REQUIRED_KEYS}
+    bench.validate_json(legacy_setup)
+
+
+@pytest.mark.parametrize("missing_key", _REQUIRED_KEYS)
+def test_validate_json_fallback_exits_when_key_missing(bench, monkeypatch, missing_key):
+    monkeypatch.setattr(bench, "_load_config_schema", lambda: (None, None))
+    legacy_setup = {k: {} if k != "benchmarks" else [] for k in _REQUIRED_KEYS}
+    del legacy_setup[missing_key]
+    with pytest.raises(SystemExit) as excinfo:
+        bench.validate_json(legacy_setup)
+    assert excinfo.value.code == os.EX_DATAERR
 
 
 # ---------------------------------------------------------------------------

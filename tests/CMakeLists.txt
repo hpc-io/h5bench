@@ -52,6 +52,14 @@ if(Python3_Interpreter_FOUND)
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 
+	# JSON schema validation tests — pure Python, no benchmark binary needed.
+	# Requires the `jsonschema` pip package (see tests/requirements.txt).
+	add_test(
+		NAME "h5bench-schema"
+		COMMAND Python3::Interpreter -m pytest --verbose --rootdir ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_schema.py
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+
 	if(H5BENCH_EXERCISER)
 		add_test(
 			NAME "h5bench-sync-exerciser"
