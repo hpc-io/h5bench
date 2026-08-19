@@ -1,0 +1,51 @@
+# Pre-commit hooks for h5bench-owned code. Vendored submodules
+# (amrex/e3sm/macsio/openpmd) are excluded so pre-commit does not try
+# to reformat upstream sources.
+#
+# Trailing-whitespace and end-of-file-fixer are intentionally omitted
+# at first landing: the tree has ~90 files with trailing whitespace
+# and ~62 without a final newline that would need a separate cleanup
+# sweep. Add them in a follow-up PR once that sweep lands.
+#
+# Install locally:  pip install pre-commit && pre-commit install
+
+default_language_version:
+  python: python3
+
+exclude: |
+  (?x)^(
+    amrex/|
+    e3sm/|
+    macsio/|
+    openpmd/
+  )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        # PyYAML in check-yaml does not understand !reference or the
+        # GitHub Actions ${{ }} template syntax on its own, but plain
+        # YAML syntax errors still get flagged.
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v10.0.1
+    hooks:
+      - id: clang-format
+        types_or: [c, c++]
+        # Mirror the existing clang-format-check.yml scope: h5bench-owned
+        # sources only. Vendored submodules are already excluded above.
+        files: \.(c|h|cpp|hpp)$
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        # Matches the existing lint.yml scope so the two checks agree.
+        files: ^src/.*\.py$
+        args: [--config=tox.ini]
