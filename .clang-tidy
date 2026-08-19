@@ -1,0 +1,37 @@
+# clang-tidy config for h5bench-owned C sources.
+#
+# The set below is intentionally conservative: bugprone + a subset of
+# readability/performance/portability that has low false-positive rate on
+# an MPI+HDF5 C codebase. Individual noisy checks are opted out because
+# they either fight the existing style (align-*, magic-numbers) or would
+# require rewriting stable public benchmark APIs (function-cognitive-
+# complexity, non-const-parameter).
+#
+# The workflow runs clang-tidy in report-only mode. Tighten with
+# WarningsAsErrors once the tree is clean for a given check family.
+
+Checks: >-
+  -*,
+  bugprone-*,
+  readability-*,
+  performance-*,
+  portability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-reserved-identifier,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-braces-around-statements,
+  -readability-implicit-bool-conversion,
+  -readability-function-cognitive-complexity,
+  -readability-isolate-declaration,
+  -readability-non-const-parameter,
+  -readability-else-after-return,
+  -readability-named-parameter,
+  -readability-avoid-const-params-in-decls,
+  -readability-uppercase-literal-suffix
+
+WarningsAsErrors: ''
+FormatStyle: file
+HeaderFilterRegex: '^(commons|h5bench_patterns|exerciser|metadata_stress)/'
