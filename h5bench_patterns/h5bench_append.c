@@ -75,28 +75,28 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
     float *data_1D_FLOAT, **data_2D_FLOAT, ***data_3D_FLOAT;
 
     if (params.num_dims == 1) {
-        data_1D_INT   = malloc(params.dim_1 * sizeof(int));
-        data_1D_FLOAT = malloc(params.dim_1 * sizeof(float));
+        H5B_MALLOC(data_1D_INT, params.dim_1 * sizeof(int));
+        H5B_MALLOC(data_1D_FLOAT, params.dim_1 * sizeof(float));
     }
 
     if (params.num_dims == 2) {
-        data_2D_INT   = malloc(params.dim_1 * sizeof(int *));
-        data_2D_FLOAT = malloc(params.dim_1 * sizeof(float *));
+        H5B_MALLOC(data_2D_INT, params.dim_1 * sizeof(int *));
+        H5B_MALLOC(data_2D_FLOAT, params.dim_1 * sizeof(float *));
         for (int i = 0; i < params.dim_1; i++) {
-            data_2D_INT[i]   = malloc(params.dim_2 * sizeof(int));
-            data_2D_FLOAT[i] = malloc(params.dim_2 * sizeof(float));
+            H5B_MALLOC(data_2D_INT[i], params.dim_2 * sizeof(int));
+            H5B_MALLOC(data_2D_FLOAT[i], params.dim_2 * sizeof(float));
         }
     }
 
     if (params.num_dims == 3) {
-        data_3D_INT   = malloc(params.dim_1 * sizeof(int **));
-        data_3D_FLOAT = malloc(params.dim_1 * sizeof(float **));
+        H5B_MALLOC(data_3D_INT, params.dim_1 * sizeof(int **));
+        H5B_MALLOC(data_3D_FLOAT, params.dim_1 * sizeof(float **));
         for (int i = 0; i < params.dim_1; i++) {
-            data_3D_INT[i]   = malloc(params.dim_2 * sizeof(int *));
-            data_3D_FLOAT[i] = malloc(params.dim_2 * sizeof(float *));
+            H5B_MALLOC(data_3D_INT[i], params.dim_2 * sizeof(int *));
+            H5B_MALLOC(data_3D_FLOAT[i], params.dim_2 * sizeof(float *));
             for (int j = 0; j < params.dim_2; j++) {
-                data_3D_INT[i][j]   = malloc(params.dim_3 * sizeof(int));
-                data_3D_FLOAT[i][j] = malloc(params.dim_3 * sizeof(float));
+                H5B_MALLOC(data_3D_INT[i][j], params.dim_3 * sizeof(int));
+                H5B_MALLOC(data_3D_FLOAT[i][j], params.dim_3 * sizeof(float));
             }
         }
     }
@@ -152,13 +152,21 @@ append_h5_data(bench_params params, time_step *ts, hid_t loc, hid_t *dset_ids, h
     t1 = get_time_usec();
 
     dset_ids[0] = H5Dopen_async(loc, "x", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[0], "H5Dopen_async(x)");
     dset_ids[1] = H5Dopen_async(loc, "y", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[1], "H5Dopen_async(y)");
     dset_ids[2] = H5Dopen_async(loc, "z", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[2], "H5Dopen_async(z)");
     dset_ids[3] = H5Dopen_async(loc, "id_1", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[3], "H5Dopen_async(id_1)");
     dset_ids[4] = H5Dopen_async(loc, "id_2", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[4], "H5Dopen_async(id_2)");
     dset_ids[5] = H5Dopen_async(loc, "px", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[5], "H5Dopen_async(px)");
     dset_ids[6] = H5Dopen_async(loc, "py", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[6], "H5Dopen_async(py)");
     dset_ids[7] = H5Dopen_async(loc, "pz", dapl, ts->es_meta_create);
+    H5B_CHECK_HID(dset_ids[7], "H5Dopen_async(pz)");
 
     t2 = get_time_usec();
 
@@ -350,11 +358,14 @@ _set_dataspace_seq_3D(hid_t *filespace_in_out, hid_t *memspace_out, unsigned lon
 hid_t
 get_filespace(hid_t file_id)
 {
-    char *grp_name  = "/Timestep_0";
-    char *ds_name   = "px";
-    hid_t gid       = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
-    hid_t dsid      = H5Dopen2(gid, ds_name, H5P_DEFAULT);
+    char *grp_name = "/Timestep_0";
+    char *ds_name  = "px";
+    hid_t gid      = H5Gopen2(file_id, grp_name, H5P_DEFAULT);
+    H5B_CHECK_HID(gid, "H5Gopen2(/Timestep_0)");
+    hid_t dsid = H5Dopen2(gid, ds_name, H5P_DEFAULT);
+    H5B_CHECK_HID(dsid, "H5Dopen2(px)");
     hid_t filespace = H5Dget_space(dsid);
+    H5B_CHECK_HID(filespace, "H5Dget_space");
     H5Dclose(dsid);
     H5Gclose(gid);
     return filespace;
@@ -424,10 +435,10 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
     int           dset_cnt = 8;
     for (int ts_index = 0; ts_index < nts; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
-        sprintf(grp_name, "Timestep_%d", ts_index);
+        snprintf(grp_name, sizeof(grp_name), "Timestep_%d", ts_index);
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
-        MEM_MONITOR->mem_used += ts->mem_size;
         assert(ts);
+        MEM_MONITOR->mem_used += ts->mem_size;
 
         if (params.cnt_time_step_delay > 0) {
             if (ts_index > params.cnt_time_step_delay - 1) // delayed close on all ids of the previous ts
@@ -437,6 +448,7 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
 
         t1         = get_time_usec();
         ts->grp_id = H5Gopen_async(file_id, grp_name, gapl, ts->es_meta_create);
+        H5B_CHECK_HID(ts->grp_id, "H5Gopen_async");
         t2         = get_time_usec();
         meta_time3 = (t2 - t1);
 
@@ -473,7 +485,7 @@ _run_benchmark_modify(hid_t file_id, hid_t fapl, hid_t gapl, hid_t filespace, be
         *inner_metadata_time += (meta_time1 + meta_time2 + meta_time3 + meta_time4 + meta_time5);
     }
 
-    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp);
+    mem_monitor_final_run(MEM_MONITOR, &metadata_time_imp, &read_time_imp, NULL, NULL);
     *raw_read_time_out += read_time_imp;
     *inner_metadata_time += metadata_time_imp;
     *total_data_size_out = nts * actual_read_cnt * (6 * sizeof(float) + 2 * sizeof(int));
@@ -504,7 +516,13 @@ main(int argc, char *argv[])
 {
     int mpi_thread_lvl_provided = -1;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
-    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    if (mpi_thread_lvl_provided != MPI_THREAD_MULTIPLE) {
+        fprintf(stderr,
+                "h5bench_append: MPI implementation does not provide MPI_THREAD_MULTIPLE "
+                "(got level %d)\n",
+                mpi_thread_lvl_provided);
+        h5bench_die(NULL);
+    }
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
 
@@ -545,7 +563,8 @@ main(int argc, char *argv[])
 
     hsize_t dims[64] = {0};
 
-    hid_t         file_id         = H5Fopen(file_name, H5F_ACC_RDWR, fapl);
+    hid_t file_id = H5Fopen(file_name, H5F_ACC_RDWR, fapl);
+    H5B_CHECK_HID(file_id, "H5Fopen");
     hid_t         filespace       = get_filespace(file_id);
     int           dims_cnt        = H5Sget_simple_extent_dims(filespace, dims, NULL);
     unsigned long total_particles = 1;

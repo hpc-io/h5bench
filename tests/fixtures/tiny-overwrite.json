@@ -1,0 +1,48 @@
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "2",
+        "configuration": "-np 2 --allow-run-as-root --oversubscribe"
+    },
+    "vol": {},
+    "file-system": {},
+    "directory": "test-output-tiny-overwrite",
+    "benchmarks": [
+        {
+            "benchmark": "write",
+            "file": "tiny-overwrite.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "1",
+                "DELAYED_CLOSE_TIMESTEPS": "0",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "0 s",
+                "NUM_DIMS": "1",
+                "DIM_1": "1024",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "MODE": "SYNC"
+            }
+        },
+        {
+            "benchmark": "overwrite",
+            "file": "tiny-overwrite.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "1",
+                "DELAYED_CLOSE_TIMESTEPS": "0",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "0 s",
+                "NUM_DIMS": "1",
+                "DIM_1": "1024",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "MODE": "SYNC"
+            }
+        }
+    ]
+}

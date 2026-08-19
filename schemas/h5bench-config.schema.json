@@ -1,0 +1,238 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/hpc-io/h5bench/schemas/h5bench-config.schema.json",
+    "title": "h5bench configuration",
+    "description": "Validates the JSON file passed to the h5bench Python driver. Pattern benchmarks (write/read/append/overwrite/write-unlimited/write_var_normal_dist) are strictly typed because the driver translates their keys into argv for the binary; exerciser/metadata/amrex/openpmd/e3sm/macsio carry an opaque configuration object because their binaries parse the keys themselves.",
+    "type": "object",
+    "required": ["mpi", "vol", "file-system", "directory", "benchmarks"],
+    "additionalProperties": true,
+    "properties": {
+        "mpi": { "$ref": "#/$defs/mpiSection" },
+        "vol": { "$ref": "#/$defs/volSection" },
+        "file-system": { "$ref": "#/$defs/fileSystemSection" },
+        "directory": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Output directory for benchmark artifacts (created if missing)."
+        },
+        "benchmarks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/benchmarkEntry" }
+        }
+    },
+    "$defs": {
+        "mpiSection": {
+            "type": "object",
+            "required": ["command"],
+            "additionalProperties": false,
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": ["mpirun", "mpiexec", "srun", "jsrun", "runjob"],
+                    "description": "MPI launcher binary. The driver wires up -np / -n for mpirun/mpiexec/srun automatically when 'configuration' is absent."
+                },
+                "ranks": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "description": "Rank count as a numeric string. Used only when 'configuration' is absent."
+                },
+                "configuration": {
+                    "type": "string",
+                    "description": "Raw extra arguments appended verbatim after the launcher command. When set, overrides the implicit -np <ranks> wiring."
+                }
+            }
+        },
+        "volSection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "library": {
+                    "type": "string",
+                    "description": "Colon-separated list of directories prepended to LD_LIBRARY_PATH (and DYLD_LIBRARY_PATH) for the run."
+                },
+                "preload": {
+                    "type": "string",
+                    "description": "Colon-separated list of shared objects prepended to LD_PRELOAD."
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Directory exported as HDF5_PLUGIN_PATH so HDF5 finds VOL connectors."
+                },
+                "connector": {
+                    "type": "string",
+                    "description": "Value for HDF5_VOL_CONNECTOR, e.g. 'async under_vol=0;under_info={}'."
+                }
+            }
+        },
+        "fileSystemSection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "lustre": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "stripe-size": { "type": ["string", "integer"] },
+                        "stripe-count": { "type": ["string", "integer"] }
+                    }
+                }
+            }
+        },
+
+        "benchmarkEntry": {
+            "type": "object",
+            "required": ["benchmark"],
+            "properties": {
+                "benchmark": {
+                    "type": "string",
+                    "enum": [
+                        "write",
+                        "write-unlimited",
+                        "overwrite",
+                        "append",
+                        "read",
+                        "write_var_normal_dist",
+                        "exerciser",
+                        "metadata",
+                        "amrex",
+                        "openpmd",
+                        "e3sm",
+                        "macsio"
+                    ]
+                },
+                "file": {
+                    "type": "string",
+                    "description": "Output filename relative to the top-level 'directory'."
+                },
+                "configuration": { "type": "object" }
+            },
+            "oneOf": [
+                { "$ref": "#/$defs/patternBenchmark" },
+                { "$ref": "#/$defs/exerciserBenchmark" },
+                { "$ref": "#/$defs/metadataBenchmark" },
+                { "$ref": "#/$defs/opaqueBenchmark" }
+            ]
+        },
+
+        "patternBenchmark": {
+            "description": "write / write-unlimited / overwrite / append / read / write_var_normal_dist — the driver translates the configuration keys into argv for the h5bench_<pattern> binary, so each key is strictly typed.",
+            "type": "object",
+            "properties": {
+                "benchmark": {
+                    "enum": [
+                        "write",
+                        "write-unlimited",
+                        "overwrite",
+                        "append",
+                        "read",
+                        "write_var_normal_dist"
+                    ]
+                },
+                "file": { "type": "string" },
+                "configuration": { "$ref": "#/$defs/patternConfiguration" }
+            },
+            "required": ["benchmark", "file", "configuration"],
+            "additionalProperties": false
+        },
+
+        "patternConfiguration": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "MEM_PATTERN":     { "enum": ["CONTIG", "INTERLEAVED", "STRIDED"] },
+                "FILE_PATTERN":    { "enum": ["CONTIG", "INTERLEAVED", "STRIDED"] },
+                "MODE":            { "enum": ["SYNC", "ASYNC", "LOG"] },
+                "READ_OPTION":     { "enum": ["FULL", "PARTIAL", "STRIDED", "LDC", "RDC", "CS", "PRL"] },
+                "COLLECTIVE_DATA":     { "enum": ["YES", "NO"] },
+                "COLLECTIVE_METADATA": { "enum": ["YES", "NO"] },
+                "COMPRESS":            { "enum": ["YES", "NO"] },
+                "ALIGN":               { "enum": ["YES", "NO"] },
+
+                "NUM_DIMS":     { "$ref": "#/$defs/dimCount" },
+                "DIM_1":        { "$ref": "#/$defs/numericString" },
+                "DIM_2":        { "$ref": "#/$defs/numericString" },
+                "DIM_3":        { "$ref": "#/$defs/numericString" },
+                "CHUNK_DIM_1":  { "$ref": "#/$defs/numericString" },
+                "CHUNK_DIM_2":  { "$ref": "#/$defs/numericString" },
+                "CHUNK_DIM_3":  { "$ref": "#/$defs/numericString" },
+                "STDEV_DIM_1":  { "$ref": "#/$defs/numericString" },
+
+                "TIMESTEPS":               { "$ref": "#/$defs/numericString" },
+                "DELAYED_CLOSE_TIMESTEPS": { "$ref": "#/$defs/numericString" },
+
+                "STRIDE_SIZE":   { "$ref": "#/$defs/numericString" },
+                "STRIDE_SIZE_2": { "$ref": "#/$defs/numericString" },
+                "STRIDE_SIZE_3": { "$ref": "#/$defs/numericString" },
+                "BLOCK_SIZE":    { "$ref": "#/$defs/numericString" },
+                "BLOCK_SIZE_2":  { "$ref": "#/$defs/numericString" },
+                "BLOCK_SIZE_3":  { "$ref": "#/$defs/numericString" },
+                "BLOCK_CNT":     { "$ref": "#/$defs/numericString" },
+
+                "ALIGN_LEN":       { "$ref": "#/$defs/numericString" },
+                "ALIGN_THRESHOLD": { "$ref": "#/$defs/numericString" },
+
+                "NUM_PARTICLES": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\s+(K|M|G|T)s?)?$",
+                    "description": "Accepts either a plain integer ('1024') or the K/M/G/T suffix form h5bench parses ('1024 Ks')."
+                },
+
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": {
+                    "type": "string",
+                    "pattern": "^\\d+\\s+(min|sec|s|ms|us)$",
+                    "description": "<value> <unit>. Unit ∈ {min, sec, s, ms, us}; '0 s' is valid for fast tests."
+                },
+
+                "CSV_FILE": { "type": "string" }
+            }
+        },
+
+        "dimCount": {
+            "type": "string",
+            "enum": ["1", "2", "3"],
+            "description": "Number of dataset dimensions; 1, 2, or 3."
+        },
+
+        "numericString": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "h5bench config historically uses string-quoted integers, e.g. \"1024\"."
+        },
+
+        "exerciserBenchmark": {
+            "description": "h5bench_exerciser receives its configuration as argv flags; the driver passes them through verbatim.",
+            "type": "object",
+            "properties": {
+                "benchmark":     { "const": "exerciser" },
+                "configuration": { "type": "object" }
+            },
+            "required": ["benchmark"],
+            "additionalProperties": false
+        },
+
+        "metadataBenchmark": {
+            "description": "h5bench_hdf5_iotest writes its own ini-style config; the driver passes a 'file' name and the configuration block.",
+            "type": "object",
+            "properties": {
+                "benchmark":     { "const": "metadata" },
+                "file":          { "type": "string" },
+                "configuration": { "type": "object" }
+            },
+            "required": ["benchmark", "configuration"],
+            "additionalProperties": false
+        },
+
+        "opaqueBenchmark": {
+            "description": "amrex / openpmd / e3sm / macsio — externally-owned benchmark binaries that parse their own configuration; the schema does not introspect their keys.",
+            "type": "object",
+            "properties": {
+                "benchmark":     { "enum": ["amrex", "openpmd", "e3sm", "macsio"] },
+                "file":          { "type": "string" },
+                "configuration": { "type": "object" }
+            },
+            "required": ["benchmark", "configuration"],
+            "additionalProperties": false
+        }
+    }
+}

@@ -1,0 +1,28 @@
+# Query filters to include or exclude specific queries
+query-filters:
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-short-global-name/
+      id: cpp/short-global-name
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-commented-out-code/ 
+      id: cpp/commented-out-code
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-poorly-documented-function/
+      id: cpp/poorly-documented-function
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-trivial-switch/
+      id: cpp/trivial-switch
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-irregular-enum-init/
+      id: cpp/irregular-enum-init
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-guarded-free/
+      id: cpp/guarded-free
+
+# Directories to scan for vulnerabilities
+paths:
+  - src  # Main source directory
+
+# Directories and files to ignore during the scan
+paths-ignore:
+  - tests # Test directory

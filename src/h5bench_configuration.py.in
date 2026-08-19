@@ -1,1 +1,34 @@
+"""
+Build-time configuration exposed to the h5bench Python driver and tests.
+
+This file is the template that CMake processes via configure_file() into
+``h5bench_configuration.py`` inside the build directory. Every ``@NAME@``
+below is substituted with the corresponding CMake variable's value at
+configure time; CMake's ``option(... OFF)`` defaults guarantee every flag
+is either the literal string ``"ON"`` or ``"OFF"``.
+
+Importing this module lets tests key off what was actually built rather
+than guessing from binary presence, and lets the driver check VOL-ASYNC
+availability without probing the filesystem.
+"""
+
 __install__ = "@CMAKE_INSTALL_PREFIX@/bin/"
+
+
+def _flag(raw):
+    # CMake substitutes booleans as plain ON/OFF strings.
+    return str(raw).upper() == "ON"
+
+
+# Optional benchmark toggles. ``H5BENCH_ALL=ON`` at configure time forces
+# each of the per-benchmark flags to ON in CMakeLists.txt, so the values
+# here mirror exactly what got built.
+__options__ = {
+    "H5BENCH_METADATA":  _flag("@H5BENCH_METADATA@"),
+    "H5BENCH_EXERCISER": _flag("@H5BENCH_EXERCISER@"),
+    "H5BENCH_AMREX":     _flag("@H5BENCH_AMREX@"),
+    "H5BENCH_OPENPMD":   _flag("@H5BENCH_OPENPMD@"),
+    "H5BENCH_E3SM":      _flag("@H5BENCH_E3SM@"),
+    "H5BENCH_MACSIO":    _flag("@H5BENCH_MACSIO@"),
+    "WITH_ASYNC_VOL":    _flag("@WITH_ASYNC_VOL@"),
+}
