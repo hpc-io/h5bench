@@ -135,12 +135,25 @@ def test_top_level_extra_key_tolerated(schema, base_pattern_config):
 
 
 @pytest.mark.parametrize(
-    'launcher', ['mpirun', 'mpiexec', 'srun', 'jsrun', 'runjob']
+    'launcher',
+    ['mpirun', 'mpiexec', 'srun', 'ibrun', 'aprun', 'flux run', 'prun'],
 )
 def test_mpi_known_launcher_accepted(schema, base_pattern_config, launcher):
     setup = copy.deepcopy(base_pattern_config)
     setup['mpi']['command'] = launcher
     jsonschema.validate(setup, schema)
+
+
+@pytest.mark.parametrize('launcher', ['jsrun', 'runjob', 'lrun'])
+def test_mpi_legacy_launcher_rejected(schema, base_pattern_config, launcher):
+    # jsrun (Summit/Sierra), runjob (BlueGene/Q), lrun (Sierra/Lassen
+    # wrapper) were dropped because their systems are decommissioned or
+    # winding down. Confirm the enum still rejects them so nobody
+    # accidentally re-adds without updating this test.
+    setup = copy.deepcopy(base_pattern_config)
+    setup['mpi']['command'] = launcher
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(setup, schema)
 
 
 def test_mpi_unknown_launcher_rejected(schema, base_pattern_config):

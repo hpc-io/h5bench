@@ -57,7 +57,8 @@ class H5bench:
         """Check for parallel overwrite command."""
         mpi = [
             'mpirun', 'mpiexec',
-            'srun'
+            'srun', 'ibrun', 'aprun',
+            'prun'
         ]
 
         # Get user defined shell
@@ -312,6 +313,8 @@ class H5bench:
                 self.mpi = '{} -np {}'.format(mpi['command'], mpi['ranks'])
             elif mpi['command'] == 'srun':
                 self.mpi = '{} --cpu_bind=cores -n {}'.format(mpi['command'], mpi['ranks'])
+            elif mpi['command'] in ['ibrun', 'aprun', 'flux run', 'prun']:
+                self.mpi = '{} -n {}'.format(mpi['command'], mpi['ranks'])
             else:
                 self.logger.warning('Unknown MPI launcher selected!')
 
