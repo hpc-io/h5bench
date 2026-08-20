@@ -29,8 +29,16 @@
             "properties": {
                 "command": {
                     "type": "string",
-                    "enum": ["mpirun", "mpiexec", "srun", "jsrun", "runjob"],
-                    "description": "MPI launcher binary. The driver wires up -np / -n for mpirun/mpiexec/srun automatically when 'configuration' is absent."
+                    "enum": [
+                        "mpirun",
+                        "mpiexec",
+                        "srun",
+                        "ibrun",
+                        "aprun",
+                        "flux run",
+                        "prun"
+                    ],
+                    "description": "MPI launcher binary. The driver wires up '-np <ranks>' for mpirun/mpiexec, '--cpu_bind=cores -n <ranks>' for srun, and '-n <ranks>' for the rest when 'configuration' is absent. Legacy launchers (jsrun on Summit/Sierra, lrun on Lassen, runjob on BlueGene/Q) were dropped in favour of the shorter list; add them back to the enum if a live system still needs them."
                 },
                 "ranks": {
                     "type": "string",

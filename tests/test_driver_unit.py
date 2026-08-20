@@ -160,6 +160,12 @@ def test_prepare_parallel_srun_uses_cpu_bind(bench):
     assert bench.mpi == "srun --cpu_bind=cores -n 16"
 
 
+@pytest.mark.parametrize("launcher", ["ibrun", "aprun", "flux run", "prun"])
+def test_prepare_parallel_extra_launchers_use_dash_n(bench, launcher):
+    bench.prepare_parallel({"command": launcher, "ranks": "8"})
+    assert bench.mpi == "{} -n 8".format(launcher)
+
+
 def test_prepare_parallel_unknown_command_warns_and_blanks(bench):
     bench.prepare_parallel({"command": "not-a-launcher", "ranks": "2"})
     # The legacy contract: unknown command -> blank mpi prefix, no exception.
