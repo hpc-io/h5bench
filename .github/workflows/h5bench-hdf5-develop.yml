@@ -15,7 +15,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: "yes"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
 

@@ -5,7 +5,7 @@ MACSio (Multi-purpose, Application-Centric, Scalable I/O Proxy Application) is b
 
 MACSio in h5bench only supports the HDF5 interface. You need to have the `json-cwx <https://github.com/LLNL/json-cwx>`_ dependency library installed prior to compiling it in h5bench.
 
-You can find more information in MACSio `GitHub repository <https://github.com/LLNL/MACSio>`_.
+You can find more information in MACSio `GitHub repository <https://github.com/Parallel-NetCDF/E3SM-IO>`_.
 
 Configuration
 -------------

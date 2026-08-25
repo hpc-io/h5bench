@@ -1,0 +1,125 @@
+name: h5bench (HDF5 1.14.1 + compression) 
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  h5bench:
+    runs-on: ubuntu-20.04
+    container:
+      image: hpcio/hdf5-1.14.1-compression
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build h5bench SYNC
+        run: |
+          current="$PWD"
+
+          export HDF5_HOME=/opt/hdf5
+
+          mkdir build-sync
+          cd build-sync
+
+          cmake .. \
+            -DCMAKE_C_COMPILER=$HDF5_HOME/bin/h5pcc
+          make
+
+      - name: Test h5bench SYNC write/read
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-contig-1d-small.json
+
+      - name: Test h5bench SYNC write/read 1D N_BIT filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-N_BIT.json
+
+      - name: Test h5bench SYNC write/read 1D SZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZIP.json
+
+      - name: Test h5bench SYNC write/read 1D GZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-GZIP.json
+
+      - name: Test h5bench SYNC write/read 1D SZ3 filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-SZ3.json
+
+      - name: Test h5bench SYNC write/read 1D ZFP filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-1d-ZFP.json
+
+      - name: Test h5bench SYNC write/read 2D N_BIT filter 
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-N_BIT.json
+
+      - name: Test h5bench SYNC write/read 2D SZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-SZIP.json
+
+      - name: Test h5bench SYNC write/read 2D GZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-GZIP.json
+
+      - name: Test h5bench SYNC write/read 2D SZ3 filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-SZ3.json
+
+      - name: Test h5bench SYNC write/read 2D ZFP filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-2d-ZFP.json
+
+      - name: Test h5bench SYNC write/read 3D N_BIT filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-N_BIT.json
+
+      - name: Test h5bench SYNC write/read 3D SZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-SZIP.json
+
+      - name: Test h5bench SYNC write/read 3D GZIP filter
+        run: |
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-GZIP.json
+
+      - name: Test h5bench SYNC write/read 3D SZ3 filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/SZ3/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-SZ3.json
+
+      - name: Test h5bench SYNC write/read 3D ZFP filter
+        run: |
+          export LD_LIBRARY_PATH=/opt/zfp/lib:$LD_LIBRARY_PATH
+          cd build-sync
+          ./h5bench --debug --abort-on-failure --validate-mode ../samples/sync-write-read-chunked-3d-ZFP.json
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test
+          path: build*/storage/**/std*
+          retention-days: 1

@@ -31,6 +31,11 @@ int parse_unit(char *str_in, unsigned long long *num, char **unit_str);
 
 int has_vol_async;
 
+char *compress_filter_names[] = {"INVALID", "N_BIT", "SZIP", "GZIP", "SZ3", "ZFP", "SNAPPY_CUDA"};
+
+int                  compress_filter_ids[] = {-1, 5, 4, 1, 32024, 32013, 32003};
+static unsigned int *cd_values;
+
 unsigned long
 get_time_usec()
 {
@@ -181,8 +186,9 @@ ts_delayed_close(mem_monitor *mon, unsigned long *metadata_time_total, int dset_
     unsigned long t1, t2;
     unsigned long meta_time = 0;
 
-    if (!has_vol_async)
+    if (!has_vol_async) {
         return 0;
+    }
 
     for (int i = 0; i < mon->time_step_cnt; i++) {
         ts_run = &(mon->time_steps[i]);
@@ -851,6 +857,62 @@ _set_params(char *key, char *val_in, bench_params *params_in_out, int do_write)
         else
             (*params_in_out).read_option = READ_OPTION_INVALID;
     }
+    else if (strcmp(key, "COMPRESS_FILTER") == 0) { // New
+        if (strcmp(val_in, "N_BIT") == 0) {
+            (*params_in_out).compress_filter = N_BIT;
+        }
+        else if (strcmp(val_in, "SZIP") == 0) {
+            (*params_in_out).compress_filter = SZIP;
+        }
+        else if (strcmp(val_in, "GZIP") == 0) {
+            (*params_in_out).compress_filter = GZIP;
+        }
+        else if (strcmp(val_in, "SZ3") == 0) {
+            (*params_in_out).compress_filter = SZ3;
+        }
+        else if (strcmp(val_in, "ZFP") == 0) {
+            (*params_in_out).compress_filter = ZFP;
+        }
+        else if (strcmp(val_in, "SNAPPY_CUDA") == 0) {
+            (*params_in_out).compress_filter = SNAPPY_CUDA;
+        }
+
+        else
+            (*params_in_out).compress_filter = COMPRESS_FILTER_INVALID;
+    }
+    else if (strcmp(key, "CD_NELMTS") == 0) {
+        (*params_in_out).cd_nelmts = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_1") == 0) {
+        (*params_in_out).cd_value_1 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_2") == 0) {
+        (*params_in_out).cd_value_2 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_3") == 0) {
+        (*params_in_out).cd_value_3 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_4") == 0) {
+        (*params_in_out).cd_value_4 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_5") == 0) {
+        (*params_in_out).cd_value_5 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_6") == 0) {
+        (*params_in_out).cd_value_6 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_7") == 0) {
+        (*params_in_out).cd_value_7 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_8") == 0) {
+        (*params_in_out).cd_value_8 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_9") == 0) {
+        (*params_in_out).cd_value_9 = atoi(val);
+    }
+    else if (strcmp(key, "CD_VALUES_10") == 0) {
+        (*params_in_out).cd_value_10 = atoi(val);
+    }
     else if (strcmp(key, "NUM_DIMS") == 0) {
         int num = atoi(val);
         if (num > 0)
@@ -1099,6 +1161,13 @@ bench_params_init(bench_params *params_out)
     (*params_out).align           = 0;
     (*params_out).align_threshold = 0;
     (*params_out).align_len       = 0;
+
+    (*params_out).cd_nelmts  = 0; // new
+    (*params_out).cd_value_1 = 0; // new
+    (*params_out).cd_value_2 = 0; // new
+    (*params_out).cd_value_3 = 0; // new
+    (*params_out).cd_value_4 = 0; // new
+    (*params_out).cd_value_5 = 0; // new
 }
 
 int
@@ -1272,6 +1341,24 @@ print_params(const bench_params *p)
 
     if (p->useCompress) {
         printf("Use compression: %d\n", p->useCompress);
+        printf("    Compression_filter_name: %s\n", compress_filter_names[p->compress_filter]);
+        printf("    Compression_filter_id: %d\n", compress_filter_ids[p->compress_filter]);
+        printf("    Number of compression filter parameters: %d\n", p->cd_nelmts);
+        cd_values    = (unsigned int *)malloc(10 * sizeof(unsigned int));
+        cd_values[0] = p->cd_value_1;
+        cd_values[1] = p->cd_value_2;
+        cd_values[2] = p->cd_value_3;
+        cd_values[3] = p->cd_value_4;
+        cd_values[4] = p->cd_value_5;
+        cd_values[5] = p->cd_value_6;
+        cd_values[6] = p->cd_value_7;
+        cd_values[7] = p->cd_value_8;
+        cd_values[8] = p->cd_value_9;
+        cd_values[9] = p->cd_value_10;
+        for (int i = 0; i < p->cd_nelmts; ++i) {
+            printf("    Compression parameter %d: %d\n", i + 1, cd_values[i]);
+        }
+        free(cd_values);
         printf("    chunk_dim1: %lu\n", p->chunk_dim_1);
         if (p->num_dims >= 2) {
             printf("    chunk_dim2: %lu\n", p->chunk_dim_2);

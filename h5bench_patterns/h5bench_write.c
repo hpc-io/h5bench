@@ -37,6 +37,7 @@
 //              02/19/2019 --> Add option to write multiple timesteps of data - Tang
 //
 
+#include <inttypes.h>
 #include <hdf5.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,11 +49,16 @@
 #include <time.h>
 #include "../commons/h5bench_util.h"
 #include "../commons/async_adaptor.h"
+
 #ifdef HAVE_SUBFILING
 #include "H5FDsubfiling.h"
 #include "H5FDioc.h"
 #endif
-#define DIM_MAX 3
+
+#define DIM_MAX                3
+#define H5Z_FILTER_ZFP         32013
+#define H5Z_FILTER_SZ3         32024
+#define H5Z_FILTER_SNAPPY_CUDA 32003
 
 herr_t ierr;
 
@@ -60,7 +66,10 @@ typedef struct compress_info {
     int     USE_COMPRESS;
     hid_t   dcpl_id;
     hsize_t chunk_dims[DIM_MAX];
+    hsize_t total_compressed_size;
 } compress_info;
+
+static unsigned int *cd_values;
 
 // Global Variables and dimensions
 async_mode    ASYNC_MODE;
@@ -756,6 +765,7 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
     unsigned long metadata_time_exp = 0, data_time_exp = 0, t0, t1, t2, t3, t4;
     unsigned long metadata_time_imp = 0, data_time_imp = 0;
     unsigned long meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
+    COMPRESS_INFO.total_compressed_size = 0;
     for (int ts_index = 0; ts_index < timestep_cnt; ts_index++) {
         meta_time1 = 0, meta_time2 = 0, meta_time3 = 0, meta_time4 = 0, meta_time5 = 0;
         time_step *ts = &(MEM_MONITOR->time_steps[ts_index]);
@@ -824,6 +834,11 @@ _run_benchmark_write(bench_params params, hid_t file_id, hid_t fapl, hid_t files
 
             for (int j = 0; j < dset_cnt; j++) {
                 if (ts->dset_ids[j] != 0) {
+                    // get the size of each dataset after compression before losing access
+                    hsize_t dset_size = H5Dget_storage_size(ts->dset_ids[j]);
+                    COMPRESS_INFO.total_compressed_size += dset_size;
+
+                    // close the dataset
                     H5Dclose_async(ts->dset_ids[j], ts->es_meta_close);
                 }
             }
@@ -882,8 +897,27 @@ set_globals(const bench_params *params)
 
     if (COMPRESS_INFO.USE_COMPRESS) { // set DCPL
         herr_t ret;
+
+        // Construct auxiliary data for the filter
+        cd_values    = (unsigned int *)malloc(10 * sizeof(unsigned int));
+        cd_values[0] = params->cd_value_1;
+        cd_values[1] = params->cd_value_2;
+        cd_values[2] = params->cd_value_3;
+        cd_values[3] = params->cd_value_4;
+        cd_values[4] = params->cd_value_5;
+        cd_values[5] = params->cd_value_6;
+        cd_values[6] = params->cd_value_7;
+        cd_values[7] = params->cd_value_8;
+        cd_values[8] = params->cd_value_9;
+        cd_values[9] = params->cd_value_10;
+
+        // Create a new property list instance
         COMPRESS_INFO.dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         assert(COMPRESS_INFO.dcpl_id > 0);
+
+        // Clear any possible residual filter settings
+        ret = H5Premove_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ALL);
+        assert(ret >= 0);
 
         /* Set chunked layout and chunk dimensions */
         ret = H5Pset_layout(COMPRESS_INFO.dcpl_id, H5D_CHUNKED);
@@ -891,7 +925,33 @@ set_globals(const bench_params *params)
         ret =
             H5Pset_chunk(COMPRESS_INFO.dcpl_id, params->num_dims, (const hsize_t *)COMPRESS_INFO.chunk_dims);
         assert(ret >= 0);
-        ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
+
+        // Adds the specified filter to pipeline
+        if (params->compress_filter == N_BIT) {
+            ret = H5Pset_nbit(COMPRESS_INFO.dcpl_id);
+        }
+        else if (params->compress_filter == SZIP) {
+            ret = H5Pset_szip(COMPRESS_INFO.dcpl_id, H5_SZIP_EC_OPTION_MASK, 8);
+        }
+        else if (params->compress_filter == GZIP) {
+            ret = H5Pset_deflate(COMPRESS_INFO.dcpl_id, 9);
+        }
+        else if (params->compress_filter == SZ3) {
+            ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SZ3, H5Z_FLAG_MANDATORY, params->cd_nelmts,
+                                cd_values);
+        }
+        else if (params->compress_filter == ZFP) {
+            ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_ZFP, H5Z_FLAG_MANDATORY, params->cd_nelmts,
+                                cd_values);
+        }
+        else if (params->compress_filter == SNAPPY_CUDA) {
+            ret = H5Pset_filter(COMPRESS_INFO.dcpl_id, H5Z_FILTER_SNAPPY_CUDA, H5Z_FLAG_MANDATORY,
+                                params->cd_nelmts, cd_values);
+        }
+        else {
+            ret = -1;
+        }
+        free(cd_values);
         assert(ret >= 0);
     }
 
@@ -978,6 +1038,8 @@ main(int argc, char *argv[])
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_lvl_provided);
     assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
+    assert(MPI_THREAD_MULTIPLE == mpi_thread_lvl_provided);
+    MPI_Comm_rank(MPI_COMM_WORLD, &MY_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &NUM_RANKS);
     MPI_Comm           comm    = MPI_COMM_WORLD;
     MPI_Info           info    = MPI_INFO_NULL;
@@ -998,6 +1060,17 @@ main(int argc, char *argv[])
 
     char *       output_file;
     bench_params params;
+
+    params.cd_value_1  = 0;
+    params.cd_value_2  = 0;
+    params.cd_value_3  = 0;
+    params.cd_value_4  = 0;
+    params.cd_value_5  = 0;
+    params.cd_value_6  = 0;
+    params.cd_value_7  = 0;
+    params.cd_value_8  = 0;
+    params.cd_value_9  = 0;
+    params.cd_value_10 = 0;
 
     char *cfg_file_path = argv[1];
     output_file         = argv[2];
@@ -1104,7 +1177,9 @@ main(int argc, char *argv[])
     unsigned long t2 = get_time_usec(); // t2 - t1: metadata: creating/opening
 
     unsigned long raw_write_time, inner_metadata_time, local_data_size;
-    int           stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
+
+    // Run write benchmark
+    int stat = _run_benchmark_write(params, file_id, fapl, filespace, memspace, data, data_size,
                                     &local_data_size, &raw_write_time, &inner_metadata_time);
 
     if (stat < 0) {
@@ -1124,6 +1199,8 @@ main(int argc, char *argv[])
     unsigned long tfclose_start = get_time_usec();
 
     H5Fclose_async(file_id, 0);
+
+    // reopen file and try to get the compressed data size for calculating compression ratio
 
     unsigned long tfclose_end = get_time_usec();
     MPI_Barrier(MPI_COMM_WORLD);
@@ -1147,9 +1224,24 @@ main(int argc, char *argv[])
             read_time_val(params.compute_time, TIME_US) * (params.cnt_time_step - 1);
         printf("Total emulated compute time: %.3lf s\n", total_sleep_time_us / (1000.0 * 1000.0));
 
+        // Report total write size
         double total_size_bytes = NUM_RANKS * local_data_size;
         value                   = format_human_readable(total_size_bytes);
         printf("Total write size: %.3lf %cB\n", value.value, value.unit);
+
+        // Assume no compression
+        float compression_ratio = 1.0;
+
+        // Report compression ratio
+        if (COMPRESS_INFO.USE_COMPRESS) {
+            if (COMPRESS_INFO.total_compressed_size > 0) {
+                compression_ratio = total_size_bytes / COMPRESS_INFO.total_compressed_size;
+            }
+
+            value = format_human_readable(COMPRESS_INFO.total_compressed_size);
+            printf("Total compressed size: %.3lf %cB\n", value.value, value.unit);
+            printf("Compression ratio: %.3f\n", compression_ratio);
+        }
 
         float rwt_s    = (float)raw_write_time / (1000.0 * 1000.0);
         float raw_rate = (float)total_size_bytes / rwt_s;
@@ -1184,12 +1276,17 @@ main(int argc, char *argv[])
             fprintf(params.csv_fs, "operation, %s, %s\n", "write", "");
             fprintf(params.csv_fs, "ranks, %d, %s\n", NUM_RANKS, "");
             fprintf(params.csv_fs, "collective data, %s, %s\n", params.data_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "collective meta, %s, %s\n", params.meta_coll == 1 ? "YES" : "NO", "");
-            fprintf(params.csv_fs, "subfiling, %s, %s\n", params.subfiling == 1 ? "YES" : "NO", "");
             fprintf(params.csv_fs, "total compute time, %.3lf, %s\n", total_sleep_time_us / (1000.0 * 1000.0),
                     "seconds");
             value = format_human_readable(total_size_bytes);
             fprintf(params.csv_fs, "total size, %.3lf, %cB\n", value.value, value.unit);
+
+            if (COMPRESS_INFO.USE_COMPRESS) {
+                value = format_human_readable(COMPRESS_INFO.total_compressed_size);
+                fprintf(params.csv_fs, "total compressed size, %.3lf, %cB\n", value.value, value.unit);
+                fprintf(params.csv_fs, "compression ratio, %.3lf, %s\n", compression_ratio, "");
+            }
+
             fprintf(params.csv_fs, "raw time, %.3f, %s\n", rwt_s, "seconds");
             value = format_human_readable(raw_rate);
             fprintf(params.csv_fs, "raw rate, %.3lf, %cB/s\n", value.value, value.unit);
